@@ -23,15 +23,23 @@ class FMDOpt(torch.optim.Optimizer):
         self.m = m
 
         # set eta and the divergence
+        self.eta = deepcopy(self.params)
         self.eta_optim_gen = lambda : self.optimizer_to(eta_optim(deepcopy(self.params),**eta_optim_args), 'cuda')
         self.inner_optim_gen = lambda : self.optimizer_to(inner_optim(deepcopy(self.params),**surr_optim_args), 'cuda')
         self.eta_optim = self.eta_optim_gen()
         self.inner_optim = self.inner_optim_gen()
         self.div_op = div_op
 
-        # preset eta (parameter-wise / diagnol only)
-        self.eta = deepcopy(self.params)
+        self.eta_optim.param_groups[0]['params']
+        self.inner_optim
 
+        # preset eta (parameter-wise / diagnol only)
+        for eta, eta_opt, inner_opt in zip(self.eta,
+                                           self.eta_optim.param_groups[0]['params'],
+                                           self.inner_optim.param_groups[0]['params']):
+            eta.data = eta.data.to('cuda')
+            eta_opt.data = eta_opt.data.to('cuda')
+            inner_opt.data = inner_opt.data.to('cuda')
         # store state for debugging
         self.state['outer_steps'] = 0
         self.state['inner_steps'] = 0
@@ -69,7 +77,7 @@ class FMDOpt(torch.optim.Optimizer):
         for target_param, param in zip(target, source):
             if target_param.grad is None:
                 with torch.no_grad():
-                    target_param.grad = torch.zeros(param.grad.shape)
+                    target_param.grad = torch.zeros(param.grad.shape, device='cuda')
             target_param.grad.copy_(param.grad)
     @staticmethod
     def add_grads(target, source):
@@ -77,19 +85,28 @@ class FMDOpt(torch.optim.Optimizer):
         for target_param, param in zip(target, source):
             if target_param.grad is None:
                 with torch.no_grad():
-                    target_param.grad = torch.zeros(param.grad.shape)
+                    target_param.grad = torch.zeros(param.grad.shape, device='cuda')
             target_param.grad.add_(param.grad)
     @staticmethod
-    def mult_grads(target, source):
+    def grad_grad_prod(target, source):
         """ copies nueral network gradients between to networks. """
         for target_param, param in zip(target, source):
             if target_param.grad is None:
                 with torch.no_grad():
-                    target_param.grad = torch.zeros(param.grad.shape)
+                    target_param.grad = torch.zeros(param.grad.shape, device='cuda')
             target_param.grad.mul_(param.grad)
     @staticmethod
     def grad_param_prod(target, source):
-        dot_prod = torch.tensor(0.)
+        dot_prod = torch.tensor(0., device='cuda')
+        for target_param, param in zip(target, source):
+            if target_param.grad is None:
+                with torch.no_grad():
+                    target_param.data = torch.zeros(param.grad.shape, device='cuda')
+            dot_prod += (target_param.grad * param.data).sum()
+        return dot_prod
+    @staticmethod
+    def grad_sum(target, source):
+        cumu_grad_prod = torch.tensor(0.)
         for target_param, param in zip(target, source):
             if target_param.grad is None:
                 with torch.no_grad():
@@ -105,7 +122,7 @@ class FMDOpt(torch.optim.Optimizer):
         new_params = self.eta_optim.param_groups[0]['params']
         # manually compute pre-conditioner based on update
         for current, new, eta in zip(current_params, new_params, self.eta):
-            eta = new.grad / (current - new + 1e-12*torch.rand(current.size()))
+            eta = new.grad / (current - new + 1e-12*torch.rand(current.size(),device='cuda'))
         return self.eta
 
     def step(self, closure, clip_grad=False):
@@ -119,9 +136,6 @@ class FMDOpt(torch.optim.Optimizer):
         # compute loss + grad for eta computation
         loss_t, f_t, y = closure(call_backward=True)
 
-        # save the current parameters + grad info
-        params_current = deepcopy(self.params)
-
         # replace gradients in eta-optim
         self.copy_grads(self.eta_optim.param_groups[0]['params'], self.params)
 
@@ -129,27 +143,30 @@ class FMDOpt(torch.optim.Optimizer):
         eta = self.compute_eta()
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
-        def first_surrogate(call_backward=True, loss_backwards=False):
+        def first_surrogate(call_backward=True):
             # zero out the gradient
-            self.zero_grad()
+            loss, f_t_back, _ = closure(call_backward=False)
             # compute gradient through reg term
-            reg_term = self.div_op(f_t,f_t.detach())
-            reg_term.backward()
-            # scale gradient update by eta from eta optim
-            self.mult_grads(self.params, self.eta)
-            #  add scaled grad to loss grad
-            self.add_grads(self.params, self.eta_optim.param_groups[0]['params'])
+            reg_term = self.div_op(f_t_back,f_t_back.detach())
+            # if we are updating gradient info
+            if call_backward:
+                # backwards throughreg term
+                reg_term.backward()
+                # scale gradient update by eta from eta optim
+                self.grad_param_prod(self.params, self.eta)
+                # add scaled grad to loss grad
+                self.add_grads(self.params, self.eta_optim.param_groups[0]['params'])
             #
             surr = loss + self.grad_param_prod(self.params, self.params)
             #
-            return loss
+            return surr
 
         # take single step in surrogate function
         self.copy_grads(self.inner_optim.params, self.params)
         current_loss = self.inner_optim.step(first_surrogate)
         self.state['inner_steps'] += 1
         self.state['loss'] = current_loss
-        print('yeet.')
+
         # set general surrogate loss now that we have taken first step
         def general_surrogate(call_backward=True):
             # zero out the gradient
@@ -161,7 +178,6 @@ class FMDOpt(torch.optim.Optimizer):
             loss, f, y = closure(call_backward=False)
             # surr = loss + (1 / eta) * self.div_op(f-f_t)
             surr = loss + (1 / self.eta_optim.param_groups[0]['lr'])
-
             #
             return loss
 

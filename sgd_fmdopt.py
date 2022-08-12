@@ -34,11 +34,9 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         # store state for debugging
         self.state['outer_steps'] = 0
         self.state['inner_steps'] = 0
-        self.state['loss'] = None
+        # self.state['loss'] = None
         self.state['step_time'] = None
         self.state['inner_step_size'] = None
-        self.state['n_forwards'] = 0
-        self.state['n_backwards'] = 0
         self.state['grad_evals'] = 0
         self.state['function_evals'] = 0
 
@@ -48,13 +46,10 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         for target_param, param in zip(target, source):
             target_param.data.copy_(param.data)
 
-    def step(self, closure, clip_grad=False):
-
+    def step(self, closure, clip_grad=False): 
         # set initial step size
-        self.state['n_forwards'] += 1
-        self.state['grad_evals'] += 1
-        self.state['outer_steps'] += 1
         start = time.time()
+        self.state['outer_steps'] += 1
 
         # compute loss + grad for eta computation
         _, f_t, _ = closure(call_backward=False)
@@ -74,11 +69,11 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             loss = surrogate(call_backward=True)
             current_loss = self.inner_optim.step(surrogate)
             self.state['inner_steps'] += 1
-            self.state['loss'] = current_loss
+            # self.state['loss'] = current_loss
+            self.state['grad_evals'] += 1
 
         # update internal logs everywhere
         self.state['function_evals'] = self.inner_optim.state['function_evals']
-        self.state['grad_evals']  = self.inner_optim.state['grad_evals']
         self.state['step_time'] = timer(start,time.time())
         self.state['inner_step_size'] = self.inner_optim.state['step_size']
 

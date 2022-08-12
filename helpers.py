@@ -23,6 +23,10 @@ def get_grad_list(params):
             grad = 0.
         g_list += [grad]
     return g_list
+def get_grad_norm(params):
+    glist = get_grad_list(params)
+    return compute_grad_norm(glist)
+
 def replace_params(model, params):
     zipped = zip([m for m in params], [m for m in model.parameters()])
     for p_new, p_current in zipped:

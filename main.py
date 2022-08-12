@@ -15,36 +15,23 @@ from load_data import create_mushroom_data
 from fmdopt import FMDOpt
 from sgd_fmdopt import SGD_FMDOpt
 from lsopt import LSOpt
-
-def log_check(log_dict):
-    keys = log_dict.keys()
-    if 'inner_steps' not in list(keys):
-        log_dict['inner_steps'] = 1
-    if 'outer_steps' not in list(keys):
-        log_dict['outer_steps'] = 1
-    if 'function_evals' not in list(keys):
-        log_dict['function_evals'] = 1
-    if 'grad_evals' not in list(keys):
-        log_dict['grad_evals'] = 1
-    return log_dict
-
+from helpers import get_grad_norm
 def train_model(model, optim, loss_func, X, y, call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
     # log stuff
-
     dataset = torch.utils.data.TensorDataset(X, y)
     data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
+    logs, s = [], 0
     import_vals = ['inner_steps', 'loss', 'function_evals', 'grad_evals', 'step_time', 'inner_step_size']
-
     # iterate over epochs
     for t in tqdm(range(total_rounds)):
+        s = 0
         # step through data by sampling without replacement
         for X_batch, y_batch in tqdm(data_generator,leave=False):
             # create closure for line-search/lbfgs
             def closure(call_backward=True):
                 optim.zero_grad()
                 model_outputs = model(X_batch)
-                loss = loss_func(model_outputs, y_batch) 
+                loss = loss_func(model_outputs, y_batch)
                 if call_backward==True:
                     loss.backward()
                 return loss, model_outputs, y_batch
@@ -52,19 +39,28 @@ def train_model(model, optim, loss_func, X, y, call_closure=False, total_rounds 
                 closure()
             # step optimizer over closure
             optim.step(closure)
+            s += 1
         # log everything
         if t % log_rate == 0:
-            avg_loss = closure(call_backward=False)[0].detach().cpu()*0
+            avg_loss = closure(call_backward=True)[0].detach().cpu().numpy()*0
+            grad_norm = get_grad_norm(model.parameters()).detach().cpu().numpy()*0
             for X_batch, y_batch in data_generator:
-                avg_loss += loss_func(model(X_batch), y_batch).detach().cpu()
-            log_info = {'avg_loss': avg_loss}
+                avg_loss += loss_func(model(X_batch), y_batch).detach().cpu().numpy()
+                grad_norm += get_grad_norm(model.parameters()).detach().cpu().numpy()
+            log_info = {'avg_loss': avg_loss,
+                        'optim_steps': s,
+                        'grad_norm': grad_norm}
             log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
-            log_info = log_check(log_info)
             wandb.log(log_info)
-    #
-    print('final loss:', avg_loss)
+            logs.append(log_info)
+    # reformat stored data
+    parsed_logs = {}
+    for key in log_info.keys():
+        if key in ['step_time']:
+            continue
+        parsed_logs[key] = torch.tensor([i[key] for i in logs])
     # return info
-    return model
+    return model, parsed_logs
 
 def get_args():
     # grab parse.
@@ -103,13 +99,14 @@ def main():
     elif args.loss == 'MSELoss':
         X, y = create_mushroom_data()
         X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
+        y = y.unsqueeze(1)
         loss_func = nn.MSELoss()
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
     # train with an optimizer
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=10**args.log_eta)
-        train_model(model, optim, loss_func, X, y, call_closure=True,
+        model, logs = train_model(model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'SGD_FMDOpt':
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
@@ -117,17 +114,18 @@ def main():
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
         optim = SGD_FMDOpt(model.parameters(), eta=10**args.log_eta, div_op=div_measure,
                        inner_optim=LSOpt, surr_optim_args=surr_optim_args, m=args.m)
-        train_model(model, optim, loss_func, X, y, call_closure=False,
+        model, logs = train_model(model, optim, loss_func, X, y, call_closure=False,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'Adam':
         optim = torch.optim.Adam(model.parameters(), lr=10**args.log_eta)
-        train_model(model, optim, loss_func, X, y, call_closure=True,
+        model, logs = train_model(model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'Adagrad':
         optim = torch.optim.Adagrad(model.parameters(), lr=10**args.log_eta)
-        train_model(model, optim, loss_func, X, y, call_closure=True,
+        model, logs = train_model(model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
-
+    #
+    logs = torch.save(logs, 'logs/'+args.algo+'_'+args.loss+'_'+str(args.m)+'.pt')
     #
     return
 

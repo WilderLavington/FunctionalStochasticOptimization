@@ -39,49 +39,52 @@ def download_all_runs_summary():
     all_df = pd.concat([name_df, config_df, summary_df], axis=1)
     all_df.to_csv(SUMMARY_FILE)
 
-def create_dataset():
-    # create structured dict of good params
-    best_config_loc = {}
-    for example in tqdm(config_setups):
-        best_config_loc[str(example)] = {}
-        # create filtered df
-        filtered_df = deepcopy(runs_df)
-        filtered_df = filtered_df.loc[filtered_df['env_name'] == example[0]]
-        filtered_df = filtered_df.loc[filtered_df['beta_update'] == example[1]]
-        filtered_df = filtered_df.loc[filtered_df['samples_per_update'] == example[2]]
-        filtered_df = filtered_df.loc[filtered_df['loss_type'] == example[3]]
-        filtered_df = filtered_df.loc[filtered_df['model_type'] == example[4]]
-        filtered_df = filtered_df.loc[filtered_df['algo'] == example[5]]
-        filtered_df = filtered_df.loc[filtered_df['total_examples_mean'] >= REQ_EXAMPLES]
+def plot(fig_name='example.png',x='optim_steps',
+        y='avg_loss',max_steps=100,m=1,loss='MSELoss'):
+    # =================================================
+    #
+    sgd_data = torch.load('logs/SGD'+'_'+loss+'_'+str(5)+'.pt')
+    adam_data = torch.load('logs/Adam'+'_'+loss+'_'+str(5)+'.pt')
+    Adagrad_data = torch.load('logs/Adagrad'+'_'+loss+'_'+str(5)+'.pt')
+    SGD_FMDOpt_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(m)+'.pt')
+    # =================================================
+    #
+    fig, ax = plt.subplots()
+    print(sgd_data)
+    ax.plot(sgd_data['optim_steps'][:max_steps], sgd_data[y][:max_steps], label='SGD')
+    ax.plot(adam_data['optim_steps'][:max_steps], adam_data[y][:max_steps], label='Adam')
+    ax.plot(Adagrad_data['optim_steps'], Adagrad_data[y], label='Adagrad')
+    ax.plot(SGD_FMDOpt_data[x][(x < max_steps).nonzero().reshape(-1)],
+                SGD_FMDOpt_data[y][(x < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt')
+    ax.grid()
+    plt.legend()
+    plt.rcParams['figure.dpi'] = 400
+    plt.xlabel(x)
+    plt.ylabel(y)
+    plt.title('Functional Decent Comparison: m='+str(m))
+    plt.show()
+    plt.savefig(fig_name)
 
-        # check its not empty
-        while len(filtered_df) > 0:
+def get_args():
+    # grab parse.
+    parser = argparse.ArgumentParser(description='PyTorch Soft Actor-Critic Args')
+    # optimization args
+    parser.add_argument('--x', type=str, default='optim_steps', help='SGD,Adam,SGD_FMDOpt')
+    parser.add_argument('--y', type=str, default='avg_loss')
+    parser.add_argument('--loss', type=str, default='MSELoss')
+    parser.add_argument('--fig_name', type=str, default='example.png')
+    parser.add_argument('--max_steps', type=str, default='example.png')
+    args, knk = parser.parse_known_args()
+    #
+    return args, parser
+
+def main():
+
+    # get arguments
+    args, parser = get_args()
+    plot(fig_name=args.fig_name, x=args.x, y=args.y,
+         max_steps=args.max_steps, m=1, loss=args.loss)
 
 
-                # iterate through all stats and rows while orginizing
-                for i, row in run.history().iterrows():
-                    if info_key not in row.keys():
-                        break
-                    # store different stats
-                    for sub_stat in ['_05_quant', '_95_quant', '_mean', '_min', '_max']:
-                        info_key.replace(sub_stat,'')
-                        if info_key.replace(sub_stat,'') not in best_config_loc[str(example)].keys():
-                            best_config_loc[str(example)][info_key.replace(sub_stat,'')] = {}
-                        if sub_stat not in best_config_loc[str(example)][info_key.replace(sub_stat,'')].keys():
-                            best_config_loc[str(example)][info_key.replace(sub_stat,'')][sub_stat]=[]
-                        if sub_stat in info_key:
-                            best_config_loc[str(example)][info_key.replace(sub_stat,'')][sub_stat].append(row[info_key])
-                # add in id just in case
-                best_config_loc[str(example)]['id'] = runs_df.loc[min_idx,:]['id']
-                #
-                best_config_loc[str(example)]['updates'] = []
-                best_config_loc[str(example)]['total_examples'] = []
-                for i, row in run.history().iterrows():
-                    best_config_loc[str(example)]['updates'].append(row['update_mean'])
-                    best_config_loc[str(example)]['total_examples'].append(row['total_examples_mean'])
-                break
-            except:
-                filtered_df.drop(best_id)
-
-    # save it
-    torch.save(best_config_loc, BASE_FOLDER+SUMMARY_FILE+'.pt')
+if __name__ == "__main__":
+    main()

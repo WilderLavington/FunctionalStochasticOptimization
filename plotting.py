@@ -40,30 +40,36 @@ def download_all_runs_summary():
     all_df.to_csv(SUMMARY_FILE)
 
 def plot(fig_name='example.png',x='optim_steps',
-        y='avg_loss',max_steps=100,m=1,loss='MSELoss'):
+        y='avg_loss',max_steps=1000,m=1,loss='MSELoss'):
     # =================================================
     #
     sgd_data = torch.load('logs/SGD'+'_'+loss+'_'+str(5)+'.pt')
     adam_data = torch.load('logs/Adam'+'_'+loss+'_'+str(5)+'.pt')
-    Adagrad_data = torch.load('logs/Adagrad'+'_'+loss+'_'+str(5)+'.pt')
-    SGD_FMDOpt_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(m)+'.pt')
+    adagrad_data = torch.load('logs/Adagrad'+'_'+loss+'_'+str(5)+'.pt')
+    SGD_FMDOpt1_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(1)+'.pt')
+    SGD_FMDOpt2_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(2)+'.pt')
+    SGD_FMDOpt3_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(3)+'.pt')
     # =================================================
     #
     fig, ax = plt.subplots()
-    print(sgd_data['optim_steps'],max_steps)
-    ax.plot(sgd_data['optim_steps'][:max_steps], sgd_data[y][:max_steps], label='SGD')
-    ax.plot(adam_data['optim_steps'][:max_steps], adam_data[y][:max_steps], label='Adam')
-    ax.plot(Adagrad_data['optim_steps'], Adagrad_data[y], label='Adagrad')
-    ax.plot(SGD_FMDOpt_data[x][(x < max_steps).nonzero().reshape(-1)],
-                SGD_FMDOpt_data[y][(x < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt')
+    low_order_idx = (adam_data['optim_steps'] < max_steps).nonzero().reshape(-1)
+    ax.plot(sgd_data['optim_steps'][low_order_idx], sgd_data[y][low_order_idx], label='SGD')
+    ax.plot(adam_data['optim_steps'][low_order_idx], adam_data[y][low_order_idx], label='Adam')
+    ax.plot(adagrad_data['optim_steps'][low_order_idx], adagrad_data[y][low_order_idx], label='Adagrad')
+    ax.plot(SGD_FMDOpt1_data[x][(SGD_FMDOpt1_data[x] < max_steps).nonzero().reshape(-1)],
+                SGD_FMDOpt1_data[y][(SGD_FMDOpt1_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=1)')
+    ax.plot(SGD_FMDOpt2_data[x][(SGD_FMDOpt2_data[x] < max_steps).nonzero().reshape(-1)],
+                SGD_FMDOpt2_data[y][(SGD_FMDOpt2_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=2)')
+    ax.plot(SGD_FMDOpt3_data[x][(SGD_FMDOpt3_data[x] < max_steps).nonzero().reshape(-1)],
+                SGD_FMDOpt3_data[y][(SGD_FMDOpt3_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=3)')
     ax.grid()
     plt.legend()
     plt.rcParams['figure.dpi'] = 400
     plt.xlabel(x)
     plt.ylabel(y)
     plt.title('Functional Decent Comparison: m='+str(m))
-    plt.show()
-    plt.savefig(fig_name)
+    # plt.show()
+    plt.savefig(fig_name, bbox_inches='tight')
 
 def get_args():
     # grab parse.
@@ -83,7 +89,7 @@ def main():
     # get arguments
     args, parser = get_args()
     plot(fig_name=args.fig_name, x=args.x, y=args.y,
-         max_steps=args.max_steps, m=1, loss=args.loss)
+         max_steps=args.max_steps, loss=args.loss)
 
 
 if __name__ == "__main__":

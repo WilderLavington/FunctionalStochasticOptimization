@@ -20,7 +20,7 @@ def train_model(model, optim, loss_func, X, y, call_closure=False, total_rounds 
     # log stuff
     dataset = torch.utils.data.TensorDataset(X, y)
     data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    logs, s = [], 0
+    logs, s, starting_time = [], 0,  time()
     import_vals = ['inner_steps', 'loss', 'function_evals', 'grad_evals', 'step_time', 'inner_step_size']
     # iterate over epochs
     for t in tqdm(range(total_rounds)):
@@ -48,7 +48,8 @@ def train_model(model, optim, loss_func, X, y, call_closure=False, total_rounds 
                 grad_norm += get_grad_norm(model.parameters()).detach().cpu().numpy()
             log_info = {'avg_loss': avg_loss,
                         'optim_steps': s,
-                        'grad_norm': grad_norm}
+                        'grad_norm': grad_norm,
+                        'time-elapsed':  time() - starting_time}
             log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
             wandb.log(log_info)
             logs.append(log_info)

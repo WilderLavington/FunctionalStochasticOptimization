@@ -50,7 +50,7 @@ def plot(fig_name='example.png',x='optim_steps',
     # =================================================
     #
     fig, ax = plt.subplots()
-    print(sgd_data)
+    print(sgd_data['optim_steps'],max_steps)
     ax.plot(sgd_data['optim_steps'][:max_steps], sgd_data[y][:max_steps], label='SGD')
     ax.plot(adam_data['optim_steps'][:max_steps], adam_data[y][:max_steps], label='Adam')
     ax.plot(Adagrad_data['optim_steps'], Adagrad_data[y], label='Adagrad')
@@ -73,7 +73,7 @@ def get_args():
     parser.add_argument('--y', type=str, default='avg_loss')
     parser.add_argument('--loss', type=str, default='MSELoss')
     parser.add_argument('--fig_name', type=str, default='example.png')
-    parser.add_argument('--max_steps', type=str, default='example.png')
+    parser.add_argument('--max_steps', type=int, default=100)
     args, knk = parser.parse_known_args()
     #
     return args, parser

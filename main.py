@@ -24,7 +24,6 @@ def train_model(model, optim, loss_func, X, y, call_closure=False, total_rounds 
     import_vals = ['inner_steps', 'loss', 'function_evals', 'grad_evals', 'step_time', 'inner_step_size']
     # iterate over epochs
     for t in tqdm(range(total_rounds)):
-        s = 0
         # step through data by sampling without replacement
         for X_batch, y_batch in tqdm(data_generator,leave=False):
             # create closure for line-search/lbfgs
@@ -70,6 +69,8 @@ def get_args():
     parser.add_argument('--episodes', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=100)
     parser.add_argument('--loss', type=str, default='CrossEntropyLoss')
+    parser.add_argument('--project', type=str, default='FunctionalOptimization')
+    parser.add_argument('--entity', type=str, default='wilderlavington')
     parser.add_argument('--log_eta', type=float, default=-4)
     parser.add_argument('--m', type=int, default=5)
     parser.add_argument('--init_step_size', type=float, default=1)
@@ -87,7 +88,7 @@ def main():
     args, parser = get_args()
 
     # get weights
-    wandb.init(project='FunctionalOptimization', entity='wilderlavington', config=args)
+    wandb.init(project=args.project, entity=args.entity, config=args)
 
     # set loss functions + models + data
     if args.loss == 'CrossEntropyLoss':

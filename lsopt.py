@@ -80,7 +80,7 @@ class LSOpt(torch.optim.Optimizer):
         step_size = self.expand_coeff * self.state['step_size']
 
         # get loss and compute gradients
-        loss = closure(call_backward=False)
+        loss = closure(call_backward=True)
         self.state['grad_evals'] += 1
 
         if clip_grad:
@@ -96,7 +96,7 @@ class LSOpt(torch.optim.Optimizer):
 
             # take some steps
             for e in range(100):
-                
+
                 # =================================================
                 # try a prospective step
                 for p_next, p_current, g_current in zip(self.params, params_current, grad_current):

@@ -140,7 +140,7 @@ class FMDOpt(torch.optim.Optimizer):
         self.copy_grads(self.eta_optim.param_groups[0]['params'], self.params)
 
         # step eta_optim to compute what ever eta was
-        eta = self.compute_eta()
+        # eta = self.compute_eta()
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def first_surrogate(call_backward=True):
@@ -170,16 +170,20 @@ class FMDOpt(torch.optim.Optimizer):
         # set general surrogate loss now that we have taken first step
         def general_surrogate(call_backward=True):
             # zero out the gradient
-            self.zero_grad()
-            # compute
-            reg_term = self.div_op(f,f_t)
-            reg_term.backward()
+            loss, f, _ = closure(call_backward=False)
+            # compute gradient through reg term
+            reg_term = self.div_op(f, f_t.detach())
+            # if we are updating gradient info
+            if call_backward:
+                # backwards throughreg term
+                reg_term.backward()
+                # scale gradient update by eta from eta optim
+                self.grad_param_prod(self.params, self.eta)
+
             #
-            loss, f, y = closure(call_backward=False)
-            # surr = loss + (1 / eta) * self.div_op(f-f_t)
-            surr = loss + (1 / self.eta_optim.param_groups[0]['lr'])
+            surr = loss + self.grad_param_prod(self.params, self.params)
             #
-            return loss
+            return surr
 
         # now we take multiple steps over surrogate
         if self.m > 1:

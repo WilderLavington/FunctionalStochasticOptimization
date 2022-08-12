@@ -30,7 +30,7 @@ def log_check(log_dict):
 
 def train_model(model, optim, loss_func, X, y, call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
     # log stuff
-    X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.long)
+
     dataset = torch.utils.data.TensorDataset(X, y)
     data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
@@ -44,7 +44,7 @@ def train_model(model, optim, loss_func, X, y, call_closure=False, total_rounds 
             def closure(call_backward=True):
                 optim.zero_grad()
                 model_outputs = model(X_batch)
-                loss = loss_func(model_outputs, y_batch)
+                loss = loss_func(model_outputs, y_batch) 
                 if call_backward==True:
                     loss.backward()
                 return loss, model_outputs, y_batch
@@ -73,7 +73,7 @@ def get_args():
     parser.add_argument('--algo', type=str, default='SGD', help='SGD,Adam,SGD_FMDOpt')
     parser.add_argument('--episodes', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=100)
-    parser.add_argument('--loss', type=str, default='CrossEntropyLoss') 
+    parser.add_argument('--loss', type=str, default='CrossEntropyLoss')
     parser.add_argument('--log_eta', type=float, default=-4)
     parser.add_argument('--m', type=int, default=5)
     parser.add_argument('--init_step_size', type=float, default=1)
@@ -96,11 +96,13 @@ def main():
     # set loss functions + models + data
     if args.loss == 'CrossEntropyLoss':
         X, y = create_mushroom_data()
+        X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.long)
         loss_func = nn.CrossEntropyLoss()
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
     elif args.loss == 'MSELoss':
         X, y = create_mushroom_data()
+        X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
         loss_func = nn.MSELoss()
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')

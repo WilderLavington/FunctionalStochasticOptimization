@@ -38,26 +38,8 @@ class ContinuousLinearModel(nn.Module):
         super(ContinuousLinearModel, self).__init__()
         # something to compute it all
         self.mean_linear = nn.Linear(num_inputs, num_actions)
-    def sample(self, state, reparam=True):
-        # grab info
-        mean, log_std = self.forward(state)
-        # force requirements on std
-        normal = Normal(mean, log_std.exp())
-        x_t = normal.sample()
-        log_prob = normal.log_prob(x_t)
-        return x_t, log_prob, mean
-    def log_prob(self, state, action):
-        # get dist
-        mean, log_std = self.forward(state)
-        normal = Normal(mean, log_std.exp())
-        log_prob = normal.log_prob(action).sum(1, keepdim=True)
-        # return
-        return log_prob
-    def transform_state(self, state):
-        # if torch.is_tensor(state):
-        #     state = state.cpu().numpy()
-        return state
+  
     def forward(self, state):
-        state = self.transform_state(state)
+        state = state.float()
         output = self.mean_linear(state)
-        return self.mean_linear(state), torch.zeros(output.shape)
+        return self.mean_linear(state)

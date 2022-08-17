@@ -9,7 +9,7 @@ from helpers import *
 # linesearch optimizer
 class LSOpt(torch.optim.Optimizer):
     def __init__(self, params, init_step_size=1,
-                 c=0.1, beta_update=0.9, expand_coeff=1.8):
+                 c=0.001, beta_update=0.9, expand_coeff=1.8):
         params = list(params)
         super().__init__(params, {})
         assert beta_update < 1.

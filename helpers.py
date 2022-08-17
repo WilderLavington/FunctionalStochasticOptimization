@@ -1,6 +1,16 @@
 
 import torch
 
+def update_lr(optimizer, epoch, initial_lr):
+    """Decreases the learning rate as 1 / sqrt(t) """
+     for param_group in optimizer.param_groups:
+         if new_lr <= 0.:
+             pass
+             return old_lr, optimizer
+         else:
+             param_group['lr'] = initial_lr / torch.sqrt(epoch)
+             return new_lr, optimizer
+
 # helpers
 def compute_grad_norm(grad_list):
     grad_norm = 0.

@@ -14,8 +14,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
     def __init__(self, params, m=1, eta_schedule = 'constant',
                  div_op = lambda f,f1: torch.norm(f-f1).pow(2),
                  inner_optim = LSOpt, eta=1e-3, stoch_reg=True,
-                 surr_optim_args={'init_step_size':2.},
-                 total_steps = 1000):
+                 surr_optim_args={'init_step_size':2.}):
         params = list(params)
         super().__init__(params, {})
 
@@ -28,6 +27,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.div_op = div_op
         self.eta =  eta
         self.eta_schedule = eta_schedule
+        self.ada_scaling = torch.zero(0., device='cuda')
 
         # preset eta (parameter-wise / diagnol only)
         for inner_opt in self.inner_optim.param_groups[0]['params']:
@@ -55,7 +55,10 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.state['outer_steps'] += 1
 
         # compute loss + grad for eta computation
-        _, f_t, F_t = closure(call_backward=False)
+        loss, f_t, F_t = closure(call_backward=True)
+
+        # get current jacobian
+        self.ada_scaling += torch.norm(f_t.grad).pow(2).detach()
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
@@ -66,17 +69,8 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             else:
                 reg_term = self.div_op(F,F_t.detach())
             #
-            if eta_schedule == 'constant':
-                surr = loss + self.eta * reg_term
-            elif eta_schedule == 'stochastic':
-                surr = loss + self.eta * reg_term * torch.sqrt(self.state['outer_steps'])
-            elif eta_schedule == 'exponential':
-                surr = loss + self.eta * reg_term * \
-                    (self.state['outer_steps']) ** (self.state['outer_steps'] / self.total_steps)
-                # assert total_steps <= self.state['outer_steps']
-            else:
-                raise Exception
-
+            surr = loss + self.eta * torch.sqrt(self.ada_scaling) * reg_term
+            #
             if call_backward:
                 surr.backward()
             return surr

@@ -16,7 +16,8 @@ from fmdopt import FMDOpt
 from sgd_fmdopt import SGD_FMDOpt
 from lsopt import LSOpt
 from helpers import get_grad_norm
-def train_model(model, optim, loss_func, X, y, call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
+def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
+            call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
     # log stuff
     dataset = torch.utils.data.TensorDataset(X, y)
     data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -30,15 +31,19 @@ def train_model(model, optim, loss_func, X, y, call_closure=False, total_rounds 
             def closure(call_backward=True):
                 optim.zero_grad()
                 model_outputs = model(X_batch)
+                all_model_outputs = model(X)
                 loss = loss_func(model_outputs, y_batch)
                 if call_backward==True:
                     loss.backward()
-                return loss, model_outputs, y_batch
+                return loss, model_outputs, all_model_outputs
             if call_closure:
                 closure()
             # step optimizer over closure
             optim.step(closure)
             s += 1
+            if decay_lr:
+                optim = update_lr(optim, s, 10**args.log_eta)
+
         # log everything
         if t % log_rate == 0:
             avg_loss = closure(call_backward=True)[0].detach().cpu().numpy()*0
@@ -78,6 +83,10 @@ def get_args():
     parser.add_argument('--c', type=float, default=0.1)
     parser.add_argument('--beta_update', type=float, default=0.9)
     parser.add_argument('--expand_coeff', type=float, default=1.8)
+    parser.add_argument('--use_optimal_stepsize', type=int, default=1)
+    parser.add_argument('--eta_schedule', type=str, default='constant')
+    parser.add_argument('--dataset_name', type=str, default='mushrooms')
+     
     # parse
     args, knk = parser.parse_known_args()
     #
@@ -91,40 +100,45 @@ def main():
     # get weights
     wandb.init(project=args.project, entity=args.entity, config=args)
 
-    # set loss functions + models + data
+    # set loss functions + models + data + lr
     if args.loss == 'CrossEntropyLoss':
-        X, y = create_mushroom_data()
+        X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
         X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.long)
         loss_func = nn.CrossEntropyLoss()
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
+        stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
     elif args.loss == 'MSELoss':
-        X, y = create_mushroom_data()
+        X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
         X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
         y = y.unsqueeze(1)
         loss_func = nn.MSELoss()
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
+        L = torch.eig(torch.mm(X.t().double(), X.double()), eigenvectors=True)[0].max().float()
+        stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
+
     # train with an optimizer
     if args.algo == 'SGD':
-        optim = torch.optim.SGD(model.parameters(), lr=10**args.log_eta)
-        model, logs = train_model(model, optim, loss_func, X, y, call_closure=True,
+        optim = torch.optim.SGD(model.parameters(), lr=stepsize)
+        model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'SGD_FMDOpt':
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
         surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
-        optim = SGD_FMDOpt(model.parameters(), eta=10**args.log_eta, div_op=div_measure,
-                       inner_optim=LSOpt, surr_optim_args=surr_optim_args, m=args.m)
-        model, logs = train_model(model, optim, loss_func, X, y, call_closure=False,
+        optim = SGD_FMDOpt(model.parameters(), eta=stepsize, div_op=div_measure,
+                eta_schedule=args.eta_schedule inner_optim=LSOpt,
+                surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
+        model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'Adam':
-        optim = torch.optim.Adam(model.parameters(), lr=10**args.log_eta)
-        model, logs = train_model(model, optim, loss_func, X, y, call_closure=True,
+        optim = torch.optim.Adam(model.parameters(), lr=stepsize)
+        model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'Adagrad':
-        optim = torch.optim.Adagrad(model.parameters(), lr=10**args.log_eta)
-        model, logs = train_model(model, optim, loss_func, X, y, call_closure=True,
+        optim = torch.optim.Adagrad(model.parameters(), lr=stepsize)
+        model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
     #
     logs = torch.save(logs, 'logs/'+args.algo+'_'+args.loss+'_'+str(args.m)+'.pt')

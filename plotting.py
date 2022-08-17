@@ -51,23 +51,88 @@ def plot(fig_name='example.png',x='optim_steps',
     SGD_FMDOpt3_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(3)+'.pt')
     # =================================================
     #
+    if x == 'function_evals+grad_evals':
+        # =================================================
+        #
+        fig, ax = plt.subplots()
+        low_order_idx = (2 * adam_data['optim_steps'] < max_steps).nonzero().reshape(-1)
+        ax.plot(sgd_data['optim_steps'][low_order_idx], sgd_data[y][low_order_idx], label='SGD')
+        ax.plot(adam_data['optim_steps'][low_order_idx], adam_data[y][low_order_idx], label='Adam')
+        ax.plot(adagrad_data['optim_steps'][low_order_idx], adagrad_data[y][low_order_idx], label='Adagrad')
+        ax.plot(SGD_FMDOpt1_data[x][(SGD_FMDOpt1_data['function_evals'] + SGD_FMDOpt1_data['grad_evals'] < max_steps).nonzero().reshape(-1)],
+                    SGD_FMDOpt1_data[y][(SGD_FMDOpt1_data['function_evals'] + SGD_FMDOpt1_data['grad_evals'] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=1)')
+        ax.plot(SGD_FMDOpt2_data[x][(SGD_FMDOpt2_data['function_evals'] + SGD_FMDOpt2_data['grad_evals'] < max_steps).nonzero().reshape(-1)],
+                    SGD_FMDOpt2_data[y][(SGD_FMDOpt2_data['function_evals'] + SGD_FMDOpt2_data['grad_evals'] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=2)')
+        ax.plot(SGD_FMDOpt3_data[x][(SGD_FMDOpt3_data['function_evals'] + SGD_FMDOpt3_data['grad_evals'] < max_steps).nonzero().reshape(-1)],
+                    SGD_FMDOpt3_data[y][(SGD_FMDOpt3_data['function_evals'] + SGD_FMDOpt3_data['grad_evals'] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=3)')
+        ax.grid()
+        plt.legend()
+        plt.rcParams['figure.dpi'] = 400
+        plt.xlabel(x)
+        plt.ylabel(y)
+        plt.title('Optimizer-Comparison: ' )
+        # plt.show()
+        plt.savefig(fig_name, bbox_inches='tight')
+
+    else:
+        # =================================================
+        #
+        fig, ax = plt.subplots()
+        low_order_idx = (adam_data['optim_steps'] < max_steps).nonzero().reshape(-1)
+        ax.plot(sgd_data['optim_steps'][low_order_idx], sgd_data[y][low_order_idx], label='SGD')
+        ax.plot(adam_data['optim_steps'][low_order_idx], adam_data[y][low_order_idx], label='Adam')
+        ax.plot(adagrad_data['optim_steps'][low_order_idx], adagrad_data[y][low_order_idx], label='Adagrad')
+        ax.plot(SGD_FMDOpt1_data[x][(SGD_FMDOpt1_data[x] < max_steps).nonzero().reshape(-1)],
+                    SGD_FMDOpt1_data[y][(SGD_FMDOpt1_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=1)')
+        ax.plot(SGD_FMDOpt2_data[x][(SGD_FMDOpt2_data[x] < max_steps).nonzero().reshape(-1)],
+                    SGD_FMDOpt2_data[y][(SGD_FMDOpt2_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=2)')
+        ax.plot(SGD_FMDOpt3_data[x][(SGD_FMDOpt3_data[x] < max_steps).nonzero().reshape(-1)],
+                    SGD_FMDOpt3_data[y][(SGD_FMDOpt3_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=3)')
+        ax.grid()
+        plt.legend()
+        plt.rcParams['figure.dpi'] = 400
+        plt.xlabel(x)
+        plt.ylabel(y)
+        plt.title('Optimizer-Comparison: ' )
+        # plt.show()
+        plt.savefig(fig_name, bbox_inches='tight')
+
+
+
+def func_plot(fig_name='example.png',x='optim_steps',
+        y='avg_loss',max_steps=1000,m=1,loss='MSELoss'):
+
+    # =================================================
+    #
+    sgd_data = torch.load('logs/SGD'+'_'+loss+'_'+str(5)+'.pt')
+    adam_data = torch.load('logs/Adam'+'_'+loss+'_'+str(5)+'.pt')
+    adagrad_data = torch.load('logs/Adagrad'+'_'+loss+'_'+str(5)+'.pt')
+    SGD_FMDOpt1_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(1)+'.pt')
+    SGD_FMDOpt2_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(2)+'.pt')
+    SGD_FMDOpt3_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(3)+'.pt')
+    SGD_FMDOpt4_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(4)+'.pt')
+    SGD_FMDOpt5_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(5)+'.pt')
+    # =================================================
+    #
     fig, ax = plt.subplots()
     low_order_idx = (adam_data['optim_steps'] < max_steps).nonzero().reshape(-1)
-    ax.plot(sgd_data['optim_steps'][low_order_idx], sgd_data[y][low_order_idx], label='SGD')
-    ax.plot(adam_data['optim_steps'][low_order_idx], adam_data[y][low_order_idx], label='Adam')
-    ax.plot(adagrad_data['optim_steps'][low_order_idx], adagrad_data[y][low_order_idx], label='Adagrad')
     ax.plot(SGD_FMDOpt1_data[x][(SGD_FMDOpt1_data[x] < max_steps).nonzero().reshape(-1)],
                 SGD_FMDOpt1_data[y][(SGD_FMDOpt1_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=1)')
     ax.plot(SGD_FMDOpt2_data[x][(SGD_FMDOpt2_data[x] < max_steps).nonzero().reshape(-1)],
                 SGD_FMDOpt2_data[y][(SGD_FMDOpt2_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=2)')
     ax.plot(SGD_FMDOpt3_data[x][(SGD_FMDOpt3_data[x] < max_steps).nonzero().reshape(-1)],
                 SGD_FMDOpt3_data[y][(SGD_FMDOpt3_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=3)')
+    ax.plot(SGD_FMDOpt4_data[x][(SGD_FMDOpt4_data[x] < max_steps).nonzero().reshape(-1)],
+                SGD_FMDOpt4_data[y][(SGD_FMDOpt4_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=4)')
+    ax.plot(SGD_FMDOpt5_data[x][(SGD_FMDOpt5_data[x] < max_steps).nonzero().reshape(-1)],
+                SGD_FMDOpt5_data[y][(SGD_FMDOpt5_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=5)')
+
     ax.grid()
     plt.legend()
     plt.rcParams['figure.dpi'] = 400
     plt.xlabel(x)
     plt.ylabel(y)
-    plt.title('Functional Decent Comparison: m='+str(m))
+    plt.title('Optimizer-Comparison: ' )
     # plt.show()
     plt.savefig(fig_name, bbox_inches='tight')
 
@@ -80,6 +145,7 @@ def get_args():
     parser.add_argument('--loss', type=str, default='MSELoss')
     parser.add_argument('--fig_name', type=str, default='example.png')
     parser.add_argument('--max_steps', type=int, default=100)
+    parser.add_argument('--func_plot', type=int, default=1)
     args, knk = parser.parse_known_args()
     #
     return args, parser
@@ -88,9 +154,12 @@ def main():
 
     # get arguments
     args, parser = get_args()
-    plot(fig_name=args.fig_name, x=args.x, y=args.y,
-         max_steps=args.max_steps, loss=args.loss)
-
+    if args.func_plot:
+        func_plot(fig_name=args.fig_name, x=args.x, y=args.y,
+             max_steps=args.max_steps, loss=args.loss)
+    else:
+        plot(fig_name=args.fig_name, x=args.x, y=args.y,
+             max_steps=args.max_steps, loss=args.loss)
 
 if __name__ == "__main__":
     main()

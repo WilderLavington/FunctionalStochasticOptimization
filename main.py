@@ -9,20 +9,25 @@ import torch.nn as nn
 import argparse
 import numpy as np
 from time import time
+import pathlib
 # get local info
 from models import DiscreteLinearModel, ContinuousLinearModel
-from load_data import create_mushroom_data
+from load_data import load_libsvm
 from fmdopt import FMDOpt
 from sgd_fmdopt import SGD_FMDOpt
+from ada_fmdopt import Ada_FMDOpt
 from lsopt import LSOpt
-from helpers import get_grad_norm
+from helpers import get_grad_norm, get_random_string
+
+
 def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
     # log stuff
     dataset = torch.utils.data.TensorDataset(X, y)
     data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
     logs, s, starting_time = [], 0,  time()
-    import_vals = ['inner_steps', 'loss', 'function_evals', 'grad_evals', 'step_time', 'inner_step_size']
+    import_vals = ['inner_steps', 'loss', 'function_evals', 'grad_evals',
+            'step_time', 'inner_step_size', 'inner_backtracks']
     # iterate over epochs
     for t in tqdm(range(total_rounds)):
         # step through data by sampling without replacement
@@ -86,7 +91,9 @@ def get_args():
     parser.add_argument('--use_optimal_stepsize', type=int, default=1)
     parser.add_argument('--eta_schedule', type=str, default='constant')
     parser.add_argument('--dataset_name', type=str, default='mushrooms')
-     
+    parser.add_argument('--file_name', type=str, default='example')
+    parser.add_argument('--folder_name', type=str, default='examples/')
+    parser.add_argument('--randomize_folder', type=int, default=0)
     # parse
     args, knk = parser.parse_known_args()
     #
@@ -99,6 +106,7 @@ def main():
 
     # get weights
     wandb.init(project=args.project, entity=args.entity, config=args)
+    pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
 
     # set loss functions + models + data + lr
     if args.loss == 'CrossEntropyLoss':
@@ -107,6 +115,8 @@ def main():
         loss_func = nn.CrossEntropyLoss()
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
+        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
+        L = torch.max(L[:,0]).to('cuda')
         stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
     elif args.loss == 'MSELoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
@@ -115,7 +125,8 @@ def main():
         loss_func = nn.MSELoss()
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L = torch.eig(torch.mm(X.t().double(), X.double()), eigenvectors=True)[0].max().float()
+        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
+        L = torch.max(L[:,0]).to('cuda')
         stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     # train with an optimizer
@@ -128,8 +139,16 @@ def main():
         surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
         optim = SGD_FMDOpt(model.parameters(), eta=stepsize, div_op=div_measure,
-                eta_schedule=args.eta_schedule inner_optim=LSOpt,
+                eta_schedule=args.eta_schedule, inner_optim=LSOpt,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
+        model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
+            total_rounds = args.episodes, batch_size=args.batch_size )
+    elif args.algo == 'Ada_FMDOpt':
+        div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
+        surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c,
+                'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
+        optim = Ada_FMDOpt(model.parameters(), eta=stepsize, div_op=div_measure,
+                inner_optim=LSOpt, surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'Adam':
@@ -140,8 +159,14 @@ def main():
         optim = torch.optim.Adagrad(model.parameters(), lr=stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
-    #
-    logs = torch.save(logs, 'logs/'+args.algo+'_'+args.loss+'_'+str(args.m)+'.pt')
+
+    # store logs
+    if args.randomize_folder:
+        logs = torch.save(logs, 'logs/'+get_random_string(16)+'/'+args.file_name+'.pt')
+        logs = torch.save(args, 'logs/'+get_random_string(16)+'/'+args.folder_name+'args.pt')
+    else:
+        logs = torch.save(logs, 'logs/'+args.folder_name+args.file_name+'.pt')
+        logs = torch.save(args, 'logs/'+args.folder_name+'args.pt')
     #
     return
 

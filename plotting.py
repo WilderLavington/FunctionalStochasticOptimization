@@ -39,16 +39,22 @@ def download_all_runs_summary():
     all_df = pd.concat([name_df, config_df, summary_df], axis=1)
     all_df.to_csv(SUMMARY_FILE)
 
-def plot(fig_name='example.png',x='optim_steps',
+def create_wandb_records():
+    """
+    Download data for all runs in summary file
+    """
+
+
+def plot(fig_name='example',x='optim_steps',
         y='avg_loss',max_steps=1000,m=1,loss='MSELoss'):
     # =================================================
     #
-    sgd_data = torch.load('logs/SGD'+'_'+loss+'_'+str(5)+'.pt')
-    adam_data = torch.load('logs/Adam'+'_'+loss+'_'+str(5)+'.pt')
-    adagrad_data = torch.load('logs/Adagrad'+'_'+loss+'_'+str(5)+'.pt')
-    SGD_FMDOpt1_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(1)+'.pt')
-    SGD_FMDOpt2_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(2)+'.pt')
-    SGD_FMDOpt3_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(3)+'.pt')
+    sgd_data = torch.load('logs/'+fig_name+'SGD.pt')
+    adam_data = torch.load('logs/'+fig_name+'Adam.pt')
+    adagrad_data = torch.load('logs/'+fig_name+'Adagrad.pt')
+    SGD_FMDOpt1_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt1.pt')
+    SGD_FMDOpt2_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt2.pt')
+    SGD_FMDOpt3_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt3.pt')
     # =================================================
     #
     if x == 'function_evals+grad_evals':
@@ -99,19 +105,19 @@ def plot(fig_name='example.png',x='optim_steps',
 
 
 
-def func_plot(fig_name='example.png',x='optim_steps',
+def func_plot(fig_name='example',x='optim_steps',
         y='avg_loss',max_steps=1000,m=1,loss='MSELoss'):
 
     # =================================================
     #
-    sgd_data = torch.load('logs/SGD'+'_'+loss+'_'+str(5)+'.pt')
-    adam_data = torch.load('logs/Adam'+'_'+loss+'_'+str(5)+'.pt')
-    adagrad_data = torch.load('logs/Adagrad'+'_'+loss+'_'+str(5)+'.pt')
-    SGD_FMDOpt1_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(1)+'.pt')
-    SGD_FMDOpt2_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(2)+'.pt')
-    SGD_FMDOpt3_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(3)+'.pt')
-    SGD_FMDOpt4_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(4)+'.pt')
-    SGD_FMDOpt5_data = torch.load('logs/SGD_FMDOpt'+'_'+loss+'_'+str(5)+'.pt')
+    sgd_data = torch.load('logs/'+fig_name+'SGD.pt')
+    adam_data = torch.load('logs/'+fig_name+'Adam.pt')
+    adagrad_data = torch.load('logs/'+fig_name+'Adagrad.pt')
+    SGD_FMDOpt1_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt1.pt')
+    SGD_FMDOpt2_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt2.pt')
+    SGD_FMDOpt3_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt3.pt')
+    SGD_FMDOpt4_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt4.pt')
+    SGD_FMDOpt5_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt5.pt')
     # =================================================
     #
     fig, ax = plt.subplots()
@@ -134,7 +140,7 @@ def func_plot(fig_name='example.png',x='optim_steps',
     plt.ylabel(y)
     plt.title('Optimizer-Comparison: ' )
     # plt.show()
-    plt.savefig(fig_name, bbox_inches='tight')
+    plt.savefig('plots/'+fig_name+'.pdf', bbox_inches='tight')
 
 def get_args():
     # grab parse.
@@ -143,7 +149,7 @@ def get_args():
     parser.add_argument('--x', type=str, default='optim_steps', help='SGD,Adam,SGD_FMDOpt')
     parser.add_argument('--y', type=str, default='avg_loss')
     parser.add_argument('--loss', type=str, default='MSELoss')
-    parser.add_argument('--fig_name', type=str, default='example.png')
+    parser.add_argument('--fig_name', type=str, default='example')
     parser.add_argument('--max_steps', type=int, default=100)
     parser.add_argument('--func_plot', type=int, default=1)
     args, knk = parser.parse_known_args()

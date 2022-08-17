@@ -8,7 +8,7 @@ from sklearn.preprocessing import LabelEncoder
 import urllib
 from sklearn.svm import SVC
 from sklearn.datasets import load_svmlight_file
-
+from scipy.sparse import csr_matrix
 LIBSVM_URL = "https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/"
 LIBSVM_DOWNLOAD_FN = {"rcv1"       : "rcv1_train.binary.bz2",
                       "mushrooms"  : "mushrooms",
@@ -29,27 +29,8 @@ def load_libsvm(name, data_dir='datasets/'):
         print("Download complete.")
 
     X, y = load_svmlight_file(data_path)
+    X = csr_matrix(X).todense()
+
     return X, y
 
-# def create_mushroom_data():
-#     df = pd.read_csv('datasets/mushrooms.csv')
-#     df = df.drop(["veil-type"],axis=1)
-#     target = df["class"]
-#     df = df.drop(["class"], axis=1)
-#     labelencoder=LabelEncoder()
-#     target = labelencoder.fit_transform(target)
-#     # converting to binary data
-#     for col in df.columns:
-#         # get binary columns
-#         df_bin = pd.get_dummies(df[col])
-#         # make the names unique
-#         for c in df_bin.columns:
-#             df_bin[col+'-'+c] = df_bin[c]
-#             df_bin = df_bin.drop([c], axis=1)
-#         # display result
-#         df = pd.concat((df_bin, df), axis=1)
-#         df = df.drop([col], axis=1)
-#     df['class'] = target
-#     y = df["class"].values
-#     X = df.drop(["class"], axis=1).values
-#     return X,y
+ 

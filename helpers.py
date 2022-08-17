@@ -1,15 +1,20 @@
 
 import torch
+import random
+import string
+
+def get_random_string(length):
+    # choose from all lowercase letter
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str
+    
 
 def update_lr(optimizer, epoch, initial_lr):
     """Decreases the learning rate as 1 / sqrt(t) """
-     for param_group in optimizer.param_groups:
-         if new_lr <= 0.:
-             pass
-             return old_lr, optimizer
-         else:
-             param_group['lr'] = initial_lr / torch.sqrt(epoch)
-             return new_lr, optimizer
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = initial_lr / torch.sqrt(epoch)
+    return new_lr, optimizer
 
 # helpers
 def compute_grad_norm(grad_list):

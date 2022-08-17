@@ -10,11 +10,13 @@ from helpers import *
 from lsopt import LSOpt
 
 # linesearch optimizer
-class SGD_FMDOpt(torch.optim.Optimizer):
-    def __init__(self, params, m=1, eta_schedule = 'constant',
+# linesearch optimizer
+class Ada_FMDOpt(torch.optim.Optimizer):
+    def __init__(self, params, m=1,
                  div_op = lambda f,f1: torch.norm(f-f1).pow(2),
                  inner_optim = LSOpt, eta=1e-3, stoch_reg=True,
-                 surr_optim_args={'init_step_size':2.}):
+                 surr_optim_args={'init_step_size':2.},
+                 total_steps = 1000):
         params = list(params)
         super().__init__(params, {})
 
@@ -26,8 +28,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.inner_optim = inner_optim(self.params,**surr_optim_args)
         self.div_op = div_op
         self.eta =  eta
-        self.eta_schedule = eta_schedule
-        self.ada_scaling = torch.zero(0., device='cuda')
+        self.ada_scaling = torch.tensor(0., device='cuda')
 
         # preset eta (parameter-wise / diagnol only)
         for inner_opt in self.inner_optim.param_groups[0]['params']:
@@ -55,9 +56,8 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.state['outer_steps'] += 1
 
         # compute loss + grad for eta computation
-        loss, f_t, F_t = closure(call_backward=True)
-
-        # get current jacobian
+        loss, f_t, F_t = closure(call_backward=False)
+        loss.backward(inputs=f_t) 
         self.ada_scaling += torch.norm(f_t.grad).pow(2).detach()
 
         # construct surrogate-loss to optimize (avoids extra backward calls)

@@ -1,0 +1,37 @@
+entity: wilderlavington
+method: grid
+project: FunctionalOptimization
+metric:
+  goal: minimize
+  name: grad_norm
+parameters:
+  algo:
+    values:
+    - SGD_FMDOpt
+    - Ada_FMDOpt
+  episodes:
+    values:
+    - 10000
+  batch_size:
+    values:
+    - 1
+    - 10
+    - 100
+    - 500
+  use_optimal_stepsize:
+    values:
+    - 1
+    - 0
+  loss:
+    values:
+    - MSELoss
+    - CrossEntropyLoss
+  eta_schedule:
+    values:
+    - stochastic
+    - constant
+    - exponential
+  dataset_name:
+    values:
+    - mushrooms
+    - ijcnn

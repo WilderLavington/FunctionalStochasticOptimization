@@ -88,6 +88,7 @@ def get_args():
     parser.add_argument('--c', type=float, default=0.1)
     parser.add_argument('--beta_update', type=float, default=0.9)
     parser.add_argument('--expand_coeff', type=float, default=1.8)
+    parser.add_argument('--stoch_reg', type=int, default=1)
     parser.add_argument('--use_optimal_stepsize', type=int, default=1)
     parser.add_argument('--eta_schedule', type=str, default='constant')
     parser.add_argument('--dataset_name', type=str, default='mushrooms')
@@ -139,23 +140,26 @@ def main():
         surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
         optim = SGD_FMDOpt(model.parameters(), eta=stepsize, div_op=div_measure,
-                eta_schedule=args.eta_schedule, inner_optim=LSOpt,
+                eta_schedule=args.eta_schedule, inner_optim=LSOpt,  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'Ada_FMDOpt':
+        assert args.eta_schedule == 'constant'
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
         surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
-        optim = Ada_FMDOpt(model.parameters(), eta=stepsize, div_op=div_measure,
+        optim = Ada_FMDOpt(model.parameters(), eta=stepsize, div_op=div_measure, stoch_reg=args.stoch_reg,
                 inner_optim=LSOpt, surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'Adam':
+        assert args.eta_schedule == 'constant'
         optim = torch.optim.Adam(model.parameters(), lr=stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'Adagrad':
+        assert args.eta_schedule == 'constant'
         optim = torch.optim.Adagrad(model.parameters(), lr=stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )

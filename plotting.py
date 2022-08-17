@@ -43,7 +43,7 @@ def create_wandb_records():
     """
     Download data for all runs in summary file
     """
-
+    
 
 def plot(fig_name='example',x='optim_steps',
         y='avg_loss',max_steps=1000,m=1,loss='MSELoss'):

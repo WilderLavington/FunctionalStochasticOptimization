@@ -1,6 +1,7 @@
+
 from tqdm import tqdm
-from tqdm.notebook import tqdm
 import wandb
+api = wandb.Api()
 import os
 import pandas as pd
 import wandb
@@ -13,6 +14,10 @@ import numpy as np
 import argparse
 import itertools
 import matplotlib.patches as mpatches
+
+USER='wilderlavington'
+PROJECT='FunctionalOptimization'
+SUMMARY_FILE='sharan_report_0816.csv'
 
 def download_wandb_summary():
     """
@@ -30,39 +35,51 @@ def download_wandb_summary():
         config_list.append({k: v for k, v in run.config.items()})
         name_list.append(run.name)
         id_list.append(run.id)
+
     summary_df = pd.DataFrame.from_records(summary_list)
     config_df = pd.DataFrame.from_records(config_list)
     name_df = pd.DataFrame({"name": name_list, "id": id_list})
     all_df = pd.concat([name_df, config_df, summary_df], axis=1)
-    all_df.to_csv(SUMMARY_FILE)
+    Path('logs/wandb_data/').mkdir(parents=True, exist_ok=True)
+    all_df.to_csv('logs/wandb_data/'+SUMMARY_FILE)
 
 def download_wandb_records():
     """
     Download data for all runs in summary file
     """
     # load it all in and clean it up
-    runs_df = pd.read_csv(SUMMARY_FILE+'.csv', header=0, squeeze=True)
+    runs_df = pd.read_csv('logs/wandb_data/'+SUMMARY_FILE, header=0, squeeze=True)
     runs_df = runs_df.loc[:,~runs_df.columns.duplicated()]
-    list_of_dataframes = []
-    # make thhe directory if it does not exist
-    Path('../logs/wandb_data').mkdir(parents=True, exist_ok=True)
+    columns_of_interest = ['avg_loss', 'optim_steps', 'grad_norm', 'time-elapsed', \
+            'inner_step_size', 'grad_evals', 'inner_steps', 'function_evals', \
+            'inner_backtracks']
     # set which columns we will store for vizualization
-    columns_of_interest = []
+    list_of_dataframes = []
     # iterate through all runs to create individual databases
-    for ex in tqdm(range(len(filtered_df)), leave=False):
+    for ex in tqdm(range(len(runs_df)), leave=False):
         # get the associated runs
-        run = api.run(USER+'/'+PROJECT+'/'+runs_df.loc[filtered_df.iloc[ex,0],:]['id'])
+        run = api.run(USER+'/'+PROJECT+'/'+runs_df.loc[runs_df.iloc[ex,0],:]['id'])
         run_df = []
         # iterate through all rows in online database
         for i, row in run.history().iterrows():
-            row_info = {key:row[key] for key in columns_of_interest}
-            row_info.update({'id':runs_df.loc[filtered_df.iloc[ex,0],:]['id']})
+            row_info = {key:row[key] for key in columns_of_interest if key in row.keys()}
+            for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
+                row_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
+            # row_info.update({'algo':runs_df.loc[runs_df.iloc[ex,0],:]['algo']})
+            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['m']})
+            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['c']})
+            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['log_eta']})
+            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['stoch_reg']})
+            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['batch_size']})
+            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['dataset_name']})
             run_df.append(row_info)
         # convert format to dataframe and add to our list
         list_of_dataframes.append(pd.DataFrame(run_df))
+        if ex > 3:
+            break
     # combine and then store
     wandb_records = pd.concat(list_of_dataframes)
-    wandb_records.to_csv(PROJECT)
+    wandb_records.to_csv('logs/wandb_data/__full__'+SUMMARY_FILE)
     # return single data frame for vizualization
     return wandb_records
 
@@ -70,10 +87,12 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
             x_max=1000, m=1, loss='MSELoss', download_data=True):
 
     # =================================================
-    # load data in
+    # download data in
     if download_data:
         download_wandb_summary()
-        download_wandb_records()
+        wandb_records = download_wandb_records()
+    else:
+        wandb_records = runs_df = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
 
     # =================================================
     #
@@ -180,12 +199,9 @@ def main():
 
     # get arguments
     args, parser = get_args()
-    if args.func_plot:
-        func_plot(fig_name=args.fig_name, x=args.x, y=args.y,
-             max_steps=args.max_steps, loss=args.loss)
-    else:
-        plot(fig_name=args.fig_name, x=args.x, y=args.y,
-             max_steps=args.max_steps, loss=args.loss)
+    plot(fig_name=args.fig_name, x=args.x, y=args.y,
+         x_max=args.max_steps, loss=args.loss)
+
 
 if __name__ == "__main__":
     main()

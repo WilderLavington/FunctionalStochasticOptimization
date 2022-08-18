@@ -1,3 +1,4 @@
+program: main.py
 entity: wilderlavington
 method: grid
 project: FunctionalOptimization
@@ -7,8 +8,9 @@ metric:
 parameters:
   algo:
     values:
-    - SGD_FMDOpt
-    - Ada_FMDOpt
+    - SGD
+    - Adam
+    - Adagrad
   episodes:
     values:
     - 100

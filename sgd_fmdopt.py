@@ -87,7 +87,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             loss = surrogate(call_backward=True)
             current_loss = self.inner_optim.step(surrogate)
             self.state['inner_steps'] += 1
-            self.state['inner_backtracks'] += self.inner_optim.state['n_backwards']
+            self.state['inner_backtracks'] = self.inner_optim.state['n_backwards']
             self.state['grad_evals'] += 1
 
         # update internal logs everywhere

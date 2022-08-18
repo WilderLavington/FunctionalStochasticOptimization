@@ -88,7 +88,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     # =================================================
     # download data in
     if download_data:
-        # download_wandb_summary()
+        download_wandb_summary()
         wandb_records = download_wandb_records()
     else:
         wandb_records = runs_df = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
@@ -112,9 +112,6 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         'stoch_reg': stoch_reg, 'use_optimal_stepsize': 1,
         'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m,
         'eta_schedule': 'stochastic', 'dataset_name': dataset_name})
-
-    # =================================================
-    # tensorize x/y
 
     # =================================================
     # generate plots
@@ -142,7 +139,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         fig, ax = plt.subplots()
         low_order_idx = (torch.tensor(adam_data['optim_steps'].values) < x_max).nonzero().reshape(-1)
         high_order_idx = (torch.tensor(funcopt_data[x].values) < x_max).nonzero().reshape(-1)
-        print(adagrad_data['optim_steps']) 
+
         #
         ax.plot(torch.tensor(sgd_data['optim_steps'].values[low_order_idx]), torch.tensor(sgd_data[y].values[low_order_idx]), label='SGD')
         ax.plot(torch.tensor(adam_data['optim_steps'].values[low_order_idx]), torch.tensor(adam_data[y].values[low_order_idx]), label='Adam')

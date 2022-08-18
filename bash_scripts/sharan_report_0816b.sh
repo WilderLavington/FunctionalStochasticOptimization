@@ -9,7 +9,7 @@ wandb: View sweep at: https://wandb.ai/wilderlavington/FunctionalOptimization/sw
 wandb: Run sweep agent with: wandb agent wilderlavington/FunctionalOptimization/48xy362d
 
 # run local
-wandb agent wilderlavington/FunctionalOptimization/dsh7wrt8
+wandb agent wilderlavington/FunctionalOptimization/48xy362d
 
 # run on borg
 python sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \

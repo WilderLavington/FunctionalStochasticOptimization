@@ -69,7 +69,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             if self.eta_schedule == 'constant':
                 surr = loss + self.eta * reg_term
             elif self.eta_schedule == 'stochastic':
-                surr = loss + self.eta * reg_term * torch.sqrt(self.state['outer_steps'])
+                surr = loss + self.eta * reg_term * torch.sqrt(torch.tensor(self.state['outer_steps']).float())
             elif self.eta_schedule == 'exponential':
                 surr = loss + self.eta * reg_term * \
                     (self.state['outer_steps']) ** (self.state['outer_steps'] / self.total_steps)

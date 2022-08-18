@@ -1,8 +1,6 @@
 # general imports
 import argparse
 import contextlib
-import signal
-import sys
 import numpy as np
 import os
 import json
@@ -12,15 +10,9 @@ import csv
 from copy import deepcopy
 import subprocess
 import sys
-import signal
-import gym
-import numpy
 from pathlib import Path
 import time
-import psutil
-import multiprocessing
-from multiprocessing import Process, Queue
-import torch.multiprocessing as mp
+import psutil 
 
 def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
             command='', directory='.', time='00-05:59'):

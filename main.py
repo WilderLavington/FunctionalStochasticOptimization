@@ -60,7 +60,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
                         'optim_steps': s,
                         'grad_norm': grad_norm,
                         'time-elapsed':  time() - starting_time}
-            log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
+            log_info.update({key:str(optim.state[key]) for key in optim.state.keys() if key in import_vals})
             wandb.log(log_info)
             logs.append(log_info)
     # reformat stored data

@@ -8,7 +8,6 @@ parameters:
   algo:
     values:
     - SGD_FMDOpt
-    - Ada_FMDOpt
   episodes:
     values:
     - 100
@@ -16,15 +15,14 @@ parameters:
     values:
     - 1
     - 2
-    - 3
-    - 4
-    - 5
+    - 10
+    - 20
   batch_size:
     values:
-    - 1
-    - 10
+    # - 1
+    # - 10
     - 100
-    - 500
+    # - 500
   use_optimal_stepsize:
     values:
     - 1
@@ -37,13 +35,11 @@ parameters:
     values:
     - stochastic
     - constant
-    - exponential
   c:
     values:
     - 0.1
     - 0.01
     - 0.001
-    - 0.0001
   dataset_name:
     values:
     - mushrooms

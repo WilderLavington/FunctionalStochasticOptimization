@@ -14,10 +14,7 @@ import argparse
 import itertools
 import matplotlib.patches as mpatches
 
-def load_csv():
-    return pd.read_csv(SUMMARY_FILE+'.csv', header=0, squeeze=True)
-
-def download_all_runs_summary():
+def download_wandb_summary():
     """
     Download a summary of all runs on the wandb project
     """
@@ -39,22 +36,45 @@ def download_all_runs_summary():
     all_df = pd.concat([name_df, config_df, summary_df], axis=1)
     all_df.to_csv(SUMMARY_FILE)
 
-def create_wandb_records():
+def download_wandb_records():
     """
     Download data for all runs in summary file
     """
-    
+    # load it all in and clean it up
+    runs_df = pd.read_csv(SUMMARY_FILE+'.csv', header=0, squeeze=True)
+    runs_df = runs_df.loc[:,~runs_df.columns.duplicated()]
+    list_of_dataframes = []
+    # make thhe directory if it does not exist
+    Path('../logs/wandb_data').mkdir(parents=True, exist_ok=True)
+    # set which columns we will store for vizualization
+    columns_of_interest = []
+    # iterate through all runs to create individual databases
+    for ex in tqdm(range(len(filtered_df)), leave=False):
+        # get the associated runs
+        run = api.run(USER+'/'+PROJECT+'/'+runs_df.loc[filtered_df.iloc[ex,0],:]['id'])
+        run_df = []
+        # iterate through all rows in online database
+        for i, row in run.history().iterrows():
+            row_info = {key:row[key] for key in columns_of_interest}
+            row_info.update({'id':runs_df.loc[filtered_df.iloc[ex,0],:]['id']})
+            run_df.append(row_info)
+        # convert format to dataframe and add to our list
+        list_of_dataframes.append(pd.DataFrame(run_df))
+    # combine and then store
+    wandb_records = pd.concat(list_of_dataframes)
+    wandb_records.to_csv(PROJECT)
+    # return single data frame for vizualization
+    return wandb_records
 
-def plot(fig_name='example',x='optim_steps',
-        y='avg_loss',max_steps=1000,m=1,loss='MSELoss'):
+def plot(fig_name='example',x='optim_steps', y='avg_loss',
+            x_max=1000, m=1, loss='MSELoss', download_data=True):
+
     # =================================================
-    #
-    sgd_data = torch.load('logs/'+fig_name+'SGD.pt')
-    adam_data = torch.load('logs/'+fig_name+'Adam.pt')
-    adagrad_data = torch.load('logs/'+fig_name+'Adagrad.pt')
-    SGD_FMDOpt1_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt1.pt')
-    SGD_FMDOpt2_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt2.pt')
-    SGD_FMDOpt3_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt3.pt')
+    # load data in
+    if download_data:
+        download_wandb_summary()
+        download_wandb_records()
+
     # =================================================
     #
     if x == 'function_evals+grad_evals':

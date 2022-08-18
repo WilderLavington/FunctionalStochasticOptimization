@@ -57,7 +57,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
         file.write('cd ' + directory + ' \n')
         file.write('pwd \n')
-        file.write('conda activate nus4rl \n')
+        file.write('conda activate myenv38 \n')
         # file.write('conda list \n')
         file.write('which python \n')
         file.write(command + ' \n')

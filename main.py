@@ -132,9 +132,9 @@ def main():
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
-        L = torch.max(L[:,0]).to('cuda')
+        L = torch.max(L[:,0]).float().to('cuda')
         stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
-
+    
     # train with an optimizer
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=stepsize)

@@ -30,7 +30,7 @@ def load_libsvm(name, data_dir='datasets/'):
 
     X, y = load_svmlight_file(data_path)
     X = csr_matrix(X).todense()
-
+    labels = np.unique(y)
+    y[y==labels[0]] = 0
+    y[y==labels[1]] = 1
     return X, y
-
- 

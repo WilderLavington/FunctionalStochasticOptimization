@@ -26,8 +26,7 @@ parameters:
     # - 500
   use_optimal_stepsize:
     values:
-    - 1
-    - 0
+    - 1 
   loss:
     values:
     - MSELoss

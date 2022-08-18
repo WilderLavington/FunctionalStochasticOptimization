@@ -9,14 +9,14 @@ wandb: View sweep at: https://wandb.ai/wilderlavington/FunctionalOptimization/sw
 wandb: Run sweep agent with: wandb agent wilderlavington/FunctionalOptimization/mob31ns3
 
 # run local
-wandb agent wilderlavington/FunctionalOptimization/mob31ns3
+wandb agent wilderlavington/FunctionalStochasticOptimization/lj9kdz3o
 
 # run on borg
 python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
---command='wandb agent --count 25 wilderlavington/FunctionalOptimization/mob31ns3' --machine='borg' --time='00-24:00' --account='plai' \
+--command='wandb agent --count 25 wilderlavington/FunctionalStochasticOptimization/lj9kdz3o' --machine='borg' --time='00-24:00' --account='plai' \
 --num=1
 
 # run on ubcml
 python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
---command='wandb agent --count 25 wilderlavington/FunctionalOptimization/mob31ns3' --machine='ubcml' --time='00-24:00' --account='ubcml' \
+--command='wandb agent --count 25 wilderlavington/FunctionalStochasticOptimization/lj9kdz3o' --machine='ubcml' --time='00-24:00' --account='ubcml' \
 --num=1

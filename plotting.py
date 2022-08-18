@@ -16,7 +16,7 @@ import itertools
 import matplotlib.patches as mpatches
 
 USER='wilderlavington'
-PROJECT='FunctionalOptimization'
+PROJECT='FunctionalStochasticOptimization'
 SUMMARY_FILE='sharan_report_0816.csv'
 
 def download_wandb_summary():
@@ -52,7 +52,7 @@ def download_wandb_records():
     runs_df = runs_df.loc[:,~runs_df.columns.duplicated()]
     columns_of_interest = ['avg_loss', 'optim_steps', 'grad_norm', 'time-elapsed', \
             'inner_step_size', 'grad_evals', 'inner_steps', 'function_evals', \
-            'inner_backtracks']
+            'inner_backtracks', 'optim_steps']
     # set which columns we will store for vizualization
     list_of_dataframes = []
     # iterate through all runs to create individual databases
@@ -62,54 +62,71 @@ def download_wandb_records():
         run_df = []
         # iterate through all rows in online database
         for i, row in run.history().iterrows():
-            row_info = {key:row[key] for key in columns_of_interest if key in row.keys()}
+            row_info = {}
             for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
                 row_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
-            # row_info.update({'algo':runs_df.loc[runs_df.iloc[ex,0],:]['algo']})
-            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['m']})
-            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['c']})
-            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['log_eta']})
-            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['stoch_reg']})
-            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['batch_size']})
-            # row_info.update({'m':runs_df.loc[runs_df.iloc[ex,0],:]['dataset_name']})
+            row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
             run_df.append(row_info)
         # convert format to dataframe and add to our list
         list_of_dataframes.append(pd.DataFrame(run_df))
-        if ex > 3:
-            break
     # combine and then store
     wandb_records = pd.concat(list_of_dataframes)
     wandb_records.to_csv('logs/wandb_data/__full__'+SUMMARY_FILE)
     # return single data frame for vizualization
     return wandb_records
 
+def format_dataframe(records, subfields={}):
+    for key in subfields:
+        records = records.loc[records[key] == subfields[key]]
+    return records
+
 def plot(fig_name='example',x='optim_steps', y='avg_loss',
-            x_max=1000, m=1, loss='MSELoss', download_data=True):
+            x_max=1000, m=1, loss='MSELoss', download_data=True,
+            dataset_name='mushrooms', c=0.1, batch_size=100,
+            episodes=100, stoch_reg=1):
 
     # =================================================
     # download data in
     if download_data:
-        download_wandb_summary()
+        # download_wandb_summary()
         wandb_records = download_wandb_records()
     else:
         wandb_records = runs_df = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
 
     # =================================================
-    #
+    # create datasets
+    sgd_data = format_dataframe(wandb_records,
+        subfields={'batch_size': batch_size, 'episodes': episodes,
+        'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'SGD',
+        'eta_schedule': 'stochastic', 'dataset_name': dataset_name})
+    adam_data = format_dataframe(wandb_records,
+        subfields={'batch_size': batch_size, 'episodes': episodes,
+        'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'Adam',
+        'eta_schedule': 'constant', 'dataset_name': dataset_name})
+    adagrad_data = format_dataframe(wandb_records,
+        subfields={'batch_size': batch_size, 'episodes': episodes,
+        'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'Adagrad',
+        'eta_schedule': 'constant', 'dataset_name': dataset_name})
+    funcopt_data = format_dataframe(wandb_records,
+        subfields={'batch_size': batch_size, 'episodes': episodes, 'c': c,
+        'stoch_reg': stoch_reg, 'use_optimal_stepsize': 1,
+        'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m,
+        'eta_schedule': 'stochastic', 'dataset_name': dataset_name})
+    print(funcopt_data['optim_steps'])
+
+    # =================================================
+    # generate plots
     if x == 'function_evals+grad_evals':
-        # =================================================
-        #
         fig, ax = plt.subplots()
-        low_order_idx = (2 * adam_data['optim_steps'] < max_steps).nonzero().reshape(-1)
+        #
+        low_order_idx = (2*adam_data['optim_steps'] < x_max).nonzero().reshape(-1)
+        high_order_idx = (funcopt_data['function_evals']+funcopt_data['grad_evals'] < x_max).nonzero().reshape(-1)
+        #
         ax.plot(sgd_data['optim_steps'][low_order_idx], sgd_data[y][low_order_idx], label='SGD')
         ax.plot(adam_data['optim_steps'][low_order_idx], adam_data[y][low_order_idx], label='Adam')
         ax.plot(adagrad_data['optim_steps'][low_order_idx], adagrad_data[y][low_order_idx], label='Adagrad')
-        ax.plot(SGD_FMDOpt1_data[x][(SGD_FMDOpt1_data['function_evals'] + SGD_FMDOpt1_data['grad_evals'] < max_steps).nonzero().reshape(-1)],
-                    SGD_FMDOpt1_data[y][(SGD_FMDOpt1_data['function_evals'] + SGD_FMDOpt1_data['grad_evals'] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=1)')
-        ax.plot(SGD_FMDOpt2_data[x][(SGD_FMDOpt2_data['function_evals'] + SGD_FMDOpt2_data['grad_evals'] < max_steps).nonzero().reshape(-1)],
-                    SGD_FMDOpt2_data[y][(SGD_FMDOpt2_data['function_evals'] + SGD_FMDOpt2_data['grad_evals'] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=2)')
-        ax.plot(SGD_FMDOpt3_data[x][(SGD_FMDOpt3_data['function_evals'] + SGD_FMDOpt3_data['grad_evals'] < max_steps).nonzero().reshape(-1)],
-                    SGD_FMDOpt3_data[y][(SGD_FMDOpt3_data['function_evals'] + SGD_FMDOpt3_data['grad_evals'] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=3)')
+        ax.plot(funcopt_data[x][high_order_idx], SGD_FMDOpt1_data[y][high_order_idx], label='SGD_FMDOpt(m='+m+')')
+        #
         ax.grid()
         plt.legend()
         plt.rcParams['figure.dpi'] = 400
@@ -118,21 +135,16 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         plt.title('Optimizer-Comparison: ' )
         # plt.show()
         plt.savefig(fig_name, bbox_inches='tight')
-
     else:
-        # =================================================
-        #
         fig, ax = plt.subplots()
-        low_order_idx = (adam_data['optim_steps'] < max_steps).nonzero().reshape(-1)
+        low_order_idx = (adam_data['optim_steps'] < x_max).nonzero().reshape(-1)
+        high_order_idx = (funcopt_data[x]< x_max).nonzero().reshape(-1)
+        #
         ax.plot(sgd_data['optim_steps'][low_order_idx], sgd_data[y][low_order_idx], label='SGD')
         ax.plot(adam_data['optim_steps'][low_order_idx], adam_data[y][low_order_idx], label='Adam')
         ax.plot(adagrad_data['optim_steps'][low_order_idx], adagrad_data[y][low_order_idx], label='Adagrad')
-        ax.plot(SGD_FMDOpt1_data[x][(SGD_FMDOpt1_data[x] < max_steps).nonzero().reshape(-1)],
-                    SGD_FMDOpt1_data[y][(SGD_FMDOpt1_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=1)')
-        ax.plot(SGD_FMDOpt2_data[x][(SGD_FMDOpt2_data[x] < max_steps).nonzero().reshape(-1)],
-                    SGD_FMDOpt2_data[y][(SGD_FMDOpt2_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=2)')
-        ax.plot(SGD_FMDOpt3_data[x][(SGD_FMDOpt3_data[x] < max_steps).nonzero().reshape(-1)],
-                    SGD_FMDOpt3_data[y][(SGD_FMDOpt3_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=3)')
+        ax.plot(funcopt_data[x][high_order_idx], funcopt_data[y][high_order_idx], label='SGD_FMDOpt(m=1)')
+        #
         ax.grid()
         plt.legend()
         plt.rcParams['figure.dpi'] = 400
@@ -142,44 +154,6 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         # plt.show()
         plt.savefig(fig_name, bbox_inches='tight')
 
-
-
-def func_plot(fig_name='example',x='optim_steps',
-        y='avg_loss',max_steps=1000,m=1,loss='MSELoss'):
-
-    # =================================================
-    #
-    sgd_data = torch.load('logs/'+fig_name+'SGD.pt')
-    adam_data = torch.load('logs/'+fig_name+'Adam.pt')
-    adagrad_data = torch.load('logs/'+fig_name+'Adagrad.pt')
-    SGD_FMDOpt1_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt1.pt')
-    SGD_FMDOpt2_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt2.pt')
-    SGD_FMDOpt3_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt3.pt')
-    SGD_FMDOpt4_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt4.pt')
-    SGD_FMDOpt5_data = torch.load('logs/'+fig_name+'/SGD_FMDOpt5.pt')
-    # =================================================
-    #
-    fig, ax = plt.subplots()
-    low_order_idx = (adam_data['optim_steps'] < max_steps).nonzero().reshape(-1)
-    ax.plot(SGD_FMDOpt1_data[x][(SGD_FMDOpt1_data[x] < max_steps).nonzero().reshape(-1)],
-                SGD_FMDOpt1_data[y][(SGD_FMDOpt1_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=1)')
-    ax.plot(SGD_FMDOpt2_data[x][(SGD_FMDOpt2_data[x] < max_steps).nonzero().reshape(-1)],
-                SGD_FMDOpt2_data[y][(SGD_FMDOpt2_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=2)')
-    ax.plot(SGD_FMDOpt3_data[x][(SGD_FMDOpt3_data[x] < max_steps).nonzero().reshape(-1)],
-                SGD_FMDOpt3_data[y][(SGD_FMDOpt3_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=3)')
-    ax.plot(SGD_FMDOpt4_data[x][(SGD_FMDOpt4_data[x] < max_steps).nonzero().reshape(-1)],
-                SGD_FMDOpt4_data[y][(SGD_FMDOpt4_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=4)')
-    ax.plot(SGD_FMDOpt5_data[x][(SGD_FMDOpt5_data[x] < max_steps).nonzero().reshape(-1)],
-                SGD_FMDOpt5_data[y][(SGD_FMDOpt5_data[x] < max_steps).nonzero().reshape(-1)], label='SGD_FMDOpt(m=5)')
-
-    ax.grid()
-    plt.legend()
-    plt.rcParams['figure.dpi'] = 400
-    plt.xlabel(x)
-    plt.ylabel(y)
-    plt.title('Optimizer-Comparison: ' )
-    # plt.show()
-    plt.savefig('plots/'+fig_name+'.pdf', bbox_inches='tight')
 
 def get_args():
     # grab parse.
@@ -191,6 +165,7 @@ def get_args():
     parser.add_argument('--fig_name', type=str, default='example')
     parser.add_argument('--max_steps', type=int, default=100)
     parser.add_argument('--func_plot', type=int, default=1)
+    parser.add_argument('--download_data', type=int, default=1)
     args, knk = parser.parse_known_args()
     #
     return args, parser
@@ -200,7 +175,7 @@ def main():
     # get arguments
     args, parser = get_args()
     plot(fig_name=args.fig_name, x=args.x, y=args.y,
-         x_max=args.max_steps, loss=args.loss)
+         x_max=args.max_steps, loss=args.loss, download_data=args.download_data)
 
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
     dataset = torch.utils.data.TensorDataset(X, y)
     data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
     logs, s, starting_time = [], 0,  time()
-    import_vals = ['inner_steps', 'loss', 'function_evals', 'grad_evals',
+    import_vals = ['inner_steps', 'avg_loss', 'function_evals', 'grad_evals',
             'step_time', 'inner_step_size', 'inner_backtracks']
     # iterate over epochs
     for t in tqdm(range(total_rounds)):
@@ -57,7 +57,8 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
                 avg_loss += loss_func(model(X_batch), y_batch).detach().cpu().numpy()
                 grad_norm += get_grad_norm(model.parameters()).detach().cpu().numpy()
             log_info = {'avg_loss': avg_loss,
-                        'optim_steps': s,
+                        'optim_steps': s, 'function_evals': s, 'grad_evals': s,
+                        'inner_backtracks': 0, 'inner_steps': 1,
                         'grad_norm': grad_norm,
                         'time-elapsed':  time() - starting_time}
             log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
@@ -66,6 +67,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             except:
                 print(log_info)
                 raise Exception
+            
             logs.append(log_info)
     # reformat stored data
     parsed_logs = {}
@@ -134,7 +136,7 @@ def main():
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
         L = torch.max(L[:,0]).float().to('cuda')
         stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
-    
+
     # train with an optimizer
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=stepsize)

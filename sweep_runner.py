@@ -12,7 +12,7 @@ import subprocess
 import sys
 from pathlib import Path
 import time
-import psutil 
+import psutil
 
 def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
             command='', directory='.', time='00-05:59'):
@@ -47,11 +47,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
         file.write('#SBATCH --mem-per-cpu=4G \n')
         file.write('#SBATCH --cpus-per-task=4 \n')
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
-        file.write('cd ' + directory + ' \n')
-        file.write('pwd \n')
-        file.write('conda activate myenv38 \n')
-        # file.write('conda list \n')
-        file.write('which python \n')
+        file.write('cd ' + directory + ' \n') 
         file.write(command + ' \n')
         file.write('exit')
         file.close()

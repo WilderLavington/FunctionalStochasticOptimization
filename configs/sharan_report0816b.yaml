@@ -11,17 +11,17 @@ parameters:
     - Ada_FMDOpt
   episodes:
     values:
-    - 10000
+    - 100
   batch_size:
     values:
-    - 1
-    - 10
+    # - 1
+    # - 10
     - 100
-    - 500
+    # - 500
   use_optimal_stepsize:
     values:
     - 1
-    - 0
+    # - 0
   loss:
     values:
     - MSELoss
@@ -30,7 +30,7 @@ parameters:
     values:
     - stochastic
     - constant
-    - exponential
+    # - exponential
   dataset_name:
     values:
     - mushrooms

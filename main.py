@@ -60,15 +60,20 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
                         'optim_steps': s,
                         'grad_norm': grad_norm,
                         'time-elapsed':  time() - starting_time}
-            log_info.update({key:str(optim.state[key]) for key in optim.state.keys() if key in import_vals})
-            wandb.log(log_info)
+            log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
+            try:
+                wandb.log(log_info)
+            except:
+                print(log_info)
+                raise Exception
             logs.append(log_info)
     # reformat stored data
     parsed_logs = {}
     for key in log_info.keys():
-        if key in ['step_time']:
-            continue
-        parsed_logs[key] = torch.tensor([i[key] for i in logs])
+        try:
+            parsed_logs[key] = torch.tensor([i[key] for i in logs])
+        except:
+            pass
     # return info
     return model, parsed_logs
 

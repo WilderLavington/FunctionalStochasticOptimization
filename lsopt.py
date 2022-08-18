@@ -25,7 +25,7 @@ class LSOpt(torch.optim.Optimizer):
         self.state['function_evals'] = 0
         self.state['grad_evals'] = 0
 
-        print(self.c)
+
 
     @staticmethod
     def compute_grad_norm(grad_list):
@@ -118,8 +118,7 @@ class LSOpt(torch.optim.Optimizer):
                     break
                 else:
                     pass
-        #
-        print(e)
+        # 
         self.state['step_size'] = step_size
         # return loss
         return loss

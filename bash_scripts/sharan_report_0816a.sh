@@ -20,3 +20,13 @@ python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/Funct
 python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
 --command='wandb agent --count 25 wilderlavington/FunctionalStochasticOptimization/lj9kdz3o' --machine='ubcml' --time='00-24:00' --account='ubcml' \
 --num=1
+
+# plotting code
+python plotting.py --download_data=1 --loss=MSELoss --x='function_evals+grad_evals' --batch_size=100  \
+  --y=grad_norm --dataset_name=mushrooms --fig_name='mushrooms+mse' --max_steps=100000 --c=0.001
+python plotting.py --download_data=0 --loss=CrossEntropyLoss --x='function_evals+grad_evals' --batch_size=100  \
+  --y=grad_norm --dataset_name=mushrooms --fig_name='mushrooms+cel' --max_steps=100000
+python plotting.py --download_data=0 --loss=MSELoss --x='function_evals+grad_evals' --batch_size=100   \
+  --y=grad_norm --dataset_name=ijcnn --fig_name='ijcnn+mse' --max_steps=50000 --c=0.001
+python plotting.py --download_data=0 --loss=CrossEntropyLoss --x='function_evals+grad_evals' --batch_size=100  \
+  --y=grad_norm --dataset_name=ijcnn --fig_name='ijcnn+cel' --max_steps=50000 --c=0.001

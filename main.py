@@ -67,7 +67,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             except:
                 print(log_info)
                 raise Exception
-            
+
             logs.append(log_info)
     # reformat stored data
     parsed_logs = {}
@@ -144,7 +144,7 @@ def main():
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'SGD_FMDOpt':
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c,
+        surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size, 
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
         optim = SGD_FMDOpt(model.parameters(), eta=stepsize, div_op=div_measure,
                 eta_schedule=args.eta_schedule, inner_optim=LSOpt,  stoch_reg=args.stoch_reg,

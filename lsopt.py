@@ -8,7 +8,7 @@ from helpers import *
 
 # linesearch optimizer
 class LSOpt(torch.optim.Optimizer):
-    def __init__(self, params, init_step_size=1,
+    def __init__(self, params, init_step_size=1, n_batches_per_epoch=None,
                  c=0.001, beta_update=0.9, expand_coeff=1.8):
         params = list(params)
         super().__init__(params, {})
@@ -17,15 +17,15 @@ class LSOpt(torch.optim.Optimizer):
         # create some local tools
         self.params = params
         self.c = c
-        self.expand_coeff = expand_coeff
+        self.expand_coeff = expand_coeff**(1. / n_batches_per_epoch)
         self.beta_b = beta_update
         self.init_step_size = init_step_size
         # store state for debugging
         self.state['step_size'] = init_step_size
-        self.state['n_forwards'] = 0
-        self.state['n_backwards'] = 0
         self.state['function_evals'] = 0
         self.state['grad_evals'] = 0
+
+        print(self.c)
 
     @staticmethod
     def compute_grad_norm(grad_list):
@@ -114,11 +114,12 @@ class LSOpt(torch.optim.Optimizer):
 
                 # =================================================
                 # stopping conditions
-                if found or (step_size < 1e-8):
+                if found or (step_size < 1e-6):
                     break
                 else:
-                    self.state['n_backwards'] += 1
+                    pass
         #
+        print(e)
         self.state['step_size'] = step_size
         # return loss
         return loss

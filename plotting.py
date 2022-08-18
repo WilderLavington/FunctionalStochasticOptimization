@@ -81,9 +81,9 @@ def format_dataframe(records, subfields={}):
     return records
 
 def plot(fig_name='example',x='optim_steps', y='avg_loss',
-            x_max=10000, m=1, loss='MSELoss', download_data=True,
+            x_max=10000, m=[1,2,10,20], stoch_reg=[1,0], loss='MSELoss', download_data=True,
             dataset_name='mushrooms', c=0.1, batch_size=100,
-            episodes=100, stoch_reg=1):
+            episodes=100,  func_only=True):
 
     # =================================================
     # download data in
@@ -107,45 +107,53 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         subfields={'batch_size': batch_size, 'episodes': episodes,
         'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'Adagrad',
         'eta_schedule': 'constant', 'dataset_name': dataset_name})
-    funcopt_data = format_dataframe(wandb_records,
-        subfields={'batch_size': batch_size, 'episodes': episodes, 'c': c,
-        'stoch_reg': stoch_reg, 'use_optimal_stepsize': 1,
-        'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m,
-        'eta_schedule': 'stochastic', 'dataset_name': dataset_name})
+    funcopt_dataset = []
+    for m_ in m:
+        for stoch_reg_ in stoch_reg:
+            funcopt_dataset.append(format_dataframe(wandb_records,
+            subfields={'batch_size': batch_size, 'episodes': episodes, 'c': c,
+            'stoch_reg': stoch_reg, 'use_optimal_stepsize': 1,
+            'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m_, 'stoch_reg':stoch_reg_,
+            'eta_schedule': 'stochastic', 'dataset_name': dataset_name}))
 
     # =================================================
     # generate plots
     if x == 'function_evals+grad_evals':
         fig, ax = plt.subplots()
-        #
-        low_order_idx = (2*torch.tensor(adam_data['optim_steps'].values) < x_max).nonzero().reshape(-1)
-        high_order_idx = (torch.tensor(funcopt_data['function_evals'].values)+torch.tensor(funcopt_data['grad_evals'].values) < x_max).nonzero().reshape(-1)
-        #
-
-        ax.plot(torch.tensor(sgd_data['optim_steps'].values)[low_order_idx], torch.tensor(sgd_data[y].values)[low_order_idx], label='SGD')
-        ax.plot(torch.tensor(adam_data['optim_steps'].values)[low_order_idx], torch.tensor(adam_data[y].values)[low_order_idx], label='Adam')
-        ax.plot(torch.tensor(adagrad_data['optim_steps'].values)[low_order_idx], torch.tensor(adagrad_data[y].values)[low_order_idx], label='Adagrad')
-        ax.plot(torch.tensor(funcopt_data[x].values)[high_order_idx], torch.tensor(funcopt_data[y].values)[high_order_idx], label='SGD_FMDOpt(m='+str(m)+')')
-        #
+        if not func_only:
+            low_order_idx = (torch.tensor(adam_data['optim_steps'].values) < x_max).nonzero().reshape(-1)
+            ax.plot(torch.tensor(sgd_data['optim_steps'].values)[low_order_idx], torch.tensor(sgd_data[y].values)[low_order_idx], label='SGD')
+            ax.plot(torch.tensor(adam_data['optim_steps'].values)[low_order_idx], torch.tensor(adam_data[y].values)[low_order_idx], label='Adam')
+            ax.plot(torch.tensor(adagrad_data['optim_steps'].values)[low_order_idx], torch.tensor(adagrad_data[y].values)[low_order_idx], label='Adagrad')
+        s = -1
+        for m_ in m:
+            for stoch_reg_ in stoch_reg:
+                s += 1
+                funcopt_data = funcopt_dataset[s]
+                high_order_idx = (torch.tensor(funcopt_data['function_evals'].values)+torch.tensor(funcopt_data['grad_evals'].values) < x_max).nonzero().reshape(-1)
+                ax.plot((torch.tensor(funcopt_data['function_evals'].values)+torch.tensor(funcopt_data['grad_evals'].values))[high_order_idx],
+                    torch.tensor(funcopt_data[y].values)[high_order_idx], label='SGD_FMDOpt(m='+str(m_)+', reg='+str(stoch_reg_)+')')
         ax.grid()
         plt.legend()
         plt.rcParams['figure.dpi'] = 400
         plt.xlabel(x)
         plt.ylabel(y)
         plt.title('Optimizer-Comparison: ' )
-        # plt.show()
-        plt.savefig(fig_name, bbox_inches='tight')
+        plt.savefig(fig_name+'pdf', bbox_inches='tight')
     else:
         fig, ax = plt.subplots()
-        low_order_idx = (torch.tensor(adam_data['optim_steps'].values) < x_max).nonzero().reshape(-1)
-        high_order_idx = (torch.tensor(funcopt_data[x].values) < x_max).nonzero().reshape(-1)
-
-        #
-        ax.plot(torch.tensor(sgd_data['optim_steps'].values[low_order_idx]), torch.tensor(sgd_data[y].values[low_order_idx]), label='SGD')
-        ax.plot(torch.tensor(adam_data['optim_steps'].values[low_order_idx]), torch.tensor(adam_data[y].values[low_order_idx]), label='Adam')
-        ax.plot(torch.tensor(adagrad_data['optim_steps'].values[low_order_idx]), torch.tensor(adagrad_data[y].values[low_order_idx]), label='Adagrad')
-        ax.plot(torch.tensor(funcopt_data[x].values[high_order_idx]), torch.tensor(funcopt_data[y].values[high_order_idx]), label='SGD_FMDOpt(m='+str(m)+')')
-        #
+        if not func_only:
+            low_order_idx = (torch.tensor(adam_data['optim_steps'].values) < x_max).nonzero().reshape(-1)
+            ax.plot(torch.tensor(sgd_data['optim_steps'].values[low_order_idx]), torch.tensor(sgd_data[y].values[low_order_idx]), label='SGD')
+            ax.plot(torch.tensor(adam_data['optim_steps'].values[low_order_idx]), torch.tensor(adam_data[y].values[low_order_idx]), label='Adam')
+            ax.plot(torch.tensor(adagrad_data['optim_steps'].values[low_order_idx]), torch.tensor(adagrad_data[y].values[low_order_idx]), label='Adagrad')
+        s = -1
+        for m_ in m:
+            for stoch_reg_ in stoch_reg:
+                s += 1
+                funcopt_data = funcopt_dataset[s]
+                high_order_idx = (torch.tensor(funcopt_data[x].values) < x_max).nonzero().reshape(-1)
+                ax.plot(torch.tensor(funcopt_data[x].values)[high_order_idx], torch.tensor(funcopt_data[y].values)[high_order_idx], label='SGD_FMDOpt(m='+str(m_)+', reg='+str(stoch_reg_)+')')
         ax.grid()
         plt.legend()
         plt.rcParams['figure.dpi'] = 400
@@ -153,7 +161,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         plt.ylabel(y)
         plt.title('Optimizer-Comparison: ' )
         # plt.show()
-        plt.savefig(fig_name, bbox_inches='tight')
+        plt.savefig(fig_name+'pdf', bbox_inches='tight')
 
 
 def get_args():
@@ -164,9 +172,12 @@ def get_args():
     parser.add_argument('--y', type=str, default='avg_loss')
     parser.add_argument('--loss', type=str, default='MSELoss')
     parser.add_argument('--fig_name', type=str, default='example')
-    parser.add_argument('--max_steps', type=int, default=5000)
-    parser.add_argument('--func_plot', type=int, default=1)
+    parser.add_argument('--dataset_name', type=str, default='mushrooms')
+    parser.add_argument('--max_steps', type=int, default=100000)
+    parser.add_argument('--batch_size', type=int, default=100)
+    parser.add_argument('--c', type=float, default=0.01)
     parser.add_argument('--download_data', type=int, default=1)
+    parser.add_argument('--func_only', type=int, default=0)
     args, knk = parser.parse_known_args()
     #
     return args, parser
@@ -175,8 +186,9 @@ def main():
 
     # get arguments
     args, parser = get_args()
-    plot(fig_name=args.fig_name, x=args.x, y=args.y,
-         x_max=args.max_steps, loss=args.loss, download_data=args.download_data)
+    plot(fig_name=args.fig_name, x=args.x, y=args.y, func_only=args.func_only,
+         x_max=args.max_steps, loss=args.loss, download_data=args.download_data,
+         dataset_name=args.dataset_name, c=args.c)
 
 
 if __name__ == "__main__":

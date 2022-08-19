@@ -13,7 +13,7 @@ from lsopt import LSOpt
 class SGD_FMDOpt(torch.optim.Optimizer):
     def __init__(self, params, m=1, eta_schedule = 'constant',
                  div_op = lambda f,f1: torch.norm(f-f1).pow(2),
-                 inner_optim = LSOpt, eta=1e-3, stoch_reg=True,
+                 inner_optim = LSOpt, inv_eta=1e-3, stoch_reg=True,
                  surr_optim_args={'init_step_size':2.},
                  total_steps = 1000):
         params = list(params)
@@ -26,7 +26,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         # set eta and the divergence
         self.inner_optim = inner_optim(self.params,**surr_optim_args)
         self.div_op = div_op
-        self.eta =  eta
+        self.eta =  1/inv_eta
         self.eta_schedule = eta_schedule
 
         # preset eta (parameter-wise / diagnol only)
@@ -63,8 +63,8 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             #
             if self.stoch_reg:
                 reg_term = self.div_op(f,f_t.detach())
-            else:
-                reg_term = self.div_op(F,F_t.detach())
+            else: # rescale reg term for more consistent behavior
+                reg_term = self.div_op(F,F_t.detach()) * (f_t.detach().shape[0] / F_t.detach().shape[0])
             #
             if self.eta_schedule == 'constant':
                 surr = loss + self.eta * reg_term

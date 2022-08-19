@@ -25,7 +25,8 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
 
     # log stuff
     dataset = torch.utils.data.TensorDataset(X, y)
-    data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+        shuffle=True, drop_last=True)
     logs, s, starting_time = [], 0,  time()
     import_vals = ['inner_steps', 'avg_loss', 'function_evals', 'grad_evals',
             'step_time', 'inner_step_size', 'inner_backtracks']
@@ -50,13 +51,12 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             log_info = {'avg_loss': avg_loss,
                         'optim_steps': s, 'function_evals': s, 'grad_evals': s,
                         'inner_backtracks': 0, 'inner_steps': 1,
-                        'grad_norm': grad_norm,
+                        'grad_norm': grad_norm, 'eta_scale': args.stepsize,
                         'time-elapsed':  time() - starting_time}
             log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
             try:
                 wandb.log(log_info)
             except:
-                print(log_info)
                 raise Exception
             log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
             logs.append(log_info)
@@ -106,7 +106,7 @@ def get_args():
     parser.add_argument('--init_step_size', type=float, default=1)
     parser.add_argument('--c', type=float, default=0.1)
     parser.add_argument('--beta_update', type=float, default=0.9)
-    parser.add_argument('--expand_coeff', type=float, default=1.8)
+    parser.add_argument('--expand_coeff', type=float, default=2.0)
     parser.add_argument('--stoch_reg', type=int, default=1)
     parser.add_argument('--use_optimal_stepsize', type=int, default=1)
     parser.add_argument('--eta_schedule', type=str, default='constant')
@@ -115,6 +115,7 @@ def get_args():
     parser.add_argument('--folder_name', type=str, default='examples/')
     parser.add_argument('--randomize_folder', type=int, default=0)
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--fullbatch', type=int, default=0)
     # parse
     args, knk = parser.parse_known_args()
     #
@@ -128,7 +129,7 @@ def main():
     # se
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
-    
+
     # get weights
     wandb.init(project=args.project, entity=args.entity, config=args)
     pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
@@ -143,6 +144,7 @@ def main():
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
         L = torch.max(L[:,0]).to('cuda')
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
+        # F = torch.norm(torch.mm(X.t().cpu().double(), X.cpu().double()),p='fro')
     elif args.loss == 'MSELoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
         X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
@@ -152,9 +154,11 @@ def main():
         model.to('cuda')
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
         L = torch.max(L[:,0]).float().to('cuda')
+        # F = torch.norm(torch.mm(X.t().cpu().double(), X.cpu().double()),p='fro')
         args.stepsize  = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     # train with an optimizer
+    args.batch_size = y.shape[0] if args.fullbatch else args.batch_size
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
@@ -164,7 +168,7 @@ def main():
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
         surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
-        optim = SGD_FMDOpt(model.parameters(), eta=args.stepsize, div_op=div_measure,
+        optim = SGD_FMDOpt(model.parameters(), inv_eta=args.stepsize, div_op=div_measure,
                 eta_schedule=args.eta_schedule, inner_optim=LSOpt,  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,

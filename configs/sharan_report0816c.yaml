@@ -22,7 +22,7 @@ parameters:
     values:
     - 1
     - 10
-    # - 100
+    - 100
     - 500
   use_optimal_stepsize:
     values:

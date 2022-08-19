@@ -83,8 +83,7 @@ def format_dataframe(records, subfields={}):
 def plot(fig_name='example',x='optim_steps', y='avg_loss',
             x_max=10000, m=[1,2,10,20], stoch_reg=[1,0], loss='MSELoss', download_data=True,
             dataset_name='mushrooms', c=0.1, batch_size=100,
-            episodes=100,  func_only=True):
-
+            episodes=100,  func_only=True, eta_schedule='stochastic'):
     # =================================================
     # download data in
     if download_data:
@@ -92,7 +91,6 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         wandb_records = download_wandb_records()
     else:
         wandb_records = runs_df = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
-
     # =================================================
     # create datasets
     sgd_data = format_dataframe(wandb_records,
@@ -114,8 +112,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
             subfields={'batch_size': batch_size, 'episodes': episodes, 'c': c,
             'stoch_reg': stoch_reg, 'use_optimal_stepsize': 1,
             'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m_, 'stoch_reg':stoch_reg_,
-            'eta_schedule': 'stochastic', 'dataset_name': dataset_name}))
-
+            'eta_schedule': eta_schedule, 'dataset_name': dataset_name}))
     # =================================================
     # generate plots
     if x == 'function_evals+grad_evals':
@@ -139,7 +136,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         plt.xlabel(x)
         plt.ylabel(y)
         plt.title('Optimizer-Comparison: ' )
-        plt.savefig(fig_name+'pdf', bbox_inches='tight')
+        plt.savefig(fig_name+'.pdf', bbox_inches='tight')
     else:
         fig, ax = plt.subplots()
         if not func_only:
@@ -161,7 +158,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         plt.ylabel(y)
         plt.title('Optimizer-Comparison: ' )
         # plt.show()
-        plt.savefig(fig_name+'pdf', bbox_inches='tight')
+        plt.savefig(fig_name+'.pdf', bbox_inches='tight')
 
 
 def get_args():
@@ -177,7 +174,9 @@ def get_args():
     parser.add_argument('--batch_size', type=int, default=100)
     parser.add_argument('--c', type=float, default=0.01)
     parser.add_argument('--download_data', type=int, default=1)
-    parser.add_argument('--func_only', type=int, default=0)
+    parser.add_argument('--func_only', type=int, default=1)
+    parser.add_argument('--eta_schedule', type=str, default='constant')
+
     args, knk = parser.parse_known_args()
     #
     return args, parser

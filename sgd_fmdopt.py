@@ -84,13 +84,14 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         # now we take multiple steps over surrogate
         for m in range(0,self.m):
             # create surr-grad through params
-            loss = surrogate(call_backward=True)
+            # loss = surrogate(call_backward=True)
             current_loss = self.inner_optim.step(surrogate)
             self.state['inner_steps'] += 1
             self.state['inner_backtracks'] = self.inner_optim.state['n_backwards']
             self.state['grad_evals'] += 1
 
         # update internal logs everywhere
+        # self.state['grad_evals'] = self.inner_optim.state['grad_evals']
         self.state['function_evals'] = self.inner_optim.state['function_evals']
         self.state['step_time'] = timer(start,time.time())
         self.state['inner_step_size'] = self.inner_optim.state['step_size']

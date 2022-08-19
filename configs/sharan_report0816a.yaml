@@ -18,6 +18,11 @@ parameters:
     - 2
     - 10
     - 20
+  seed:
+    values:
+    - 1
+    - 2
+    - 3
   batch_size:
     values:
     # - 1

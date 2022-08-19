@@ -17,19 +17,51 @@ from fmdopt import FMDOpt
 from sgd_fmdopt import SGD_FMDOpt
 from ada_fmdopt import Ada_FMDOpt
 from lsopt import LSOpt
-from helpers import get_grad_norm, get_random_string
+from helpers import get_grad_norm, get_random_string, update_lr
 
 
 def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
+
     # log stuff
     dataset = torch.utils.data.TensorDataset(X, y)
     data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
     logs, s, starting_time = [], 0,  time()
     import_vals = ['inner_steps', 'avg_loss', 'function_evals', 'grad_evals',
             'step_time', 'inner_step_size', 'inner_backtracks']
+
     # iterate over epochs
     for t in tqdm(range(total_rounds)):
+
+        # log everything
+        if t % log_rate == 0:
+            avg_loss = 0.
+            grad_norm = 0.
+            for X_batch, y_batch in data_generator:
+                def closure(call_backward=True):
+                    optim.zero_grad()
+                    loss = loss_func(model(X_batch), y_batch)
+                    if call_backward==True:
+                        loss.backward()
+                    return loss
+                avg_loss += closure(call_backward=True).detach().cpu().numpy()
+                grad_norm += get_grad_norm(model.parameters()).detach().cpu().numpy()
+
+            log_info = {'avg_loss': avg_loss,
+                        'optim_steps': s, 'function_evals': s, 'grad_evals': s,
+                        'inner_backtracks': 0, 'inner_steps': 1,
+                        'grad_norm': grad_norm,
+                        'time-elapsed':  time() - starting_time}
+            log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
+            try:
+                wandb.log(log_info)
+            except:
+                print(log_info)
+                raise Exception
+            log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
+            logs.append(log_info)
+            print(log_info)
+
         # step through data by sampling without replacement
         for X_batch, y_batch in tqdm(data_generator,leave=False):
             # create closure for line-search/lbfgs
@@ -47,28 +79,8 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             optim.step(closure)
             s += 1
             if decay_lr:
-                optim = update_lr(optim, s, 10**args.log_eta)
+                optim = update_lr(optim, torch.tensor(s).float(), torch.tensor(args.stepsize).float())
 
-        # log everything
-        if t % log_rate == 0:
-            avg_loss = closure(call_backward=True)[0].detach().cpu().numpy()*0
-            grad_norm = get_grad_norm(model.parameters()).detach().cpu().numpy()*0
-            for X_batch, y_batch in data_generator:
-                avg_loss += loss_func(model(X_batch), y_batch).detach().cpu().numpy()
-                grad_norm += get_grad_norm(model.parameters()).detach().cpu().numpy()
-            log_info = {'avg_loss': avg_loss,
-                        'optim_steps': s, 'function_evals': s, 'grad_evals': s,
-                        'inner_backtracks': 0, 'inner_steps': 1,
-                        'grad_norm': grad_norm,
-                        'time-elapsed':  time() - starting_time}
-            log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
-            try:
-                wandb.log(log_info)
-            except:
-                print(log_info)
-                raise Exception
-
-            logs.append(log_info)
     # reformat stored data
     parsed_logs = {}
     for key in log_info.keys():
@@ -102,6 +114,7 @@ def get_args():
     parser.add_argument('--file_name', type=str, default='example')
     parser.add_argument('--folder_name', type=str, default='examples/')
     parser.add_argument('--randomize_folder', type=int, default=0)
+    parser.add_argument('--seed', type=int, default=0)
     # parse
     args, knk = parser.parse_known_args()
     #
@@ -112,6 +125,10 @@ def main():
     # get arguments
     args, parser = get_args()
 
+    # se
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    
     # get weights
     wandb.init(project=args.project, entity=args.entity, config=args)
     pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
@@ -125,7 +142,7 @@ def main():
         model.to('cuda')
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
         L = torch.max(L[:,0]).to('cuda')
-        stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
     elif args.loss == 'MSELoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
         X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
@@ -135,18 +152,19 @@ def main():
         model.to('cuda')
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
         L = torch.max(L[:,0]).float().to('cuda')
-        stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
+        args.stepsize  = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     # train with an optimizer
     if args.algo == 'SGD':
-        optim = torch.optim.SGD(model.parameters(), lr=stepsize)
+        optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
-            total_rounds = args.episodes, batch_size=args.batch_size )
+            total_rounds = args.episodes, batch_size=args.batch_size,
+            decay_lr = 1 if args.eta_schedule=='stochastic' else 0)
     elif args.algo == 'SGD_FMDOpt':
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size, 
+        surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
-        optim = SGD_FMDOpt(model.parameters(), eta=stepsize, div_op=div_measure,
+        optim = SGD_FMDOpt(model.parameters(), eta=args.stepsize, div_op=div_measure,
                 eta_schedule=args.eta_schedule, inner_optim=LSOpt,  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
@@ -156,18 +174,18 @@ def main():
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
         surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
-        optim = Ada_FMDOpt(model.parameters(), eta=stepsize, div_op=div_measure, stoch_reg=args.stoch_reg,
+        optim = Ada_FMDOpt(model.parameters(), eta=args.stepsize, div_op=div_measure, stoch_reg=args.stoch_reg,
                 inner_optim=LSOpt, surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'Adam':
         assert args.eta_schedule == 'constant'
-        optim = torch.optim.Adam(model.parameters(), lr=stepsize)
+        optim = torch.optim.Adam(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
     elif args.algo == 'Adagrad':
         assert args.eta_schedule == 'constant'
-        optim = torch.optim.Adagrad(model.parameters(), lr=stepsize)
+        optim = torch.optim.Adagrad(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
 

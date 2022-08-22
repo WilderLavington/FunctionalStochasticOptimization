@@ -35,12 +35,12 @@ parameters:
   batch_size:
     values:
     # - 1
-    # - 10
+    - 10
     - 100
-    # - 500
+    - 500
   use_optimal_stepsize:
     values:
-    - 1
+    - 0
   loss:
     values:
     - MSELoss
@@ -58,7 +58,3 @@ parameters:
     values:
     - mushrooms
     - ijcnn
-  stoch_reg:
-    values:
-    - 0
-    - 1

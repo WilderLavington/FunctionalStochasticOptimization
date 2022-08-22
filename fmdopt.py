@@ -1,4 +1,6 @@
 
+
+### NOT COMPLETE -- GENERALIZED VERSION OF sgd_fmdopt
 # imports
 import torch
 import numpy as np

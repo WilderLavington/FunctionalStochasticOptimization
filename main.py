@@ -29,7 +29,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
         shuffle=True, drop_last=True)
     logs, s, starting_time = [], 0,  time()
     import_vals = ['inner_steps', 'avg_loss', 'function_evals', 'grad_evals',
-            'step_time', 'inner_step_size', 'inner_backtracks']
+            'step_time', 'inner_step_size', 'inner_backtracks', 'outer_stepsize']
 
     # iterate over epochs
     for t in tqdm(range(total_rounds)):
@@ -39,12 +39,14 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             avg_loss = 0.
             grad_norm = 0.
             for X_batch, y_batch in data_generator:
+
                 def closure(call_backward=True):
                     optim.zero_grad()
                     loss = loss_func(model(X_batch), y_batch)
                     if call_backward==True:
                         loss.backward()
                     return loss
+
                 avg_loss += closure(call_backward=True).detach().cpu().numpy()
                 grad_norm += get_grad_norm(model.parameters()).detach().cpu().numpy()
 
@@ -64,15 +66,19 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
 
         # step through data by sampling without replacement
         for X_batch, y_batch in tqdm(data_generator,leave=False):
+
             # create closure for line-search/lbfgs
             def closure(call_backward=True):
                 optim.zero_grad()
                 model_outputs = model(X_batch)
-                all_model_outputs = model(X)
-                loss = loss_func(model_outputs, y_batch)
+                def inner_closure(model_outputs):
+                    loss = loss_func(model_outputs, y_batch)
+                    return loss
+                loss = inner_closure(model_outputs)
                 if call_backward==True:
                     loss.backward()
-                return loss, model_outputs, all_model_outputs
+                return loss, model_outputs, inner_closure
+
             if call_closure:
                 closure()
             # step optimizer over closure
@@ -142,7 +148,7 @@ def main():
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
-        L = torch.max(L[:,0]).to('cuda')
+        L = torch.max(L[:,0]).to('cuda') / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
         # F = torch.norm(torch.mm(X.t().cpu().double(), X.cpu().double()),p='fro')
     elif args.loss == 'MSELoss':
@@ -158,6 +164,7 @@ def main():
         args.stepsize  = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     # train with an optimizer
+    # episodes == passes over the data
     args.batch_size = y.shape[0] if args.fullbatch else args.batch_size
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
@@ -165,23 +172,29 @@ def main():
             total_rounds = args.episodes, batch_size=args.batch_size,
             decay_lr = 1 if args.eta_schedule=='stochastic' else 0)
     elif args.algo == 'SGD_FMDOpt':
+
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
+
         surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
+
         optim = SGD_FMDOpt(model.parameters(), inv_eta=args.stepsize, div_op=div_measure,
                 eta_schedule=args.eta_schedule, inner_optim=LSOpt,  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
+
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds = args.episodes, batch_size=args.batch_size )
-    elif args.algo == 'Ada_FMDOpt':
-        assert args.eta_schedule == 'constant'
-        div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c,
-                'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
-        optim = Ada_FMDOpt(model.parameters(), eta=args.stepsize, div_op=div_measure, stoch_reg=args.stoch_reg,
-                inner_optim=LSOpt, surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
-        model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
-            total_rounds = args.episodes, batch_size=args.batch_size )
+
+    # elif args.algo == 'Ada_FMDOpt':
+    #     assert args.eta_schedule == 'constant'
+    #     div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
+    #     surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c,
+    #             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
+    #     optim = Ada_FMDOpt(model.parameters(), eta=args.stepsize, div_op=div_measure, stoch_reg=args.stoch_reg,
+    #             inner_optim=LSOpt, surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
+    #     model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
+    #         total_rounds = args.episodes, batch_size=args.batch_size )
+
     elif args.algo == 'Adam':
         assert args.eta_schedule == 'constant'
         optim = torch.optim.Adam(model.parameters(), lr=args.stepsize)

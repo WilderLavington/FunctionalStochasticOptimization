@@ -26,7 +26,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         # set eta and the divergence
         self.inner_optim = inner_optim(self.params,**surr_optim_args)
         self.div_op = div_op
-        self.eta =  1/inv_eta
+        self.eta =  1/inv_eta # please rename
         self.eta_schedule = eta_schedule
 
         # preset eta (parameter-wise / diagnol only)
@@ -43,6 +43,31 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.state['function_evals'] = 0
 
     @staticmethod
+    def compute_grad_norm(grad_list):
+        grad_norm = 0.
+        device = torch.device("cuda" if (torch.cuda.is_available()) else "cpu")
+        # assert 1==0
+        for g in grad_list:
+            if g is None:
+                continue
+            if torch.sum(torch.mul(g, g)).device != device:
+                grad_norm += torch.sum(torch.mul(g, g)).to(device)
+            else:
+                grad_norm += torch.sum(torch.mul(g, g))
+        grad_norm = torch.sqrt(grad_norm)
+        return grad_norm
+
+    @staticmethod
+    def get_grad_list(params):
+        g_list = []
+        for p in params:
+            grad = p.grad
+            if grad is None:
+                grad = 0.
+            g_list += [grad]
+        return g_list
+
+    @staticmethod
     def copy_params(target, source):
         """ copies nueral network parameters between to networks. """
         for target_param, param in zip(target, source):
@@ -55,25 +80,26 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.state['outer_steps'] += 1
 
         # compute loss + grad for eta computation
-        _, f_t, F_t = closure(call_backward=False)
+        _, f_t, inner_closure = closure(call_backward=False)
+
+        # produce some 1 by m (n=batch-size, m=output of f)
+        dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
-            loss, f, F = closure(call_backward=False)
-            #
-            if self.stoch_reg:
-                reg_term = self.div_op(f,f_t.detach())
-            else: # rescale reg term for more consistent behavior
-                reg_term = self.div_op(F,F_t.detach()) * (f_t.detach().shape[0] / F_t.detach().shape[0])
+
+            # f = n by m
+            loss, f, inner_closure = closure(call_backward=False)
+            # m by d -> 1
+            loss = torch.sum(dlt_dft*f)
+
+            # remove cap F
+            reg_term = self.div_op(f,f_t.detach())
             #
             if self.eta_schedule == 'constant':
                 surr = loss + self.eta * reg_term
             elif self.eta_schedule == 'stochastic':
                 surr = loss + self.eta * reg_term * torch.sqrt(torch.tensor(self.state['outer_steps']).float())
-            elif self.eta_schedule == 'exponential':
-                surr = loss + self.eta * reg_term * \
-                    (self.state['outer_steps']) ** (self.state['outer_steps'] / self.total_steps)
-                # assert total_steps <= self.state['outer_steps']
             else:
                 raise Exception
 
@@ -82,15 +108,13 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             return surr
 
         # now we take multiple steps over surrogate
+        # print('inner-loop')
         for m in range(0,self.m):
-            # create surr-grad through params
-            # loss = surrogate(call_backward=True)
+            # # check
             current_loss = self.inner_optim.step(surrogate)
             self.state['inner_steps'] += 1
             self.state['inner_backtracks'] = self.inner_optim.state['n_backwards']
             self.state['grad_evals'] += 1
-
-        # update internal logs everywhere
         # self.state['grad_evals'] = self.inner_optim.state['grad_evals']
         self.state['function_evals'] = self.inner_optim.state['function_evals']
         self.state['step_time'] = timer(start,time.time())

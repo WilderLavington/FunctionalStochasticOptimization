@@ -21,7 +21,7 @@ from helpers import get_grad_norm, get_grad_list, get_random_string, update_lr
 from torch.optim import SGD, Adam, Adagrad
 
 def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
-            call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
+            call_closure=False, total_rounds = 1000, batch_size=100, log_rate=10):
 
     # log stuff
     dataset = torch.utils.data.TensorDataset(X, y)
@@ -62,7 +62,9 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
                 raise Exception
             log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
             logs.append(log_info)
+            print('=========================================================')
             print(log_info)
+            print('=========================================================')
         # step through data by sampling without replacement
         for X_batch, y_batch in tqdm(data_generator,leave=False):
             # create closure for line-search/lbfgs

@@ -17,8 +17,8 @@ from fmdopt import FMDOpt
 from sgd_fmdopt import SGD_FMDOpt
 from ada_fmdopt import Ada_FMDOpt
 from lsopt import LSOpt
-from helpers import get_grad_norm, get_random_string, update_lr
-
+from helpers import get_grad_norm, get_grad_list, get_random_string, update_lr
+from torch.optim import SGD, Adam, Adagrad
 
 def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
@@ -63,10 +63,8 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
             logs.append(log_info)
             print(log_info)
-
         # step through data by sampling without replacement
         for X_batch, y_batch in tqdm(data_generator,leave=False):
-
             # create closure for line-search/lbfgs
             def closure(call_backward=True):
                 optim.zero_grad()
@@ -110,6 +108,7 @@ def get_args():
     parser.add_argument('--log_eta', type=float, default=-4)
     parser.add_argument('--m', type=int, default=5)
     parser.add_argument('--init_step_size', type=float, default=1)
+    parser.add_argument('--inner_opt', type=str, default='LSOpt')
     parser.add_argument('--c', type=float, default=0.1)
     parser.add_argument('--beta_update', type=float, default=0.9)
     parser.add_argument('--expand_coeff', type=float, default=2.0)
@@ -151,6 +150,16 @@ def main():
         L = torch.max(L[:,0]).to('cuda') / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
         # F = torch.norm(torch.mm(X.t().cpu().double(), X.cpu().double()),p='fro')
+    if args.loss == 'BCEWithLogitsLoss':
+        X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
+        X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
+        loss_func_ = nn.BCEWithLogitsLoss()
+        loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
+        model = DiscreteLinearModel(X.shape[1], 1)
+        model.to('cuda')
+        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
+        L = torch.max(L[:,0]).to('cuda') / 4
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
     elif args.loss == 'MSELoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
         X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
@@ -175,11 +184,14 @@ def main():
 
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
 
-        surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
+        if args.inner_opt =='LSOpt':
+            surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
+        else:
+            surr_optim_args = {'lr':args.init_step_size}
 
         optim = SGD_FMDOpt(model.parameters(), inv_eta=args.stepsize, div_op=div_measure,
-                eta_schedule=args.eta_schedule, inner_optim=LSOpt,  stoch_reg=args.stoch_reg,
+                eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
 
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,

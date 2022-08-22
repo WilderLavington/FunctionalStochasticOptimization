@@ -8,7 +8,7 @@ from helpers import *
 
 # linesearch optimizer
 class LSOpt(torch.optim.Optimizer):
-    def __init__(self, params, init_step_size=1, n_batches_per_epoch=None,
+    def __init__(self, params, lr=1, n_batches_per_epoch=None,
                  c=0.001, beta_update=0.9, expand_coeff=1.8):
         params = list(params)
         super().__init__(params, {})
@@ -19,9 +19,9 @@ class LSOpt(torch.optim.Optimizer):
         self.c = c
         self.expand_coeff = expand_coeff**(1. / n_batches_per_epoch)
         self.beta_b = beta_update
-        self.init_step_size = init_step_size
+        self.init_step_size = lr
         # store state for debugging
-        self.state['step_size'] = init_step_size
+        self.state['step_size'] = lr
         self.state['function_evals'] = 0
         self.state['grad_evals'] = 0
 
@@ -118,7 +118,7 @@ class LSOpt(torch.optim.Optimizer):
                     break
                 else:
                     pass
-        # 
+        #
         self.state['step_size'] = step_size
         # return loss
         return loss

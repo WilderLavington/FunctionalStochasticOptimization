@@ -152,7 +152,7 @@ def main():
         L = torch.max(L[:,0]).to('cuda') / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
         # F = torch.norm(torch.mm(X.t().cpu().double(), X.cpu().double()),p='fro')
-    if args.loss == 'BCEWithLogitsLoss':
+    elif args.loss == 'BCEWithLogitsLoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
         X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
         loss_func_ = nn.BCEWithLogitsLoss()

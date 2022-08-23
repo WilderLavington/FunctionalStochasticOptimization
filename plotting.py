@@ -75,9 +75,24 @@ def download_wandb_records():
     # return single data frame for vizualization
     return wandb_records
 
-def format_dataframe(records, subfields={}):
+def format_dataframe(records, subfields={}, x_col='optim_steps', y_col='avg_loss'):
+    print(records.columns)
+    # define subset of data we are interested in.
     for key in subfields:
         records = records.loc[records[key] == subfields[key]]
+    # groupby fields
+    groupby_records = list(subfields.keys())+ \
+        list(set([x_col, y_col, 'optim_steps', 'avg_loss', 'grad_norm']))
+    nongroupby_records = list(set(records.columns)-set(groupby_records))
+    # get groupby average (over different seeds)
+    print('yeet')
+    print(records.groupby(nongroupby_records).mean().keys())
+    print(y_col)
+    print(records.groupby(nongroupby_records).mean())
+    print('ok.')
+    records[y_col+'_mean'] = records.groupby(nongroupby_records).mean()[y_col]
+    print(records.columns)
+    # return the records
     return records
 
 def plot(fig_name='example',x='optim_steps', y='avg_loss',
@@ -96,15 +111,18 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     sgd_data = format_dataframe(wandb_records,
         subfields={'batch_size': batch_size, 'episodes': episodes,
         'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'SGD',
-        'eta_schedule': 'stochastic', 'dataset_name': dataset_name})
+        'eta_schedule': 'stochastic', 'dataset_name': dataset_name},
+        x_col=x , y_col=y)
     adam_data = format_dataframe(wandb_records,
         subfields={'batch_size': batch_size, 'episodes': episodes,
         'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'Adam',
-        'eta_schedule': 'constant', 'dataset_name': dataset_name})
+        'eta_schedule': 'constant', 'dataset_name': dataset_name},
+        x_col=x , y_col=y)
     adagrad_data = format_dataframe(wandb_records,
         subfields={'batch_size': batch_size, 'episodes': episodes,
         'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'Adagrad',
-        'eta_schedule': 'constant', 'dataset_name': dataset_name})
+        'eta_schedule': 'constant', 'dataset_name': dataset_name},
+        x_col=x , y_col=y)
     funcopt_dataset = []
     for m_ in m:
         for stoch_reg_ in stoch_reg:
@@ -112,7 +130,8 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
             subfields={'batch_size': batch_size, 'episodes': episodes, 'c': c,
             'stoch_reg': stoch_reg, 'use_optimal_stepsize': 1,
             'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m_, 'stoch_reg':stoch_reg_,
-            'eta_schedule': eta_schedule, 'dataset_name': dataset_name}))
+            'eta_schedule': eta_schedule, 'dataset_name': dataset_name},
+            x_col=x , y_col=y))
     # =================================================
     # generate plots
     if x == 'function_evals+grad_evals':

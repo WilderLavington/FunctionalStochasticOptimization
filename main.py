@@ -65,6 +65,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             print('=========================================================')
             print(log_info)
             print('=========================================================')
+            
         # step through data by sampling without replacement
         for X_batch, y_batch in tqdm(data_generator,leave=False):
             # create closure for line-search/lbfgs

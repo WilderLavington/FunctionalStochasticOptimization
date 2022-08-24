@@ -82,28 +82,40 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     for key in id_subfields:
         records = records.loc[records[key] == id_subfields[key]]
     if not len(records):
+        print(id_subfields['algo']+' failed to load.')
         return None
     # remove redundant information
     records = records[list(avg_subfields+max_subfields+\
-        list(id_subfields.keys())+[x_col,y_col])]
+        list(id_subfields.keys())+[x_col,y_col, 'optim_steps'])]
     records = records.loc[:,~records.columns.duplicated()].copy()
     # average over avg_subfields
     records = records.drop(avg_subfields, axis=1)
     # remove nans
     records = records[records[y_col].notna()]
     # group over averaging field
-    gb = list(set(list(max_subfields+list(id_subfields.keys())+[x_col])))
-    mean_records = records.groupby(gb).mean().reset_index()
-    best_records = mean_records.groupby(list(set(gb)-set(['optim_steps']))).min(y_col).droplevel(0).reset_index()
+    gb = list(set(list(max_subfields+list(id_subfields.keys())+[x_col, 'optim_steps'])))
+    # create different statistical reccords
+    mean_records = records.groupby(gb, as_index=False)[y_col].mean()
+    # only look at final optim steps
+    mean_records = mean_records.loc[mean_records['optim_steps'] == mean_records['optim_steps'].max()]
+    # get the best record
+    best_records = mean_records.groupby(list(set(gb)\
+        -set(['optim_steps'])-set(max_subfields))).min(y_col).droplevel(0).reset_index()
+    # find parameters of the best record
     best_params = best_records.iloc[best_records[[y_col]].idxmin()].drop([x_col,y_col], axis=1)
+    print('best parameters found:', )
+    print(best_params)
     best_records = pd.merge(best_params, records,on=list(best_params.columns),how='left')
+    best_records = best_records.sort_values(x_col, axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last')
+    # print(best_records)
+    best_records = records.groupby([x_col], as_index=False)[y_col].mean()
+
     # return the records
-    print(id_subfields['algo']+' loaded.')
-    return records
+    return best_records
 
 def plot(fig_name='example',x='optim_steps', y='avg_loss',
             x_max=10000, m=[1,2,10,20], loss='MSELoss', download_data=True,
-            dataset_name='mushrooms', c=0.1, batch_size=100,
+            dataset_name='mushrooms', batch_size=100,
             episodes=100,  func_only=True, eta_schedule='stochastic'):
     # =================================================
     # download data in
@@ -132,7 +144,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     funcopt_dataset = []
     for m_ in m:
         funcopt_dataset.append(format_dataframe(wandb_records,
-        id_subfields={'batch_size': batch_size, 'episodes': episodes, 'c': c,
+        id_subfields={'batch_size': batch_size, 'episodes': episodes,
         'use_optimal_stepsize': 0,
         'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m_,
         'eta_schedule': eta_schedule, 'dataset_name': dataset_name},
@@ -169,8 +181,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
             ax.plot(torch.tensor(adam_data['optim_steps'].values[low_order_idx]), torch.tensor(adam_data[y].values[low_order_idx]), label='Adam')
             ax.plot(torch.tensor(adagrad_data['optim_steps'].values[low_order_idx]), torch.tensor(adagrad_data[y].values[low_order_idx]), label='Adagrad')
         for m_, funcopt_data in enumerate(funcopt_dataset):
-            print(funcopt_data)
-            if funcopt_data:
+            if funcopt_data is not None:
                 high_order_idx = (torch.tensor(funcopt_data[x].values) < x_max).nonzero().reshape(-1)
                 ax.plot(torch.tensor(funcopt_data[x].values)[high_order_idx], torch.tensor(funcopt_data[y].values)[high_order_idx], label='SGD_FMDOpt(m='+str(m_))
 
@@ -195,7 +206,6 @@ def get_args():
     parser.add_argument('--dataset_name', type=str, default='mushrooms')
     parser.add_argument('--max_steps', type=int, default=100000)
     parser.add_argument('--batch_size', type=int, default=100)
-    parser.add_argument('--c', type=float, default=0.01)
     parser.add_argument('--download_data', type=int, default=1)
     parser.add_argument('--func_only', type=int, default=1)
     parser.add_argument('--eta_schedule', type=str, default='constant')
@@ -210,7 +220,7 @@ def main():
     args, parser = get_args()
     plot(fig_name=args.fig_name, x=args.x, y=args.y, func_only=args.func_only,
          x_max=args.max_steps, loss=args.loss, download_data=args.download_data,
-         dataset_name=args.dataset_name, c=args.c)
+         dataset_name=args.dataset_name, batch_size = args.batch_size)
 
 
 if __name__ == "__main__":

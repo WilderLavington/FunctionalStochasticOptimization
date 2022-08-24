@@ -125,14 +125,11 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         # try logging (generalized for different inner-optimizers )
         try:
             assert isinstance(self.inner_optim.state['function_evals'], int)
-            assert isinstance(self.inner_optim.state['n_backwards'], int)
             self.state['function_evals'] = self.inner_optim.state['function_evals']
-            self.state['inner_backtracks'] = self.inner_optim.state['n_backwards']
             self.state['inner_step_size'] = self.inner_optim.state['step_size']
         except:
             self.state['function_evals'] += 1
-            self.state['inner_backtracks'] = 0
-            self.state['inner_step_size'] = self.inner_lr
+            self.state['inner_step_size'] = self.inner_lr 
         self.state['step_time'] = timer(start,time.time())
 
         # return loss

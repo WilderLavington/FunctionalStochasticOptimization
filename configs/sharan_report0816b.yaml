@@ -31,7 +31,7 @@ parameters:
   batch_size:
     values:
     # - 1
-    # - 10
+    - 10
     - 100
     # - 500
   use_optimal_stepsize:

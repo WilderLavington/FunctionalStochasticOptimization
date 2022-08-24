@@ -75,28 +75,34 @@ def download_wandb_records():
     # return single data frame for vizualization
     return wandb_records
 
-def format_dataframe(records, subfields={}, x_col='optim_steps', y_col='avg_loss'):
-    print(records.columns)
+def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
+            max_subfields=['log_eta', 'eta_schedule', 'c'],
+            x_col='optim_steps', y_col='avg_loss'):
     # define subset of data we are interested in.
-    for key in subfields:
-        records = records.loc[records[key] == subfields[key]]
-    # groupby fields
-    groupby_records = list(subfields.keys())+ \
-        list(set([x_col, y_col, 'optim_steps', 'avg_loss', 'grad_norm']))
-    nongroupby_records = list(set(records.columns)-set(groupby_records))
-    # get groupby average (over different seeds)
-    print('yeet')
-    print(records.groupby(nongroupby_records).mean().keys())
-    print(y_col)
-    print(records.groupby(nongroupby_records).mean())
-    print('ok.')
-    records[y_col+'_mean'] = records.groupby(nongroupby_records).mean()[y_col]
-    print(records.columns)
+    for key in id_subfields:
+        records = records.loc[records[key] == id_subfields[key]]
+    if not len(records):
+        return None
+    # remove redundant information
+    records = records[list(avg_subfields+max_subfields+\
+        list(id_subfields.keys())+[x_col,y_col])]
+    records = records.loc[:,~records.columns.duplicated()].copy()
+    # average over avg_subfields
+    records = records.drop(avg_subfields, axis=1)
+    # remove nans
+    records = records[records[y_col].notna()]
+    # group over averaging field
+    gb = list(set(list(max_subfields+list(id_subfields.keys())+[x_col])))
+    mean_records = records.groupby(gb).mean().reset_index()
+    best_records = mean_records.groupby(list(set(gb)-set(['optim_steps']))).min(y_col).droplevel(0).reset_index()
+    best_params = best_records.iloc[best_records[[y_col]].idxmin()].drop([x_col,y_col], axis=1)
+    best_records = pd.merge(best_params, records,on=list(best_params.columns),how='left')
     # return the records
+    print(id_subfields['algo']+' loaded.')
     return records
 
 def plot(fig_name='example',x='optim_steps', y='avg_loss',
-            x_max=10000, m=[1,2,10,20], stoch_reg=[1,0], loss='MSELoss', download_data=True,
+            x_max=10000, m=[1,2,10,20], loss='MSELoss', download_data=True,
             dataset_name='mushrooms', c=0.1, batch_size=100,
             episodes=100,  func_only=True, eta_schedule='stochastic'):
     # =================================================
@@ -109,29 +115,28 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     # =================================================
     # create datasets
     sgd_data = format_dataframe(wandb_records,
-        subfields={'batch_size': batch_size, 'episodes': episodes,
-        'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'SGD',
+        id_subfields={'batch_size': batch_size, 'episodes': episodes,
+        'use_optimal_stepsize': 0, 'loss': loss, 'algo': 'SGD',
         'eta_schedule': 'stochastic', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     adam_data = format_dataframe(wandb_records,
-        subfields={'batch_size': batch_size, 'episodes': episodes,
-        'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'Adam',
+        id_subfields={'batch_size': batch_size, 'episodes': episodes,
+        'use_optimal_stepsize': 0, 'loss': loss, 'algo': 'Adam',
         'eta_schedule': 'constant', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     adagrad_data = format_dataframe(wandb_records,
-        subfields={'batch_size': batch_size, 'episodes': episodes,
-        'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'Adagrad',
+        id_subfields={'batch_size': batch_size, 'episodes': episodes,
+        'use_optimal_stepsize': 0, 'loss': loss, 'algo': 'Adagrad',
         'eta_schedule': 'constant', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     funcopt_dataset = []
     for m_ in m:
-        for stoch_reg_ in stoch_reg:
-            funcopt_dataset.append(format_dataframe(wandb_records,
-            subfields={'batch_size': batch_size, 'episodes': episodes, 'c': c,
-            'stoch_reg': stoch_reg, 'use_optimal_stepsize': 1,
-            'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m_, 'stoch_reg':stoch_reg_,
-            'eta_schedule': eta_schedule, 'dataset_name': dataset_name},
-            x_col=x , y_col=y))
+        funcopt_dataset.append(format_dataframe(wandb_records,
+        id_subfields={'batch_size': batch_size, 'episodes': episodes, 'c': c,
+        'use_optimal_stepsize': 0,
+        'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m_,
+        'eta_schedule': eta_schedule, 'dataset_name': dataset_name},
+        x_col=x , y_col=y))
     # =================================================
     # generate plots
     if x == 'function_evals+grad_evals':
@@ -163,13 +168,12 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
             ax.plot(torch.tensor(sgd_data['optim_steps'].values[low_order_idx]), torch.tensor(sgd_data[y].values[low_order_idx]), label='SGD')
             ax.plot(torch.tensor(adam_data['optim_steps'].values[low_order_idx]), torch.tensor(adam_data[y].values[low_order_idx]), label='Adam')
             ax.plot(torch.tensor(adagrad_data['optim_steps'].values[low_order_idx]), torch.tensor(adagrad_data[y].values[low_order_idx]), label='Adagrad')
-        s = -1
-        for m_ in m:
-            for stoch_reg_ in stoch_reg:
-                s += 1
-                funcopt_data = funcopt_dataset[s]
+        for m_, funcopt_data in enumerate(funcopt_dataset):
+            print(funcopt_data)
+            if funcopt_data:
                 high_order_idx = (torch.tensor(funcopt_data[x].values) < x_max).nonzero().reshape(-1)
-                ax.plot(torch.tensor(funcopt_data[x].values)[high_order_idx], torch.tensor(funcopt_data[y].values)[high_order_idx], label='SGD_FMDOpt(m='+str(m_)+', reg='+str(stoch_reg_)+')')
+                ax.plot(torch.tensor(funcopt_data[x].values)[high_order_idx], torch.tensor(funcopt_data[y].values)[high_order_idx], label='SGD_FMDOpt(m='+str(m_))
+
         ax.grid()
         plt.legend()
         plt.rcParams['figure.dpi'] = 400

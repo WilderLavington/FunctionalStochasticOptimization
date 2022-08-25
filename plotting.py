@@ -78,40 +78,45 @@ def download_wandb_records():
 def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
             max_subfields=['log_eta', 'eta_schedule', 'c'],
             x_col='optim_steps', y_col='avg_loss'):
-    # define subset of data we are interested in.
+    #
+    pd.set_option('display.max_columns', None)
     for key in id_subfields:
         records = records.loc[records[key] == id_subfields[key]]
     if not len(records):
         print(id_subfields['algo']+' failed to load.')
         return None
-    # remove redundant information
-    records = records[list(avg_subfields+max_subfields+\
-        list(id_subfields.keys())+[x_col,y_col, 'optim_steps'])]
-    records = records.loc[:,~records.columns.duplicated()].copy()
-    # average over avg_subfields
-    records = records.drop(avg_subfields, axis=1)
     # remove nans
     records = records[records[y_col].notna()]
+    important_cols = list(set(avg_subfields+max_subfields+\
+        list(id_subfields.keys())+[x_col, y_col, 'optim_steps']))
+    # remove redundant information
+    records = records[important_cols]
+    # average over avg_subfields
+    records = records.drop(avg_subfields, axis=1)
     # group over averaging field
     gb = list(set(list(max_subfields+list(id_subfields.keys())+[x_col, 'optim_steps'])))
-    # create different statistical reccords
-    mean_records = records.groupby(gb, as_index=False)[y_col].mean()
+    # # create different statistical reccords
+    # mean_records = records
+    # mean_records = records.groupby(gb, as_index=False)[y_col].mean()
+    # lowq_records = records.groupby(gb, as_index=False)[y_col].quantile(0.25)
+    # highq_records = records.groupby(gb, as_index=False)[y_col].quantile(0.75)
+    # mean_records['25qt'+y_col] = lowq_records[y_col]
+    # mean_records['75qt'+y_col] = highq_records[y_col]
     # only look at final optim steps
-    mean_records = mean_records.loc[mean_records['optim_steps'] == mean_records['optim_steps'].max()]
+    last_mean_records = records.loc[records['optim_steps'] == records['optim_steps'].max()]
     # get the best record
-    best_records = mean_records.groupby(list(set(gb)\
-        -set(['optim_steps'])-set(max_subfields))).min(y_col).droplevel(0).reset_index()
+    best_record = last_mean_records[last_mean_records[y_col] == last_mean_records[y_col].min()]
     # find parameters of the best record
-    best_params = best_records.iloc[best_records[[y_col]].idxmin()].drop([x_col,y_col], axis=1)
-    print('best parameters found:', )
-    print(best_params)
-    best_records = pd.merge(best_params, records,on=list(best_params.columns),how='left')
-    best_records = best_records.sort_values(x_col, axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last')
-    # print(best_records)
-    best_records = records.groupby([x_col], as_index=False)[y_col].mean()
-
+    merge_on = list(set(gb)-set(['optim_steps', x_col, y_col]))
+    merge_on = [ x for x in merge_on if x in best_record.columns.values]
+    best_records = pd.merge(best_record[merge_on], records, on=merge_on,how='left')
+    final_records = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].mean()
+    final_records[y_col+'25'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.25)[y_col]
+    final_records[y_col+'75'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.75)[y_col]
+    final_records = final_records.sort_values(x_col, axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last')
+    # print(final_records)
     # return the records
-    return best_records
+    return final_records
 
 def plot(fig_name='example',x='optim_steps', y='avg_loss',
             x_max=10000, m=[1,2,10,20], loss='MSELoss', download_data=True,
@@ -151,48 +156,46 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         x_col=x , y_col=y))
     # =================================================
     # generate plots
-    if x == 'function_evals+grad_evals':
-        fig, ax = plt.subplots()
-        if not func_only:
-            low_order_idx = (torch.tensor(adam_data['optim_steps'].values) < x_max).nonzero().reshape(-1)
-            ax.plot(torch.tensor(sgd_data['optim_steps'].values)[low_order_idx], torch.tensor(sgd_data[y].values)[low_order_idx], label='SGD')
-            ax.plot(torch.tensor(adam_data['optim_steps'].values)[low_order_idx], torch.tensor(adam_data[y].values)[low_order_idx], label='Adam')
-            ax.plot(torch.tensor(adagrad_data['optim_steps'].values)[low_order_idx], torch.tensor(adagrad_data[y].values)[low_order_idx], label='Adagrad')
-        s = -1
-        for m_ in m:
-            for stoch_reg_ in stoch_reg:
-                s += 1
-                funcopt_data = funcopt_dataset[s]
-                high_order_idx = (torch.tensor(funcopt_data['function_evals'].values)+torch.tensor(funcopt_data['grad_evals'].values) < x_max).nonzero().reshape(-1)
-                ax.plot((torch.tensor(funcopt_data['function_evals'].values)+torch.tensor(funcopt_data['grad_evals'].values))[high_order_idx],
-                    torch.tensor(funcopt_data[y].values)[high_order_idx], label='SGD_FMDOpt(m='+str(m_)+', reg='+str(stoch_reg_)+')')
-        ax.grid()
-        plt.legend()
-        plt.rcParams['figure.dpi'] = 400
-        plt.xlabel(x)
-        plt.ylabel(y)
-        plt.title('Optimizer-Comparison: ' )
-        plt.savefig(fig_name+'.pdf', bbox_inches='tight')
-    else:
-        fig, ax = plt.subplots()
-        if not func_only:
-            low_order_idx = (torch.tensor(adam_data['optim_steps'].values) < x_max).nonzero().reshape(-1)
-            ax.plot(torch.tensor(sgd_data['optim_steps'].values[low_order_idx]), torch.tensor(sgd_data[y].values[low_order_idx]), label='SGD')
-            ax.plot(torch.tensor(adam_data['optim_steps'].values[low_order_idx]), torch.tensor(adam_data[y].values[low_order_idx]), label='Adam')
-            ax.plot(torch.tensor(adagrad_data['optim_steps'].values[low_order_idx]), torch.tensor(adagrad_data[y].values[low_order_idx]), label='Adagrad')
-        for m_, funcopt_data in enumerate(funcopt_dataset):
-            if funcopt_data is not None:
-                high_order_idx = (torch.tensor(funcopt_data[x].values) < x_max).nonzero().reshape(-1)
-                ax.plot(torch.tensor(funcopt_data[x].values)[high_order_idx], torch.tensor(funcopt_data[y].values)[high_order_idx], label='SGD_FMDOpt(m='+str(m_))
-
-        ax.grid()
-        plt.legend()
-        plt.rcParams['figure.dpi'] = 400
-        plt.xlabel(x)
-        plt.ylabel(y)
-        plt.title('Optimizer-Comparison: ' )
-        # plt.show()
-        plt.savefig(fig_name+'.pdf', bbox_inches='tight')
+    # if x == 'function_evals+grad_evals':
+    #     fig, ax = plt.subplots()
+    #     if not func_only:
+    #         low_order_idx = (torch.tensor(adam_data['optim_steps'].values) < x_max).nonzero().reshape(-1)
+    #         ax.plot(torch.tensor(sgd_data['optim_steps'].values)[low_order_idx], torch.tensor(sgd_data[y].values)[low_order_idx], label='SGD')
+    #         ax.plot(torch.tensor(adam_data['optim_steps'].values)[low_order_idx], torch.tensor(adam_data[y].values)[low_order_idx], label='Adam')
+    #         ax.plot(torch.tensor(adagrad_data['optim_steps'].values)[low_order_idx], torch.tensor(adagrad_data[y].values)[low_order_idx], label='Adagrad')
+    #     for m_ in m:
+    #         funcopt_data = funcopt_dataset[s]
+    #         high_order_idx = (torch.tensor(funcopt_data['function_evals'].values)+torch.tensor(funcopt_data['grad_evals'].values) < x_max).nonzero().reshape(-1)
+    #         ax.plot((torch.tensor(funcopt_data['function_evals'].values)+torch.tensor(funcopt_data['grad_evals'].values))[high_order_idx],
+    #             torch.tensor(funcopt_data[y].values)[high_order_idx], label='SGD_FMDOpt(m='+str(m_)+', reg='+str(stoch_reg_)+')')
+    #     ax.grid()
+    #     plt.legend()
+    #     plt.rcParams['figure.dpi'] = 400
+    #     plt.xlabel(x)
+    #     plt.ylabel(y)
+    #     plt.title('Optimizer-Comparison: ' )
+    #     plt.savefig(fig_name+'.pdf', bbox_inches='tight')
+    # else:
+    fig, ax = plt.subplots()
+    if not func_only:
+        low_order_idx = (torch.tensor(sgd_data[x].values) < x_max).nonzero().reshape(-1)
+        ax.plot(torch.tensor(sgd_data[x].values[low_order_idx]), torch.tensor(sgd_data[y].values[low_order_idx]), label='SGD')
+        low_order_idx = (torch.tensor(adam_data[x].values) < x_max).nonzero().reshape(-1)
+        ax.plot(torch.tensor(adam_data[x].values[low_order_idx]), torch.tensor(adam_data[y].values[low_order_idx]), label='Adam')
+        low_order_idx = (torch.tensor(adagrad_data[x].values) < x_max).nonzero().reshape(-1)
+        ax.plot(torch.tensor(adagrad_data[x].values[low_order_idx]), torch.tensor(adagrad_data[y].values[low_order_idx]), label='Adagrad')
+    for m_, funcopt_data in enumerate(funcopt_dataset):
+        if funcopt_data is not None:
+            high_order_idx = (torch.tensor(funcopt_data[x].values) < x_max).nonzero().reshape(-1)
+            ax.plot(torch.tensor(funcopt_data[x].values)[high_order_idx], torch.tensor(funcopt_data[y].values)[high_order_idx], label='SGD_FMDOpt(m='+str(m[m_]))
+    ax.grid()
+    plt.legend()
+    plt.rcParams['figure.dpi'] = 400
+    plt.xlabel(x)
+    plt.ylabel(y)
+    plt.title('Optimizer-Comparison: ' )
+    # plt.show()
+    plt.savefig(fig_name+'.pdf', bbox_inches='tight')
 
 
 def get_args():

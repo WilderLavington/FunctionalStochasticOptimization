@@ -35,7 +35,7 @@ parameters:
   batch_size:
     values:
     # - 1
-    - 10
+    # - 10
     - 100
     # - 500
   use_optimal_stepsize:
@@ -52,9 +52,9 @@ parameters:
     - constant
   c:
     values:
-    - 0.1
+    # - 0.1
     - 0.01
-    - 0.001
+    # - 0.001
   dataset_name:
     values:
     - mushrooms

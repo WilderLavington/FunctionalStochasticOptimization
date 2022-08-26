@@ -53,7 +53,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
                         'optim_steps': s, 'function_evals': s, 'grad_evals': s,
                         'inner_backtracks': 0, 'inner_steps': 1,
                         'grad_norm': grad_norm, 'eta_scale': args.stepsize,
-                        'time-elapsed':  time() - starting_time}
+                        'time_elapsed':  time() - starting_time}
             log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
             # log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
             # # log info
@@ -189,7 +189,7 @@ def main():
         #
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
         L = torch.max(L[:,0]).float().to('cuda')
-        # rescale stepsize back if we are using optimal one 
+        # rescale stepsize back if we are using optimal one
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else args.stepsize * L
         #
         if args.inner_opt =='LSOpt':

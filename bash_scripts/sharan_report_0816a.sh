@@ -13,10 +13,10 @@ wandb agent wilderlavington/FunctionalStochasticOptimization/ie7yllu7
 
 # run on borg
 python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
---command='wandb agent --count 250 wilderlavington/FunctionalStochasticOptimization/ie7yllu7' --machine='borg' --time='00-24:00' --account='plai' \
+--command='wandb agent --count 500 wilderlavington/FunctionalStochasticOptimization/ie7yllu7' --machine='borg' --time='00-24:00' --account='plai' \
 --num=1
 
 # run on ubcml
 python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
---command='wandb agent --count 250 wilderlavington/FunctionalStochasticOptimization/ie7yllu7' --machine='ubcml' --time='00-24:00' --account='ubcml' \
+--command='wandb agent --count 500 wilderlavington/FunctionalStochasticOptimization/ie7yllu7' --machine='ubcml' --time='00-24:00' --account='ubcml' \
 --num=1

@@ -1,0 +1,33 @@
+program: main.py
+entity: wilderlavington
+method: grid
+project: FunctionalStochasticOptimization
+metric:
+  goal: minimize
+  name: grad_norm
+parameters:
+  algo:
+    values:
+    - LSOpt 
+  episodes:
+    values:
+    - 100
+  seed:
+    values:
+    - 1
+    - 2
+    - 3
+  batch_size:
+    values:
+    - 25
+    - 125
+    - 625
+  loss:
+    values:
+    - MSELoss
+    # - CrossEntropyLoss
+    - BCEWithLogitsLoss
+  dataset_name:
+    values:
+    - mushrooms
+    - ijcnn

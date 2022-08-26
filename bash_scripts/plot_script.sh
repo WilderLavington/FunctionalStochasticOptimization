@@ -4,7 +4,7 @@ python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=grad_evals \
 --max_steps=100000 --func_only=1
 python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=grad_evals \
 --batch_size=100 --y=avg_loss --dataset_name=ijcnn --func_only=0 --fig_name='ijcnn+BCE+100' \
---max_steps=100000 --func_only=1
+--max_steps=100000 --func_only=0
 python plotting.py --download_data=0 --loss=MSELoss --x=grad_evals \
 --batch_size=100 --y=avg_loss --dataset_name=mushrooms --func_only=0 --fig_name='mushrooms+MSE+100' \
 --max_steps=100000 --func_only=1

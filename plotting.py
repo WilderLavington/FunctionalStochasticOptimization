@@ -19,7 +19,7 @@ USER='wilderlavington'
 PROJECT='FunctionalStochasticOptimization'
 SUMMARY_FILE='sharan_report_0816.csv'
 
-def download_wandb_summary(sweeps=['2k3pttun', 'jiw50fqs']):
+def download_wandb_summary(sweeps=['pdrkr7y2', '4ang73m3', 'b89yp1k6', 'ie7yllu7']):
     """
     Download a summary of all runs on the wandb project
     """
@@ -28,6 +28,7 @@ def download_wandb_summary(sweeps=['2k3pttun', 'jiw50fqs']):
     config_list = []
     name_list = []
     id_list = []
+    print(len([run for run in runs]))
     assert len([run for run in runs])
     for run in tqdm(runs):
         if (sweeps is not None) and (run.sweep.id in sweeps):
@@ -98,11 +99,11 @@ def create_sensetivity_table(x='optim_steps', y='avg_loss', download_data=False,
             episodes=100, eta_schedule=['constant', 'stochastic'],
             log_eta=[-3.5, 3.5, -2.5, 2.5, -1.5, 1.5, 0.], m=[1,2,10,20],
             algo=['SGD', 'Adam', 'Adagrad', 'SGD_FMDOpt'],
-            ):
+            text_file_name='data_sense'):
     # =================================================
     # download data in
     if download_data:
-        # download_wandb_summary()
+        download_wandb_summary()
         wandb_records = download_wandb_records()
     else:
         wandb_records = runs_df = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
@@ -126,7 +127,7 @@ def create_sensetivity_table(x='optim_steps', y='avg_loss', download_data=False,
     final_records = final_records.drop(['use_optimal_stepsize', 'episodes', 'batch_size', 'c'], axis=1)
     final_records = final_records.drop_duplicates()
     print(final_records)
-    tfile = open('data_sense.txt', 'w')
+    tfile = open(text_file_name+'.txt', 'w')
     tfile.write(final_records.to_string())
     tfile.close()
 
@@ -156,7 +157,7 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     last_mean_records = records.loc[records['optim_steps'] == records['optim_steps'].max()]
     # get the best record
     best_record = last_mean_records[last_mean_records[y_col] == last_mean_records[y_col].min()]
-
+    print(best_record)
     # find parameters of the best record
     merge_on = list(set(gb)-set(['optim_steps', x_col, y_col]))
     merge_on = [ x for x in merge_on if x in best_record.columns.values]
@@ -176,11 +177,13 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
 def plot(fig_name='example',x='optim_steps', y='avg_loss',
             x_max=10000, m=[1,2,10,20], loss='MSELoss', download_data=True,
             dataset_name='mushrooms', batch_size=100,
-            episodes=100,  func_only=True, eta_schedule='constant'):
+            episodes=100,  func_only=True, eta_schedule='stochastic',
+            use_optimal_stepsize=0, alter_baselines=0,
+            vizualize=True, save=False):
     # =================================================
     # download data in
     if download_data:
-        # download_wandb_summary()
+        download_wandb_summary()
         wandb_records = download_wandb_records()
     else:
         wandb_records = runs_df = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
@@ -188,30 +191,33 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     # create datasets
     sgd_data, best_sgd = format_dataframe(wandb_records,
         id_subfields={'batch_size': batch_size, 'episodes': episodes,
-        'use_optimal_stepsize': 0, 'loss': loss, 'algo': 'SGD',
         'log_eta': -3.5,
-        'eta_schedule': 'constant', 'dataset_name': dataset_name},
+        'use_optimal_stepsize': use_optimal_stepsize, 'loss': loss, 'algo': 'SGD',
+        'eta_schedule': 'stochastic', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     adam_data, best_adam = format_dataframe(wandb_records,
         id_subfields={'batch_size': batch_size, 'episodes': episodes,
-        'use_optimal_stepsize': 0, 'loss': loss, 'algo': 'Adam',
+        'log_eta': -3.5,
+        'use_optimal_stepsize': use_optimal_stepsize, 'loss': loss, 'algo': 'Adam',
         'eta_schedule': 'constant', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     adagrad_data, best_adagrad = format_dataframe(wandb_records,
         id_subfields={'batch_size': batch_size, 'episodes': episodes,
-        'use_optimal_stepsize': 0, 'loss': loss, 'algo': 'Adagrad',
+        'log_eta': -3.5,
+        'use_optimal_stepsize': use_optimal_stepsize, 'loss': loss, 'algo': 'Adagrad',
         'eta_schedule': 'constant', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     funcopt_dataset = []
     for m_ in m:
         funcopt_dataset.append(format_dataframe(wandb_records,
         id_subfields={'batch_size': batch_size, 'episodes': episodes,
-        'use_optimal_stepsize': 0,
+        'use_optimal_stepsize': use_optimal_stepsize,
         'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m_, 'log_eta': 0.,
         'eta_schedule': eta_schedule, 'dataset_name': dataset_name},
         x_col=x , y_col=y))
+
     # =================================================
-    # generate general plots
+    # generate general plots (SGD)
     fig, ax = plt.subplots()
     if not func_only:
         low_order_idx = (torch.tensor(sgd_data[x].values) < x_max).nonzero().reshape(-1)
@@ -220,18 +226,21 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
             torch.tensor(sgd_data[y+'75'].values)[low_order_idx],
             torch.tensor(sgd_data[y+'25'].values)[low_order_idx],
             alpha = 0.5, label='_nolegend_')
-        # low_order_idx = (torch.tensor(adam_data[x].values) < x_max).nonzero().reshape(-1)
-        # ax.plot(torch.tensor(adam_data[x].values[low_order_idx]), torch.tensor(adam_data[y].values[low_order_idx]), label='Adam')
-        # ax.fill_between(torch.tensor(adam_data[x].values)[low_order_idx],
-        #     torch.tensor(adam_data[y+'75'].values)[low_order_idx],
-        #     torch.tensor(adam_data[y+'25'].values)[low_order_idx],
-        #     alpha = 0.5, label='_nolegend_')
-        # low_order_idx = (torch.tensor(adagrad_data[x].values) < x_max).nonzero().reshape(-1)
-        # ax.plot(torch.tensor(adagrad_data[x].values[low_order_idx]), torch.tensor(adagrad_data[y].values[low_order_idx]), label='Adagrad')
-        # ax.fill_between(torch.tensor(adagrad_data[x].values)[low_order_idx],
-        #     torch.tensor(adagrad_data[y+'75'].values)[low_order_idx],
-        #     torch.tensor(adagrad_data[y+'25'].values)[low_order_idx],
-        #     alpha = 0.5, label='_nolegend_')
+    # adam / adagrad plots
+    if alter_baselines:
+        low_order_idx = (torch.tensor(adam_data[x].values) < x_max).nonzero().reshape(-1)
+        ax.plot(torch.tensor(adam_data[x].values[low_order_idx]), torch.tensor(adam_data[y].values[low_order_idx]), label='Adam')
+        ax.fill_between(torch.tensor(adam_data[x].values)[low_order_idx],
+            torch.tensor(adam_data[y+'75'].values)[low_order_idx],
+            torch.tensor(adam_data[y+'25'].values)[low_order_idx],
+            alpha = 0.5, label='_nolegend_')
+        low_order_idx = (torch.tensor(adagrad_data[x].values) < x_max).nonzero().reshape(-1)
+        ax.plot(torch.tensor(adagrad_data[x].values[low_order_idx]), torch.tensor(adagrad_data[y].values[low_order_idx]), label='Adagrad')
+        ax.fill_between(torch.tensor(adagrad_data[x].values)[low_order_idx],
+            torch.tensor(adagrad_data[y+'75'].values)[low_order_idx],
+            torch.tensor(adagrad_data[y+'25'].values)[low_order_idx],
+            alpha = 0.5, label='_nolegend_')
+    # func-opt plots
     for m_, funcopt_data in enumerate(funcopt_dataset):
         if funcopt_data is not None:
             high_order_idx = (torch.tensor(funcopt_data[0][x].values) < x_max).nonzero().reshape(-1)
@@ -247,8 +256,14 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     plt.xlabel(x)
     plt.ylabel(y)
     plt.title('Optimizer-Comparison: ' )
-    # plt.show()
-    plt.savefig(fig_name+'.pdf', bbox_inches='tight')
+
+    # do we want to save
+    if save:
+        plt.savefig(fig_name+'.pdf', bbox_inches='tight')
+
+    # show atm (so we dont need to find it )
+    if vizualize:
+        plt.show()
 
 
 def get_args():
@@ -265,7 +280,9 @@ def get_args():
     parser.add_argument('--download_data', type=int, default=1)
     parser.add_argument('--func_only', type=int, default=1)
     parser.add_argument('--eta_schedule', type=str, default='constant')
-
+    parser.add_argument('--alter_baselines', type=int, default=0)
+    parser.add_argument('--use_optimal_stepsize', type=int, default=0)
+    parser.add_argument('--create_sensetivity_table', type=int, default=0)
     args, knk = parser.parse_known_args()
     #
     return args, parser
@@ -274,10 +291,18 @@ def main():
 
     # get arguments
     args, parser = get_args()
-    # create_sensetivity_table( x=args.x, y=args.y)
+
+    # plot different outcomes
+    if args.create_sensetivity_table:
+        create_sensetivity_table(x=args.x, y=args.y,
+            text_file_name=args.fig_name)
+
+    # general plot
     plot(fig_name=args.fig_name, x=args.x, y=args.y, func_only=args.func_only,
          x_max=args.max_steps, loss=args.loss, download_data=args.download_data,
-         dataset_name=args.dataset_name, batch_size = args.batch_size)
+         dataset_name=args.dataset_name, batch_size = args.batch_size,
+         use_optimal_stepsize=args.use_optimal_stepsize,
+         alter_baselines=args.alter_baselines)
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ from lsopt import LSOpt
 from helpers import get_grad_norm, get_grad_list, get_random_string, update_lr
 from torch.optim import SGD, Adam, Adagrad
 
-def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
+def train_model(args, model, optim, loss_func, X, y, decay_lr=False, single_out=False,
             call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
 
     # log stuff
@@ -70,7 +70,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
         for X_batch, y_batch in tqdm(data_generator,leave=False):
 
             # create closure for line-search/lbfgs
-            def closure(call_backward=True):
+            def closure(call_backward=True, single_out=single_out):
                 optim.zero_grad()
                 model_outputs = model(X_batch)
                 def inner_closure(model_outputs):
@@ -79,7 +79,11 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
                 loss = inner_closure(model_outputs)
                 if call_backward==True:
                     loss.backward()
-                return loss, model_outputs, inner_closure
+
+                if not single_out:
+                    return loss, model_outputs, inner_closure
+                else:
+                    return loss
 
             if call_closure:
                 closure()
@@ -178,26 +182,37 @@ def main():
 
     # train with an optimizer
     args.batch_size = y.shape[0] if args.fullbatch else args.batch_size
+
+    #
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size,
             decay_lr = 1 if args.eta_schedule=='stochastic' else 0)
+
+    elif args.algo == 'LSOpt':
+        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
+        L = torch.max(L[:,0]).float().to('cuda')
+        assert args.log_eta == -4.
+        surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
+            'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
+
+        optim = LSOpt(model.parameters(), **surr_optim_args)
+
+        model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
+            total_rounds=args.episodes, batch_size=args.batch_size, single_out=True)
+
     elif args.algo == 'SGD_FMDOpt':
         #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        #
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
         L = torch.max(L[:,0]).float().to('cuda')
-        # rescale stepsize back if we are using optimal one
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else args.stepsize * L
-        #
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
         else:
             surr_optim_args = {'lr':args.init_step_size}
-
         optim = SGD_FMDOpt(model.parameters(), inv_eta=args.stepsize, div_op=div_measure,
                 eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
@@ -220,6 +235,7 @@ def main():
         optim = torch.optim.Adam(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
+
     elif args.algo == 'Adagrad':
         assert args.eta_schedule == 'constant'
         optim = torch.optim.Adagrad(model.parameters(), lr=args.stepsize)

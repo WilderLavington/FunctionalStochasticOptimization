@@ -120,5 +120,7 @@ class LSOpt(torch.optim.Optimizer):
                     pass
         #
         self.state['step_size'] = step_size
+        # print(self.state['function_evals'] )
+        # print(e)
         # return loss
         return loss

@@ -21,19 +21,19 @@ parameters:
     - 3
   log_eta:
     values:
-    - -3.5
-    - -2.5
-    - -1.5
+    - -3.
+    - -2.
+    - -1.
     - 0.0
-    - 1.5
-    - 2.5
-    - 3.5
+    - 1.
+    - 2.
+    - 3.
   batch_size:
     values:
     # - 1
-    # - 10
-    - 100
-    # - 500
+    - 25
+    - 125
+    - 625
   use_optimal_stepsize:
     values:
     # - 1
@@ -41,7 +41,7 @@ parameters:
   loss:
     values:
     - MSELoss
-    - CrossEntropyLoss
+    # - CrossEntropyLoss
     - BCEWithLogitsLoss
   eta_schedule:
     values:

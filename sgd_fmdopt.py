@@ -129,7 +129,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             self.state['inner_step_size'] = self.inner_optim.state['step_size']
         except:
             self.state['function_evals'] += 1
-            self.state['inner_step_size'] = self.inner_lr 
+            self.state['inner_step_size'] = self.inner_lr
         self.state['step_time'] = timer(start,time.time())
 
         # return loss

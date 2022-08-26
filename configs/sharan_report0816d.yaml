@@ -8,16 +8,12 @@ metric:
 parameters:
   algo:
     values:
-    - SGD_FMDOpt
+    - SGD
+    - Adam
+    - Adagrad
   episodes:
     values:
     - 100
-  m:
-    values:
-    - 1
-    - 2
-    - 10
-    - 20
   seed:
     values:
     - 1
@@ -25,7 +21,6 @@ parameters:
     - 3
   batch_size:
     values:
-    # - 1
     - 25
     - 125
     - 625
@@ -41,11 +36,7 @@ parameters:
     values:
     - stochastic
     - constant
-  c:
-    values:
-    - 0.1
-    # - 0.01
-    # - 0.001
+    # - exponential
   dataset_name:
     values:
     - mushrooms

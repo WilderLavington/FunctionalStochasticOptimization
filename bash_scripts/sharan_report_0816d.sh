@@ -4,21 +4,21 @@ wandb sweep /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/sh
 
 # wandb infoS
 wandb: Creating sweep from: /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/sharan_report0816a.yaml
-wandb: Created sweep with ID: 4ang73m3
-wandb: View sweep at: https://wandb.ai/wilderlavington/FunctionalStochasticOptimization/sweeps/4ang73m3
-wandb: Run sweep agent with: wandb agent wilderlavington/FunctionalStochasticOptimization/4ang73m3
+wandb: Created sweep with ID: pdrkr7y2
+wandb: View sweep at: https://wandb.ai/wilderlavington/FunctionalStochasticOptimization/sweeps/pdrkr7y2
+wandb: Run sweep agent with: wandb agent wilderlavington/FunctionalStochasticOptimization/pdrkr7y2
 
 # run local
-wandb agent wilderlavington/FunctionalStochasticOptimization/4ang73m3
+wandb agent wilderlavington/FunctionalStochasticOptimization/pdrkr7y2
 
 # run on borg
 python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
---command='wandb agent --count 500 wilderlavington/FunctionalStochasticOptimization/4ang73m3' --machine='borg' --time='00-24:00' --account='plai' \
+--command='wandb agent --count 25 wilderlavington/FunctionalStochasticOptimization/pdrkr7y2' --machine='borg' --time='00-24:00' --account='plai' \
 --num=1
 
 # run on ubcml
 python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
---command='wandb agent --count 500 wilderlavington/FunctionalStochasticOptimization/4ang73m3' --machine='ubcml' --time='00-24:00' --account='ubcml' \
+--command='wandb agent --count 25 wilderlavington/FunctionalStochasticOptimization/pdrkr7y2' --machine='ubcml' --time='00-24:00' --account='ubcml' \
 --num=1
 
 # theoretical + default

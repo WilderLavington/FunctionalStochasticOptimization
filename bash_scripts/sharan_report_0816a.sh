@@ -4,29 +4,19 @@ wandb sweep /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/sh
 
 # wandb info
 wandb: Creating sweep from: /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/sharan_report0816a.yaml
-wandb: Created sweep with ID: j3v65m4s
-wandb: View sweep at: https://wandb.ai/wilderlavington/FunctionalStochasticOptimization/sweeps/j3v65m4s
-wandb: Run sweep agent with: wandb agent wilderlavington/FunctionalStochasticOptimization/j3v65m4s
+wandb: Created sweep with ID: ie7yllu7
+wandb: View sweep at: https://wandb.ai/wilderlavington/FunctionalStochasticOptimization/sweeps/ie7yllu7
+wandb: Run sweep agent with: wandb agent wilderlavington/FunctionalStochasticOptimization/ie7yllu7
 
 # run local
-wandb agent wilderlavington/FunctionalStochasticOptimization/j3v65m4s
+wandb agent wilderlavington/FunctionalStochasticOptimization/ie7yllu7
 
 # run on borg
 python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
---command='wandb agent --count 25 wilderlavington/FunctionalStochasticOptimization/j3v65m4s' --machine='borg' --time='00-24:00' --account='plai' \
+--command='wandb agent --count 250 wilderlavington/FunctionalStochasticOptimization/ie7yllu7' --machine='borg' --time='00-24:00' --account='plai' \
 --num=1
 
 # run on ubcml
 python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
---command='wandb agent --count 25 wilderlavington/FunctionalStochasticOptimization/j3v65m4s' --machine='ubcml' --time='00-24:00' --account='ubcml' \
+--command='wandb agent --count 250 wilderlavington/FunctionalStochasticOptimization/ie7yllu7' --machine='ubcml' --time='00-24:00' --account='ubcml' \
 --num=1
-
-# plotting code
-python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=optim_steps \
---batch_size=100 --y=grad_norm --dataset_name=mushrooms --func_only=0 --fig_name=1
-python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=optim_steps \
---batch_size=100 --y=grad_norm --dataset_name=ijcnn --func_only=0 --fig_name=2
-python plotting.py --download_data=0 --loss=MSELoss --x=optim_steps \
---batch_size=100 --y=grad_norm --dataset_name=mushrooms --func_only=0 --fig_name=3
-python plotting.py --download_data=0 --loss=MSELoss --x=optim_steps \
---batch_size=100 --y=grad_norm --dataset_name=ijcnn --func_only=0 --fig_name=4

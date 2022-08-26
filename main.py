@@ -39,28 +39,28 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
             avg_loss = 0.
             grad_norm = 0.
             for X_batch, y_batch in data_generator:
-
                 def closure(call_backward=True):
-                    optim.zero_grad()
+                    # optim.zero_grad()
                     loss = loss_func(model(X_batch), y_batch)
                     if call_backward==True:
                         loss.backward()
                     return loss
-
+                # add loss to average
                 avg_loss += closure(call_backward=True).detach().cpu().numpy()
-                grad_norm += get_grad_norm(model.parameters()).detach().cpu().numpy()
-
-            log_info = {'avg_loss': avg_loss,
+            # compute norm of cumulative gradient
+            grad_norm += get_grad_norm(model.parameters()).detach().cpu().numpy()
+            log_info = {'avg_loss': avg_loss / y.shape[0],
                         'optim_steps': s, 'function_evals': s, 'grad_evals': s,
                         'inner_backtracks': 0, 'inner_steps': 1,
                         'grad_norm': grad_norm, 'eta_scale': args.stepsize,
                         'time-elapsed':  time() - starting_time}
             log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
+            # log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
+            # # log info
             try:
                 wandb.log(log_info)
             except:
                 raise Exception
-            log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
             logs.append(log_info)
             print('=========================================================')
             print(log_info)
@@ -68,6 +68,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False,
 
         # step through data by sampling without replacement
         for X_batch, y_batch in tqdm(data_generator,leave=False):
+
             # create closure for line-search/lbfgs
             def closure(call_backward=True):
                 optim.zero_grad()
@@ -152,7 +153,7 @@ def main():
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
         L = torch.max(L[:,0]).to('cuda') / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
-        # F = torch.norm(torch.mm(X.t().cpu().double(), X.cpu().double()),p='fro')
+
     elif args.loss == 'BCEWithLogitsLoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
         X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
@@ -163,6 +164,7 @@ def main():
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
         L = torch.max(L[:,0]).to('cuda') / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
+
     elif args.loss == 'MSELoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
         X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
@@ -172,11 +174,9 @@ def main():
         model.to('cuda')
         L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
         L = torch.max(L[:,0]).float().to('cuda')
-        # F = torch.norm(torch.mm(X.t().cpu().double(), X.cpu().double()),p='fro')
         args.stepsize  = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     # train with an optimizer
-    # episodes == passes over the data
     args.batch_size = y.shape[0] if args.fullbatch else args.batch_size
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
@@ -184,9 +184,14 @@ def main():
             total_rounds = args.episodes, batch_size=args.batch_size,
             decay_lr = 1 if args.eta_schedule=='stochastic' else 0)
     elif args.algo == 'SGD_FMDOpt':
-
+        #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-
+        #
+        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
+        L = torch.max(L[:,0]).float().to('cuda')
+        # rescale stepsize back if we are using optimal one 
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else args.stepsize * L
+        #
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}

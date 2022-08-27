@@ -25,8 +25,6 @@ class LSOpt(torch.optim.Optimizer):
         self.state['function_evals'] = 0
         self.state['grad_evals'] = 0
 
-
-
     @staticmethod
     def compute_grad_norm(grad_list):
         grad_norm = 0.

@@ -232,12 +232,14 @@ def main():
 
     elif args.algo == 'Adam':
         assert args.eta_schedule == 'constant'
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e-3
         optim = torch.optim.Adam(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )
 
     elif args.algo == 'Adagrad':
         assert args.eta_schedule == 'constant'
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1
         optim = torch.optim.Adagrad(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )

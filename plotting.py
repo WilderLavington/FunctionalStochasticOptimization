@@ -19,7 +19,7 @@ USER='wilderlavington'
 PROJECT='FunctionalStochasticOptimization'
 SUMMARY_FILE='sharan_report_0816.csv'
 
-def download_wandb_summary(sweeps=['pdrkr7y2', '4ang73m3', 'b89yp1k6', 'ie7yllu7']):
+def download_wandb_summary(sweeps=None):
     """
     Download a summary of all runs on the wandb project
     """
@@ -49,7 +49,6 @@ def download_wandb_summary(sweeps=['pdrkr7y2', '4ang73m3', 'b89yp1k6', 'ie7yllu7
     all_df = pd.concat([name_df, config_df, summary_df], axis=1)
     Path('logs/wandb_data/').mkdir(parents=True, exist_ok=True)
     all_df.to_csv('logs/wandb_data/'+SUMMARY_FILE)
-
 
 def download_wandb_records():
     """
@@ -126,7 +125,7 @@ def create_sensetivity_table(x='optim_steps', y='avg_loss', download_data=False,
     final_records = pd.concat(final_records, axis=0, ignore_index=True)
     final_records = final_records.drop(['use_optimal_stepsize', 'episodes', 'batch_size', 'c'], axis=1)
     final_records = final_records.drop_duplicates()
-    print(final_records)
+    final_records.boxplot(column=y, by=list(set(final_records.columns)-set(['log_eta'])))
     tfile = open(text_file_name+'.txt', 'w')
     tfile.write(final_records.to_string())
     tfile.close()
@@ -167,9 +166,9 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     final_records[y_col+'75'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.75)[y_col]
     final_records = final_records.sort_values(x_col, axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last')
     # print(final_records)
-    final_records[y_col+'75'] = final_records[y_col+'75'] / 8000
-    final_records[y_col+'25'] = final_records[y_col+'25'] / 8000
-    final_records[y_col] = final_records[y_col] / 8000
+    final_records[y_col+'75'] = final_records[y_col+'75'] 
+    final_records[y_col+'25'] = final_records[y_col+'25']
+    final_records[y_col] = final_records[y_col]
 
     # return the records
     return final_records, best_record
@@ -191,28 +190,30 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     # create datasets
     sgd_data, best_sgd = format_dataframe(wandb_records,
         id_subfields={'batch_size': batch_size, 'episodes': episodes,
-        'log_eta': -3.5,
         'use_optimal_stepsize': use_optimal_stepsize, 'loss': loss, 'algo': 'SGD',
         'eta_schedule': 'stochastic', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     adam_data, best_adam = format_dataframe(wandb_records,
         id_subfields={'batch_size': batch_size, 'episodes': episodes,
-        'log_eta': -3.5,
         'use_optimal_stepsize': use_optimal_stepsize, 'loss': loss, 'algo': 'Adam',
         'eta_schedule': 'constant', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     adagrad_data, best_adagrad = format_dataframe(wandb_records,
         id_subfields={'batch_size': batch_size, 'episodes': episodes,
-        'log_eta': -3.5,
         'use_optimal_stepsize': use_optimal_stepsize, 'loss': loss, 'algo': 'Adagrad',
         'eta_schedule': 'constant', 'dataset_name': dataset_name},
+        x_col=x , y_col=y)
+    sls_data, best_sls = format_dataframe(wandb_records,
+        id_subfields={'batch_size': batch_size, 'episodes': episodes,
+        'use_optimal_stepsize': use_optimal_stepsize, 'loss': loss, 'algo': 'LSOpt',
+        'eta_schedule': 'stochastic', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     funcopt_dataset = []
     for m_ in m:
         funcopt_dataset.append(format_dataframe(wandb_records,
         id_subfields={'batch_size': batch_size, 'episodes': episodes,
         'use_optimal_stepsize': use_optimal_stepsize,
-        'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m_, 'log_eta': 0.,
+        'loss': loss, 'algo': 'SGD_FMDOpt', 'm': m_,
         'eta_schedule': eta_schedule, 'dataset_name': dataset_name},
         x_col=x , y_col=y))
 
@@ -225,6 +226,12 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         ax.fill_between(torch.tensor(sgd_data[x].values)[low_order_idx],
             torch.tensor(sgd_data[y+'75'].values)[low_order_idx],
             torch.tensor(sgd_data[y+'25'].values)[low_order_idx],
+            alpha = 0.5, label='_nolegend_')
+        low_order_idx = (torch.tensor(sls_data[x].values) < x_max).nonzero().reshape(-1)
+        ax.plot(torch.tensor(sls_data[x].values[low_order_idx]), torch.tensor(sls_data[y].values[low_order_idx]), label='SGD')
+        ax.fill_between(torch.tensor(sls_data[x].values)[low_order_idx],
+            torch.tensor(sls_data[y+'75'].values)[low_order_idx],
+            torch.tensor(sls_data[y+'25'].values)[low_order_idx],
             alpha = 0.5, label='_nolegend_')
     # adam / adagrad plots
     if alter_baselines:
@@ -283,6 +290,7 @@ def get_args():
     parser.add_argument('--alter_baselines', type=int, default=0)
     parser.add_argument('--use_optimal_stepsize', type=int, default=0)
     parser.add_argument('--create_sensetivity_table', type=int, default=0)
+    parser.add_argument('--performance_plot', type=int, default=1)
     args, knk = parser.parse_known_args()
     #
     return args, parser
@@ -298,7 +306,8 @@ def main():
             text_file_name=args.fig_name)
 
     # general plot
-    plot(fig_name=args.fig_name, x=args.x, y=args.y, func_only=args.func_only,
+    if args.performance_plot:
+        plot(fig_name=args.fig_name, x=args.x, y=args.y, func_only=args.func_only,
          x_max=args.max_steps, loss=args.loss, download_data=args.download_data,
          dataset_name=args.dataset_name, batch_size = args.batch_size,
          use_optimal_stepsize=args.use_optimal_stepsize,

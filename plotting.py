@@ -57,7 +57,7 @@ def download_wandb_records():
     # load it all in and clean it up
     runs_df = pd.read_csv('logs/wandb_data/'+SUMMARY_FILE, header=0, squeeze=True)
     runs_df = runs_df.loc[:,~runs_df.columns.duplicated()]
-    columns_of_interest = ['avg_loss', 'optim_steps', 'grad_norm', 'time-elapsed', \
+    columns_of_interest = ['avg_loss', 'optim_steps', 'grad_norm', 'time_elapsed', \
             'inner_step_size', 'grad_evals', 'inner_steps', 'function_evals', \
             'inner_backtracks', 'optim_steps']
     # set which columns we will store for vizualization
@@ -137,11 +137,11 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     pd.set_option('display.max_columns', None)
     max_subfields = [m for m in max_subfields if m not in id_subfields.keys()]
     for key in id_subfields:
+        print(key, len(records), records[key].unique())
         records = records.loc[records[key] == id_subfields[key]]
     records['function_evals+grad_evals'] = records['function_evals']+records['grad_evals']
-    if not len(records):
-        # print(id_subfields['algo']+' failed to load.')
-        return None
+    if not len(records): 
+        raise Exception
     # remove nans
     records = records[records[y_col].notna()]
     important_cols = list(set(avg_subfields+max_subfields+\
@@ -166,7 +166,7 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     final_records[y_col+'75'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.75)[y_col]
     final_records = final_records.sort_values(x_col, axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last')
     # print(final_records)
-    final_records[y_col+'75'] = final_records[y_col+'75'] 
+    final_records[y_col+'75'] = final_records[y_col+'75']
     final_records[y_col+'25'] = final_records[y_col+'25']
     final_records[y_col] = final_records[y_col]
 
@@ -206,7 +206,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     sls_data, best_sls = format_dataframe(wandb_records,
         id_subfields={'batch_size': batch_size, 'episodes': episodes,
         'use_optimal_stepsize': use_optimal_stepsize, 'loss': loss, 'algo': 'LSOpt',
-        'eta_schedule': 'stochastic', 'dataset_name': dataset_name},
+        'eta_schedule': 'constant', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     funcopt_dataset = []
     for m_ in m:
@@ -311,7 +311,7 @@ def main():
          x_max=args.max_steps, loss=args.loss, download_data=args.download_data,
          dataset_name=args.dataset_name, batch_size = args.batch_size,
          use_optimal_stepsize=args.use_optimal_stepsize,
-         alter_baselines=args.alter_baselines)
+         alter_baselines=args.alter_baselines, eta_schedule=args.eta_schedule)
 
 
 if __name__ == "__main__":

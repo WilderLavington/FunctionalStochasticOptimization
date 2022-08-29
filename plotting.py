@@ -72,7 +72,11 @@ def download_wandb_records():
             for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
                 row_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
             row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
-            row_info.update({'run_time':eval(row_info['_wandb'])['runtime']})
+            try:
+                row_info.update({'run_time':eval(row_info['_wandb'])['runtime']})
+            except:
+                row_info.update({'run_time':None})
+                
             run_df.append(row_info)
             # print(row_info)
         # convert format to dataframe and add to our list

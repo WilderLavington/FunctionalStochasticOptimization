@@ -28,7 +28,6 @@ def download_wandb_summary(sweeps=None):
     config_list = []
     name_list = []
     id_list = []
-    print(len([run for run in runs]))
     assert len([run for run in runs])
     for run in tqdm(runs):
         if (sweeps is not None) and (run.sweep.id in sweeps):
@@ -73,7 +72,9 @@ def download_wandb_records():
             for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
                 row_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
             row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
-            run_df.append(row_info['time_elapsed'])
+            row_info.update({'run_time':eval(row_info['_wandb'])['runtime']})
+            run_df.append(row_info)
+            # print(row_info)
         # convert format to dataframe and add to our list
         list_of_dataframes.append(pd.DataFrame(run_df))
     # combine and then store
@@ -137,7 +138,6 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     pd.set_option('display.max_columns', None)
     max_subfields = [m for m in max_subfields if m not in id_subfields.keys()]
     for key in id_subfields:
-        print(key, len(records), records[key].unique())
         records = records.loc[records[key] == id_subfields[key]]
     records['function_evals+grad_evals'] = records['function_evals']+records['grad_evals']
     if not len(records):
@@ -182,7 +182,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     # =================================================
     # download data in
     if download_data:
-        download_wandb_summary()
+        # download_wandb_summary()
         wandb_records = download_wandb_records()
     else:
         wandb_records = runs_df = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)

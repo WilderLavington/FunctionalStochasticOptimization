@@ -73,7 +73,7 @@ def download_wandb_records():
             for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
                 row_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
             row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
-            run_df.append(row_info)
+            run_df.append(row_info['time_elapsed'])
         # convert format to dataframe and add to our list
         list_of_dataframes.append(pd.DataFrame(run_df))
     # combine and then store
@@ -140,7 +140,7 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
         print(key, len(records), records[key].unique())
         records = records.loc[records[key] == id_subfields[key]]
     records['function_evals+grad_evals'] = records['function_evals']+records['grad_evals']
-    if not len(records): 
+    if not len(records):
         raise Exception
     # remove nans
     records = records[records[y_col].notna()]
@@ -156,7 +156,7 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     last_mean_records = records.loc[records['optim_steps'] == records['optim_steps'].max()]
     # get the best record
     best_record = last_mean_records[last_mean_records[y_col] == last_mean_records[y_col].min()]
-    print(best_record)
+
     # find parameters of the best record
     merge_on = list(set(gb)-set(['optim_steps', x_col, y_col]))
     merge_on = [ x for x in merge_on if x in best_record.columns.values]

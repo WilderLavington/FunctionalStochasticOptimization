@@ -11,10 +11,10 @@
     --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h1-mushrooms+25+bce'
     # loss = MSE
-    python plotting.py --download_data=0 --loss=MSELoss --x=optim_steps \
-    --batch_size=25 --y=grad_norm --dataset_name=mushrooms --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
-    --fig_name='plots/h1-mushrooms+25+mse'
+    python plotting.py --download_data=0 --loss=MSELoss --x=time_elapsed \
+    --batch_size=25 --y=grad_norm --dataset_name=ijcnn --func_only=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --fig_name='plots/h1-mushrooms+25+mse' --eta_schedule=stochastic
   # batch-size=125
     # loss = BCE
     python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=optim_steps \
@@ -164,7 +164,7 @@
     # loss = MSE
     python plotting.py --download_data=0 --loss=MSELoss --x=time_elapsed \
     --batch_size=25 --y=grad_norm --dataset_name=mushrooms --func_only=1 \
-    --max_steps=100000 --alter_baselines=0--use_optimal_stepsize=1 \
+    --max_steps=100000 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h3-mushrooms+25+mse'
   # batch-size=5
     # loss = BCE
@@ -231,7 +231,7 @@
     # loss = BCE
     python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=time_elapsed \
     --batch_size=25 --y=grad_norm --dataset_name=mushrooms --func_only=1 \
-    --max_steps=100000 --func_only=0 --alter_baselines=1 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h4-mushrooms+25+bce' --eta_schedule=constant
     # loss = MSE
     python plotting.py --download_data=0 --loss=MSELoss --x=time_elapsed \
@@ -301,7 +301,7 @@
 # mushrooms dataset
   # batch-size=25
     # loss = BCE
-    python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=time_elapsed \
+    python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=optim_steps \
     --batch_size=25 --y=grad_norm --dataset_name=mushrooms \
     --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h5-mushrooms+25+bce' --eta_schedule=stochastic
@@ -380,63 +380,63 @@
     # loss = MSE
     python plotting.py --download_data=0 --loss=MSELoss --x=time_elapsed \
     --batch_size=25 --y=grad_norm --dataset_name=mushrooms --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-mushrooms+25+mse' --eta_schedule=constant
   # batch-size=125
     # loss = BCE
     python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=time_elapsed \
     --batch_size=125 --y=grad_norm --dataset_name=mushrooms --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-mushrooms+125+bce' --eta_schedule=constant
     # loss = MSE
     python plotting.py --download_data=0 --loss=MSELoss --x=time_elapsed \
     --batch_size=125 --y=grad_norm --dataset_name=mushrooms --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-mushrooms+125+mse' --eta_schedule=constant
   # batch-size=625
     # loss = BCE
     python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=time_elapsed \
     --batch_size=625 --y=grad_norm --dataset_name=mushrooms --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-mushrooms+625+bce' --eta_schedule=constant
     # loss = MSE
     python plotting.py --download_data=0 --loss=MSELoss --x=time_elapsed \
     --batch_size=625 --y=grad_norm --dataset_name=mushrooms --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-mushrooms+625+bce' --eta_schedule=constant
 # ijcnn dataset
   # batch-size=25
     # loss = BCE
     python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=time_elapsed \
     --batch_size=25 --y=grad_norm --dataset_name=ijcnn --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-ijcnn+25+bce' --eta_schedule=constant
     # loss = MSE
     python plotting.py --download_data=0 --loss=MSELoss --x=time_elapsed \
     --batch_size=25 --y=grad_norm --dataset_name=ijcnn --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-ijcnn+25+mse' --eta_schedule=constant
   # batch-size=125
     # loss = BCE
     python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=time_elapsed \
     --batch_size=125 --y=grad_norm --dataset_name=ijcnn --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-ijcnn+125+bce' --eta_schedule=constant
     # loss = MSE
     python plotting.py --download_data=0 --loss=MSELoss --x=time_elapsed \
     --batch_size=125 --y=grad_norm --dataset_name=ijcnn --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-ijcnn+125+mse' --eta_schedule=constant
   # batch-size=625
     # loss = BCE
     python plotting.py --download_data=0 --loss=BCEWithLogitsLoss --x=time_elapsed \
     --batch_size=625 --y=grad_norm --dataset_name=ijcnn --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-ijcnn+625+bce' --eta_schedule=constant
     # loss = MSE
     python plotting.py --download_data=0 --loss=MSELoss --x=time_elapsed \
     --batch_size=625 --y=grad_norm --dataset_name=ijcnn --func_only=1 \
-    --max_steps=100000 --func_only=1 --alter_baselines=0 --use_optimal_stepsize=1 \
+    --max_steps=100000 --func_only=0 --alter_baselines=0 --use_optimal_stepsize=1 \
     --fig_name='plots/h6-ijcnn+625+bce' --eta_schedule=constant
 
 

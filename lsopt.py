@@ -9,7 +9,8 @@ from helpers import *
 # linesearch optimizer
 class LSOpt(torch.optim.Optimizer):
     def __init__(self, params, lr=1, n_batches_per_epoch=None,
-                 c=0.001, beta_update=0.9, expand_coeff=1.8):
+                 c=0.001, beta_update=0.9, expand_coeff=1.8,
+                 eta_schedule='constant', total_steps=None):
         params = list(params)
         super().__init__(params, {})
         assert beta_update < 1.
@@ -24,6 +25,9 @@ class LSOpt(torch.optim.Optimizer):
         self.state['step_size'] = lr
         self.state['function_evals'] = 0
         self.state['grad_evals'] = 0
+        self.state['steps'] = 0
+        self.eta_schedule = eta_schedule
+        self.total_steps = total_steps
 
     @staticmethod
     def compute_grad_norm(grad_list):
@@ -80,6 +84,7 @@ class LSOpt(torch.optim.Optimizer):
         # get loss and compute gradients
         loss = closure(call_backward=True)
         self.state['grad_evals'] += 1
+        self.state['steps'] += 1
 
         if clip_grad:
             torch.nn.utils.clip_grad_norm_(self.params, 0.25)
@@ -88,6 +93,16 @@ class LSOpt(torch.optim.Optimizer):
         params_current = deepcopy(self.params)
         grad_current = deepcopy(get_grad_list(self.params))
         grad_norm = compute_grad_norm(grad_current)
+
+        # set  eta schedule
+        if self.eta_schedule == 'constant':
+            eta = 1
+        elif self.eta_schedule == 'stochastic':
+            eta = torch.sqrt(torch.tensor(self.state['outer_steps']).float())
+        elif self.eta_schedule == 'exponential':
+            eta = torch.tensor((1/self.total_steps)**(self.state['steps']/self.total_steps)).float()
+        else:
+            raise Exception
 
         # only do the check if the gradient norm is big enough
         with torch.no_grad():
@@ -116,6 +131,11 @@ class LSOpt(torch.optim.Optimizer):
                     break
                 else:
                     pass
+
+            # =================================================
+            # apply rescaling of the step-size
+            for p_next, p_current, g_current in zip(self.params, params_current, grad_current):
+                p_next.data = p_current - eta * step_size * g_current
         #
         self.state['step_size'] = step_size
         # print(self.state['function_evals'] )

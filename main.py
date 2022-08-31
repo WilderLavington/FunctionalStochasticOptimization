@@ -13,7 +13,6 @@ import pathlib
 # get local info
 from models import DiscreteLinearModel, ContinuousLinearModel
 from load_data import load_libsvm
-from fmdopt import FMDOpt
 from sgd_fmdopt import SGD_FMDOpt
 from ada_fmdopt import Ada_FMDOpt
 from lsopt import LSOpt
@@ -52,7 +51,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False, single_out=
             log_info = {'avg_loss': avg_loss / y.shape[0],
                         'optim_steps': s, 'function_evals': s, 'grad_evals': s,
                         'inner_backtracks': 0, 'inner_steps': 1,
-                        'grad_norm': grad_norm, 'eta_scale': args.stepsize,
+                        'grad_norm': grad_norm / y.shape[0], 'eta_scale': args.stepsize,
                         'time_elapsed':  time() - starting_time}
             log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
             # log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
@@ -129,6 +128,7 @@ def get_args():
     parser.add_argument('--randomize_folder', type=int, default=0)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--fullbatch', type=int, default=0)
+    parser.add_argument('--normalize_episode_lengths', type=int, default=1)
     # parse
     args, knk = parser.parse_known_args()
     #
@@ -183,6 +183,14 @@ def main():
     # train with an optimizer
     args.batch_size = y.shape[0] if args.fullbatch else args.batch_size
 
+    # to account for batch-size (e.g. make sure we take more steps with bigger batches)
+    if args.normalize_episode_lengths:
+        args.m = 1 if args.algo in ['SGD', 'LSOpt', 'Adam', 'Adagrad'] else args.m
+        args.episodes = int(args.episodes * (1 / args.m) * (args.batch_size / y.shape[0]))
+    else:
+        assert self.eta_schedule != 'exponential'
+    args.total_steps = int(args.episodes * (y.shape[0] / args.batch_size))
+
     #
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
@@ -195,10 +203,9 @@ def main():
         L = torch.max(L[:,0]).float().to('cuda')
         assert args.log_eta == -4.
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
-            'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
-
+            'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':args.eta_schedule,
+            'total_steps':args.total_steps}
         optim = LSOpt(model.parameters(), **surr_optim_args)
-
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds=args.episodes, batch_size=args.batch_size, single_out=True)
 
@@ -210,25 +217,34 @@ def main():
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else args.stepsize * L
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
-                'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
+                'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
         else:
             surr_optim_args = {'lr':args.init_step_size}
         optim = SGD_FMDOpt(model.parameters(), inv_eta=args.stepsize, div_op=div_measure,
                 eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
-                surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
+                surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps)
 
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
-            total_rounds = args.episodes, batch_size=args.batch_size )
+            total_rounds = args.episodes, batch_size = args.batch_size)
 
-    # elif args.algo == 'Ada_FMDOpt':
-    #     assert args.eta_schedule == 'constant'
-    #     div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-    #     surr_optim_args = {'init_step_size':args.init_step_size, 'c':args.c,
-    #             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff}
-    #     optim = Ada_FMDOpt(model.parameters(), eta=args.stepsize, div_op=div_measure, stoch_reg=args.stoch_reg,
-    #             inner_optim=LSOpt, surr_optim_args=surr_optim_args, m=args.m, total_steps=args.episodes)
-    #     model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
-    #         total_rounds = args.episodes, batch_size=args.batch_size )
+    elif args.algo == 'Ada_FMDOpt':
+        assert args.eta_schedule=='constant'
+        #
+        div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
+        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
+        L = torch.max(L[:,0]).float().to('cuda')
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else args.stepsize * L
+        if args.inner_opt =='LSOpt':
+            surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
+                'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
+        else:
+            surr_optim_args = {'lr':args.init_step_size}
+        optim = Ada_FMDOpt(model.parameters(), inv_eta=args.stepsize, div_op=div_measure,
+                eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
+                surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps)
+
+        model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
+            total_rounds = args.episodes, batch_size = args.batch_size)
 
     elif args.algo == 'Adam':
         assert args.eta_schedule == 'constant'

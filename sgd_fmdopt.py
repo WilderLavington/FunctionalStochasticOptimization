@@ -97,6 +97,8 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             eta = self.eta
         elif self.eta_schedule == 'stochastic':
             eta = self.eta * torch.sqrt(torch.tensor(self.state['outer_steps']).float())
+        elif self.eta_schedule == 'exponential':
+            eta = self.eta * torch.tensor((1/total_steps)**(self.state['outer_steps']/total_steps)).float()
         else:
             raise Exception
 

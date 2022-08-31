@@ -18,6 +18,9 @@ import itertools
 USER='wilderlavington'
 PROJECT='FunctionalStochasticOptimization'
 SUMMARY_FILE='sharan_report_0816.csv'
+import time
+
+K=1
 
 def download_wandb_summary(sweeps=None):
     """
@@ -76,8 +79,8 @@ def download_wandb_records():
                 row_info.update({'run_time':eval(row_info['_wandb'])['runtime']})
             except:
                 row_info.update({'run_time':None})
-                
             run_df.append(row_info)
+            time.sleep(0.1)
             # print(row_info)
         # convert format to dataframe and add to our list
         list_of_dataframes.append(pd.DataFrame(run_df))
@@ -99,9 +102,9 @@ def smooth(array, k):
 
 def create_sensetivity_table(x='optim_steps', y='avg_loss', download_data=False,
             loss=['MSELoss', 'CrossEntropyLoss', 'BCEWithLogitsLoss'],
-            dataset_name=['mushrooms', 'ijcnn'], batch_size=[100, 500],
+            dataset_name=['mushrooms', 'ijcnn'], batch_size=[25, 125, 625],
             episodes=100, eta_schedule=['constant', 'stochastic'],
-            log_eta=[-3.5, 3.5, -2.5, 2.5, -1.5, 1.5, 0.], m=[1,2,10,20],
+            log_eta=[-3., 3., -2., 2., -1., 1., 0.], m=[1,2,10,20],
             algo=['SGD', 'Adam', 'Adagrad', 'SGD_FMDOpt'],
             text_file_name='data_sense'):
     # =================================================
@@ -115,20 +118,25 @@ def create_sensetivity_table(x='optim_steps', y='avg_loss', download_data=False,
     # create grab all datasets
     combinations = itertools.product(*[loss, dataset_name, batch_size, eta_schedule, log_eta, algo, m])
     final_records = []
-    for loss_, dataset_name_, batch_size_, eta_schedule_, log_eta_, algo_, m_ in combinations:
-        out = format_dataframe(wandb_records,
-            id_subfields={'batch_size': batch_size_, 'episodes': episodes,
-            'use_optimal_stepsize': 0, 'loss':loss_, 'algo': algo_,
-            'log_eta': log_eta_, 'eta_schedule': eta_schedule_,
-            'dataset_name': dataset_name_, 'm': m_},
-            x_col=x , y_col=y)
+    for loss_, dataset_name_, batch_size_, eta_schedule_, log_eta_, algo_, m_ in tqdm(combinations):
+        try:
+            out = format_dataframe(wandb_records,
+                id_subfields={'batch_size': batch_size_, 'episodes': episodes,
+                'use_optimal_stepsize': 0, 'loss':loss_, 'algo': algo_,
+                'log_eta': log_eta_, 'eta_schedule': eta_schedule_,
+                'dataset_name': dataset_name_, 'm': m_},
+                x_col=x , y_col=y)
+        except:
+            out = None
         if out:
             _, best_record = out
-            if best_record['optim_steps'].values[0] in [6930.0, 8019.0]:
-                final_records.append(best_record)
+            # print(best_record)
+            final_records.append(best_record)
+            # if best_record['optim_steps'].values[0] in [6930.0, 8019.0]:
+
     # final_records = pd.DataFrame(final_records)
     final_records = pd.concat(final_records, axis=0, ignore_index=True)
-    final_records = final_records.drop(['use_optimal_stepsize', 'episodes', 'batch_size', 'c'], axis=1)
+    final_records = final_records.drop(['use_optimal_stepsize', 'episodes', 'c'], axis=1)
     final_records = final_records.drop_duplicates()
     final_records.boxplot(column=y, by=list(set(final_records.columns)-set(['log_eta'])))
     tfile = open(text_file_name+'.txt', 'w')
@@ -141,6 +149,7 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     #
     pd.set_option('display.max_columns', None)
     max_subfields = [m for m in max_subfields if m not in id_subfields.keys()]
+
     for key in id_subfields:
         records = records.loc[records[key] == id_subfields[key]]
     records['function_evals+grad_evals'] = records['function_evals']+records['grad_evals']
@@ -160,7 +169,6 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     last_mean_records = records.loc[records['optim_steps'] == records['optim_steps'].max()]
     # get the best record
     best_record = last_mean_records[last_mean_records[y_col] == last_mean_records[y_col].min()]
-
     # find parameters of the best record
     merge_on = list(set(gb)-set(['optim_steps', x_col, y_col]))
     merge_on = [ x for x in merge_on if x in best_record.columns.values]
@@ -170,9 +178,9 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     final_records[y_col+'75'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.75)[y_col]
     final_records = final_records.sort_values(x_col, axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last')
     # print(final_records)
-    final_records[y_col+'75'] = final_records[y_col+'75']
-    final_records[y_col+'25'] = final_records[y_col+'25']
-    final_records[y_col] = final_records[y_col]
+    final_records[y_col+'75'] = smooth(final_records[y_col+'75'],K)
+    final_records[y_col+'25'] = smooth(final_records[y_col+'25'],K)
+    final_records[y_col] = smooth(final_records[y_col],K)
 
     # return the records
     return final_records, best_record
@@ -209,7 +217,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         x_col=x , y_col=y)
     sls_data, best_sls = format_dataframe(wandb_records,
         id_subfields={'batch_size': batch_size, 'episodes': episodes,
-        'use_optimal_stepsize': use_optimal_stepsize, 'loss': loss, 'algo': 'LSOpt',
+        'use_optimal_stepsize': 1, 'loss': loss, 'algo': 'LSOpt',
         'eta_schedule': 'constant', 'dataset_name': dataset_name},
         x_col=x , y_col=y)
     funcopt_dataset = []
@@ -232,7 +240,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
             torch.tensor(sgd_data[y+'25'].values)[low_order_idx],
             alpha = 0.5, label='_nolegend_')
         low_order_idx = (torch.tensor(sls_data[x].values) < x_max).nonzero().reshape(-1)
-        ax.plot(torch.tensor(sls_data[x].values[low_order_idx]), torch.tensor(sls_data[y].values[low_order_idx]), label='SGD')
+        ax.plot(torch.tensor(sls_data[x].values[low_order_idx]), torch.tensor(sls_data[y].values[low_order_idx]), label='SLS')
         ax.fill_between(torch.tensor(sls_data[x].values)[low_order_idx],
             torch.tensor(sls_data[y+'75'].values)[low_order_idx],
             torch.tensor(sls_data[y+'25'].values)[low_order_idx],
@@ -245,12 +253,12 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
             torch.tensor(adam_data[y+'75'].values)[low_order_idx],
             torch.tensor(adam_data[y+'25'].values)[low_order_idx],
             alpha = 0.5, label='_nolegend_')
-        low_order_idx = (torch.tensor(adagrad_data[x].values) < x_max).nonzero().reshape(-1)
-        ax.plot(torch.tensor(adagrad_data[x].values[low_order_idx]), torch.tensor(adagrad_data[y].values[low_order_idx]), label='Adagrad')
-        ax.fill_between(torch.tensor(adagrad_data[x].values)[low_order_idx],
-            torch.tensor(adagrad_data[y+'75'].values)[low_order_idx],
-            torch.tensor(adagrad_data[y+'25'].values)[low_order_idx],
-            alpha = 0.5, label='_nolegend_')
+        # low_order_idx = (torch.tensor(adagrad_data[x].values) < x_max).nonzero().reshape(-1)
+        # ax.plot(torch.tensor(adagrad_data[x].values[low_order_idx]), torch.tensor(adagrad_data[y].values[low_order_idx]), label='Adagrad')
+        # ax.fill_between(torch.tensor(adagrad_data[x].values)[low_order_idx],
+        #     torch.tensor(adagrad_data[y+'75'].values)[low_order_idx],
+        #     torch.tensor(adagrad_data[y+'25'].values)[low_order_idx],
+        #     alpha = 0.5, label='_nolegend_')
     # func-opt plots
     for m_, funcopt_data in enumerate(funcopt_dataset):
         if funcopt_data is not None:

@@ -17,12 +17,12 @@ import matplotlib.patches as mpatches
 import itertools
 USER='wilderlavington'
 PROJECT='FunctionalStochasticOptimization'
-SUMMARY_FILE='sharan_report_0816.csv'
+SUMMARY_FILE='sharan_report_0831.csv'
 import time
 
 K=1
 
-def download_wandb_summary(sweeps=None):
+def download_wandb_summary(sweeps=['63ot6ubo', 'joi8k6io']):
     """
     Download a summary of all runs on the wandb project
     """
@@ -33,18 +33,21 @@ def download_wandb_summary(sweeps=None):
     id_list = []
     assert len([run for run in runs])
     for run in tqdm(runs):
-        if (sweeps is not None) and (run.sweep.id in sweeps):
-            summary_list.append(run.summary._json_dict)
-            run = api.run(USER+'/'+PROJECT+"/"+run.id)
-            config_list.append({k: v for k, v in run.config.items()})
-            name_list.append(run.name)
-            id_list.append(run.id)
+        if (sweeps is not None):
+            if (run.sweep is not None) and (run.sweep.id in sweeps):
+                summary_list.append(run.summary._json_dict)
+                run = api.run(USER+'/'+PROJECT+"/"+run.id)
+                config_list.append({k: v for k, v in run.config.items()})
+                name_list.append(run.name)
+                id_list.append(run.id)
         elif sweeps is None:
             summary_list.append(run.summary._json_dict)
             run = api.run(USER+'/'+PROJECT+"/"+run.id)
             config_list.append({k: v for k, v in run.config.items()})
             name_list.append(run.name)
             id_list.append(run.id)
+        else:
+            pass
     summary_df = pd.DataFrame.from_records(summary_list)
     config_df = pd.DataFrame.from_records(config_list)
     name_df = pd.DataFrame({"name": name_list, "id": id_list})
@@ -151,6 +154,7 @@ def format_dataframe(records, id_subfields={}, avg_subfields=['seed'],
     max_subfields = [m for m in max_subfields if m not in id_subfields.keys()]
 
     for key in id_subfields:
+        print(key, records[key].unique())
         records = records.loc[records[key] == id_subfields[key]]
     records['function_evals+grad_evals'] = records['function_evals']+records['grad_evals']
     if not len(records):
@@ -194,7 +198,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     # =================================================
     # download data in
     if download_data:
-        # download_wandb_summary()
+        download_wandb_summary()
         wandb_records = download_wandb_records()
     else:
         wandb_records = runs_df = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)

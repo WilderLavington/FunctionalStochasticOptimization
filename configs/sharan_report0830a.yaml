@@ -15,7 +15,7 @@ parameters:
     - SGD_FMDOpt
     - SGD
     - Adam
-    - AdaGrad
+    - Adagrad
     - LSOpt
   episodes:
     values:

@@ -12,6 +12,7 @@ parameters:
   algo:
     values:
     - SGD_FMDOpt
+    - Ada_FMDOpt
   episodes:
     values:
     - 200000
@@ -24,6 +25,10 @@ parameters:
   m:
     values:
     - 1
+    - 2
+    - 5
+    - 10
+    - 20
   seed:
     values:
     - 1

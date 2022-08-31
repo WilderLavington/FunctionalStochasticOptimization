@@ -38,6 +38,8 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False, single_out=
             avg_loss = 0.
             grad_norm = 0.
             for X_batch, y_batch in data_generator:
+                # put data onto the
+                X_batch, y_batch = X_batch.cuda(), y_batch.cuda()
                 def closure(call_backward=True):
                     # optim.zero_grad()
                     loss = loss_func(model(X_batch), y_batch)
@@ -67,6 +69,9 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False, single_out=
 
         # step through data by sampling without replacement
         for X_batch, y_batch in tqdm(data_generator,leave=False):
+
+            # put data onto the
+            X_batch, y_batch = X_batch.cuda(), y_batch.cuda()
 
             # create closure for line-search/lbfgs
             def closure(call_backward=True, single_out=single_out):
@@ -146,6 +151,8 @@ def main():
     # get weights
     wandb.init(project=args.project, entity=args.entity, config=args)
     pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
+    X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
+    X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.long)
 
     # set loss functions + models + data + lr
     if args.loss == 'CrossEntropyLoss':
@@ -154,8 +161,9 @@ def main():
         loss_func = nn.CrossEntropyLoss()
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
-        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
-        L = torch.max(L[:,0]).to('cuda') / 4
+        # L, V  = torch.eig(torch.mm(X.t().cpu(), X.cpu()), eigenvectors=True)
+        # L = torch.max(L[:,0]).to('cuda') / 4
+        L = torch.norm(X.cpu(), p='fro').to('cuda')  / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     elif args.loss == 'BCEWithLogitsLoss':
@@ -165,8 +173,7 @@ def main():
         loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
         model = DiscreteLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
-        L = torch.max(L[:,0]).to('cuda') / 4
+        L = torch.norm(X.cpu(), p='fro').to('cuda') / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     elif args.loss == 'MSELoss':
@@ -176,9 +183,8 @@ def main():
         loss_func = nn.MSELoss()
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
-        L = torch.max(L[:,0]).float().to('cuda')
-        args.stepsize  = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
+        L = torch.norm(X.cpu(), p='fro').to('cuda')
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     # train with an optimizer
     args.batch_size = y.shape[0] if args.fullbatch else args.batch_size
@@ -199,8 +205,7 @@ def main():
             decay_lr = 1 if args.eta_schedule=='stochastic' else 0)
 
     elif args.algo == 'LSOpt':
-        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
-        L = torch.max(L[:,0]).float().to('cuda')
+        L = torch.norm(X.cpu(), p='fro').to('cuda')
         assert args.log_eta == -4.
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':args.eta_schedule,
@@ -212,8 +217,7 @@ def main():
     elif args.algo == 'SGD_FMDOpt':
         #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
-        L = torch.max(L[:,0]).float().to('cuda')
+        L = torch.norm(X.cpu(), p='fro').to('cuda')
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else args.stepsize * L
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
@@ -223,7 +227,6 @@ def main():
         optim = SGD_FMDOpt(model.parameters(), inv_eta=args.stepsize, div_op=div_measure,
                 eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps)
-
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds = args.episodes, batch_size = args.batch_size)
 
@@ -231,8 +234,7 @@ def main():
         assert args.eta_schedule=='constant'
         #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        L, V  = torch.eig(torch.mm(X.t().cpu().double(), X.cpu().double()), eigenvectors=True)
-        L = torch.max(L[:,0]).float().to('cuda')
+        L = torch.norm(X.cpu(), p='fro').to('cuda')
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else args.stepsize * L
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
@@ -242,7 +244,6 @@ def main():
         optim = Ada_FMDOpt(model.parameters(), inv_eta=args.stepsize, div_op=div_measure,
                 eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps)
-
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds = args.episodes, batch_size = args.batch_size)
 
@@ -255,7 +256,7 @@ def main():
 
     elif args.algo == 'Adagrad':
         assert args.eta_schedule == 'constant'
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e-3
         optim = torch.optim.Adagrad(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.episodes, batch_size=args.batch_size )

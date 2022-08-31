@@ -94,9 +94,9 @@ class Ada_FMDOpt(torch.optim.Optimizer):
 
         # update grad-norm
         if self.grad_sum:
-            self.grad_sum += torch.norm(dlt_dft,2).pow(2)
+            self.grad_sum += torch.norm(dlt_dft,2).pow(2).detach()
         else:
-            self.grad_sum = torch.norm(dlt_dft,2).pow(2)
+            self.grad_sum = torch.norm(dlt_dft,2).pow(2).detach()
 
         # set  eta schedule
         eta = self.eta * (self.grad_sum).pow(0.5)

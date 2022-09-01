@@ -23,7 +23,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.params = params
         self.m = m
         self.stoch_reg = stoch_reg
-
+        self.total_steps = total_steps
         # set eta and the divergence
         self.inner_optim = inner_optim(self.params,**surr_optim_args)
         self.div_op = div_op
@@ -98,7 +98,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         elif self.eta_schedule == 'stochastic':
             eta = self.eta * torch.sqrt(torch.tensor(self.state['outer_steps']).float())
         elif self.eta_schedule == 'exponential':
-            eta = self.eta * torch.tensor((1/total_steps)**(self.state['outer_steps']/total_steps)).float()
+            eta = self.eta * torch.tensor((1/self.total_steps)**(self.state['outer_steps']/self.total_steps)).float()
         else:
             raise Exception
 

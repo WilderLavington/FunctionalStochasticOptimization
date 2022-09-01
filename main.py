@@ -130,7 +130,7 @@ def get_args():
     parser.add_argument('--dataset_name', type=str, default='mushrooms')
     parser.add_argument('--file_name', type=str, default='example')
     parser.add_argument('--folder_name', type=str, default='examples/')
-    parser.add_argument('--randomize_folder', type=int, default=0)
+    parser.add_argument('--randomize_folder', type=int, default=1)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--fullbatch', type=int, default=0)
     parser.add_argument('--normalize_epochs_lengths', type=int, default=1)

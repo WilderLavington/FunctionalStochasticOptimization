@@ -6,27 +6,19 @@ metric:
   goal: minimize
   name: grad_norm
 parameters:
-  episodes:
-    values:
-    - 500
   algo:
     values:
-    - Ada_FMDOpt
-    - SGD_FMDOpt
     - SGD
     - Adam
     - Adagrad
     - LSOpt
   episodes:
     values:
-    - 200000
+    - 25000
   normalize_episode_lengths:
     values:
     - 1
   use_optimal_stepsize:
-    values:
-    - 1
-  m:
     values:
     - 1
   seed:
@@ -36,12 +28,10 @@ parameters:
     - 3
   batch_size:
     values:
-    - 1
     - 5
-    - 10
     - 25
-    - 100
-    - 500
+    - 125
+    - 625
   use_optimal_stepsize:
     values:
     - 1

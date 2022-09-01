@@ -190,10 +190,11 @@ def main():
     args.batch_size = y.shape[0] if args.fullbatch else args.batch_size
 
     # to account for batch-size (e.g. make sure we take more steps with bigger batches)
-    if args.normalize_episode_lengths:
+    if args.normalize_epochs_lengths:
         args.m = 1 if args.algo in ['SGD', 'LSOpt', 'Adam', 'Adagrad'] else args.m
-        args.episodes = int(args.episodes * (1 / args.m) * (args.batch_size / y.shape[0]))
+        args.epochs = int(args.episodes * (1 / args.m) * (args.batch_size / y.shape[0]))
     else:
+        args.epochs = int(args.episodes * (args.batch_size / y.shape[0]))
         assert self.eta_schedule != 'exponential'
     args.total_steps = int(args.episodes * (y.shape[0] / args.batch_size))
 
@@ -201,7 +202,7 @@ def main():
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
-            total_rounds = args.episodes, batch_size=args.batch_size,
+            total_rounds = args.epochs, batch_size=args.batch_size,
             decay_lr = 1 if args.eta_schedule=='stochastic' else 0)
 
     elif args.algo == 'LSOpt':
@@ -212,7 +213,7 @@ def main():
             'total_steps':args.total_steps}
         optim = LSOpt(model.parameters(), **surr_optim_args)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
-            total_rounds=args.episodes, batch_size=args.batch_size, single_out=True)
+            total_rounds=args.epochs, batch_size=args.batch_size, single_out=True)
 
     elif args.algo == 'SGD_FMDOpt':
         #
@@ -228,7 +229,7 @@ def main():
                 eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
-            total_rounds = args.episodes, batch_size = args.batch_size)
+            total_rounds = args.epochs, batch_size = args.batch_size)
 
     elif args.algo == 'Ada_FMDOpt':
         assert args.eta_schedule=='constant'
@@ -245,21 +246,21 @@ def main():
                 eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
-            total_rounds = args.episodes, batch_size = args.batch_size)
+            total_rounds = args.epochs, batch_size = args.batch_size)
 
     elif args.algo == 'Adam':
         assert args.eta_schedule == 'constant'
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e-3
         optim = torch.optim.Adam(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
-            total_rounds = args.episodes, batch_size=args.batch_size )
+            total_rounds = args.epochs, batch_size=args.batch_size )
 
     elif args.algo == 'Adagrad':
         assert args.eta_schedule == 'constant'
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e-3
         optim = torch.optim.Adagrad(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
-            total_rounds = args.episodes, batch_size=args.batch_size )
+            total_rounds = args.epochs, batch_size=args.batch_size )
 
     # store logs
     if args.randomize_folder:

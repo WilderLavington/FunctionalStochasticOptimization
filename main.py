@@ -133,7 +133,7 @@ def get_args():
     parser.add_argument('--randomize_folder', type=int, default=0)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--fullbatch', type=int, default=0)
-    parser.add_argument('--normalize_episode_lengths', type=int, default=1)
+    parser.add_argument('--normalize_epochs_lengths', type=int, default=1)
     # parse
     args, knk = parser.parse_known_args()
     #
@@ -192,9 +192,9 @@ def main():
     # to account for batch-size (e.g. make sure we take more steps with bigger batches)
     if args.normalize_epochs_lengths:
         args.m = 1 if args.algo in ['SGD', 'LSOpt', 'Adam', 'Adagrad'] else args.m
-        args.epochs = int(args.episodes * (1 / args.m) * (args.batch_size / y.shape[0]))
+        args.epochs = int(args.episodes * (1 / args.m) * (args.batch_size / y.shape[0])) + 1
     else:
-        args.epochs = int(args.episodes * (args.batch_size / y.shape[0]))
+        args.epochs = int(args.episodes * (args.batch_size / y.shape[0])) + 1
         assert self.eta_schedule != 'exponential'
     args.total_steps = int(args.episodes * (y.shape[0] / args.batch_size))
 

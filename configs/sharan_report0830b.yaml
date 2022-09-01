@@ -13,7 +13,7 @@ parameters:
     values:
     - SGD_FMDOpt
     - Ada_FMDOpt
-  normalize_episode_lengths:
+  normalize_epochs_lengths:
     values:
     - 1
   use_optimal_stepsize:

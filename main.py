@@ -18,6 +18,7 @@ from ada_fmdopt import Ada_FMDOpt
 from lsopt import LSOpt
 from helpers import get_grad_norm, get_grad_list, get_random_string, update_lr
 from torch.optim import SGD, Adam, Adagrad
+import os
 
 def train_model(args, model, optim, loss_func, X, y, decay_lr=False, single_out=False,
             call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
@@ -263,8 +264,15 @@ def main():
 
     # store logs
     if args.randomize_folder:
-        logs = torch.save(logs, 'logs/'+get_random_string(16)+'/'+args.file_name+'.pt')
-        logs = torch.save(args, 'logs/'+get_random_string(16)+'/'+args.folder_name+'args.pt')
+        #
+        file=get_random_string(16)
+        try:
+            os.makedirs('logs/database/'+file)
+        except FileExistsError:
+            print("File already exists")
+        #
+        logs = torch.save(logs, 'logs/database/'+file+'/'+args.file_name+'.pt')
+        logs = torch.save(args, 'logs/database/'+file+'/args.pt')
     else:
         logs = torch.save(logs, 'logs/'+args.folder_name+args.file_name+'.pt')
         logs = torch.save(args, 'logs/'+args.folder_name+'args.pt')

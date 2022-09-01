@@ -98,7 +98,7 @@ class LSOpt(torch.optim.Optimizer):
         if self.eta_schedule == 'constant':
             eta = 1
         elif self.eta_schedule == 'stochastic':
-            eta = torch.sqrt(torch.tensor(self.state['outer_steps']).float())
+            eta = torch.sqrt(torch.tensor(self.state['steps']).float())
         elif self.eta_schedule == 'exponential':
             eta = torch.tensor((1/self.total_steps)**(self.state['steps']/self.total_steps)).float()
         else:

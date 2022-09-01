@@ -207,7 +207,6 @@ def main():
 
     elif args.algo == 'LSOpt':
         L = torch.norm(X.cpu(), p='fro').to('cuda')
-        assert args.log_eta == -4.
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':args.eta_schedule,
             'total_steps':args.total_steps}

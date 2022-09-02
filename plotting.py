@@ -71,8 +71,7 @@ def download_wandb_records():
         # get the associated runs
         run = api.run(USER+'/'+PROJECT+'/'+runs_df.loc[runs_df.iloc[ex,0],:]['id'])
         run_df = []
-        # iterate through all rows in online database
-        total_rows = len([_ for _ in run.history().iterrows()]) 
+        # iterate through all rows in online database 
         base_info = {}
         for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
             base_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})

@@ -72,15 +72,14 @@ def download_wandb_records():
         run = api.run(USER+'/'+PROJECT+'/'+runs_df.loc[runs_df.iloc[ex,0],:]['id'])
         run_df = []
         # iterate through all rows in online database
-        with tqdm(total=len([_ for _ in run.history().iterrows()]), leave=False) as pbar:
-            base_info = {}
-            for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
-                base_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
-            for i, row in run.history().iterrows():
-                row_info = deepcopy(base_info)
-                row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
-                run_df.append(row_info)
-                pbar.update(1)
+        total_rows = len([_ for _ in run.history().iterrows()]) 
+        base_info = {}
+        for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
+            base_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
+        for i, row in run.history().iterrows():
+            row_info = deepcopy(base_info)
+            row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
+            run_df.append(row_info)
         # convert format to dataframe and add to our list
         list_of_dataframes.append(pd.DataFrame(run_df))
     # combine and then store

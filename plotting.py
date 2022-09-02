@@ -63,8 +63,7 @@ def download_wandb_records():
     runs_df = pd.read_csv('logs/wandb_data/'+SUMMARY_FILE, header=0, squeeze=True)
     runs_df = runs_df.loc[:,~runs_df.columns.duplicated()]
     columns_of_interest = ['avg_loss', 'optim_steps', 'grad_norm', 'time_elapsed', \
-            'inner_step_size', 'grad_evals', 'inner_steps', 'function_evals', \
-            'inner_backtracks', 'optim_steps']
+             'grad_evals', 'function_evals']
     # set which columns we will store for vizualization
     list_of_dataframes = []
     # iterate through all runs to create individual databases
@@ -79,13 +78,8 @@ def download_wandb_records():
                 for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
                     row_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
                 row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
-                try:
-                    row_info.update({'run_time':eval(row_info['_wandb'])['runtime']})
-                except:
-                    row_info.update({'run_time':None})
                 run_df.append(row_info)
                 pbar.update(1)
-            # print(row_info)
         # convert format to dataframe and add to our list
         list_of_dataframes.append(pd.DataFrame(run_df))
     # combine and then store

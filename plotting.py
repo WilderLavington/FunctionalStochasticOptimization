@@ -1,7 +1,7 @@
 
 from tqdm import tqdm
 import wandb
-api = wandb.Api()
+api = wandb.Api(timeout=180)
 import os
 import pandas as pd
 import wandb
@@ -17,12 +17,12 @@ import matplotlib.patches as mpatches
 import itertools
 USER='wilderlavington'
 PROJECT='FunctionalStochasticOptimization'
-SUMMARY_FILE='sharan_report_0831.csv'
+SUMMARY_FILE='sharan_report_0901.csv'
 import time
 
 K=1
 
-def download_wandb_summary(sweeps=['63ot6ubo', 'joi8k6io']):
+def download_wandb_summary(sweeps=None):
     """
     Download a summary of all runs on the wandb project
     """

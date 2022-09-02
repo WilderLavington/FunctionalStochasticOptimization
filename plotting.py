@@ -73,17 +73,18 @@ def download_wandb_records():
         run = api.run(USER+'/'+PROJECT+'/'+runs_df.loc[runs_df.iloc[ex,0],:]['id'])
         run_df = []
         # iterate through all rows in online database
-        for i, row in run.history().iterrows():
-            row_info = {}
-            for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
-                row_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
-            row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
-            try:
-                row_info.update({'run_time':eval(row_info['_wandb'])['runtime']})
-            except:
-                row_info.update({'run_time':None})
-            run_df.append(row_info)
-            time.sleep(0.1)
+        with tqdm(total=len([_ for _ in run.history().iterrows()]), leave=False) as pbar:
+            for i, row in run.history().iterrows():
+                row_info = {}
+                for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
+                    row_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
+                row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
+                try:
+                    row_info.update({'run_time':eval(row_info['_wandb'])['runtime']})
+                except:
+                    row_info.update({'run_time':None})
+                run_df.append(row_info)
+                pbar.update(1)
             # print(row_info)
         # convert format to dataframe and add to our list
         list_of_dataframes.append(pd.DataFrame(run_df))
@@ -198,7 +199,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     # =================================================
     # download data in
     if download_data:
-        download_wandb_summary()
+        # download_wandb_summary()
         wandb_records = download_wandb_records()
     else:
         wandb_records = runs_df = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)

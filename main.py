@@ -233,8 +233,7 @@ def main():
         assert args.eta_schedule=='constant'
         #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        L = torch.norm(X.cpu(), p='fro').to('cuda')
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else args.stepsize * L
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else  1e-3
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}

@@ -151,7 +151,7 @@ def main():
 
     # get weights
     wandb.init(project=args.project, entity=args.entity, config=args)
-    pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True) 
+    pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
 
     # set loss functions + models + data + lr
     if args.loss == 'CrossEntropyLoss':
@@ -259,6 +259,8 @@ def main():
         optim = torch.optim.Adagrad(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.epochs, batch_size=args.batch_size )
+    else:
+        raise Exception()
 
     # store logs
     if args.randomize_folder:

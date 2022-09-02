@@ -151,14 +151,12 @@ def main():
 
     # get weights
     wandb.init(project=args.project, entity=args.entity, config=args)
-    pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
-    X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
-    X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.long)
+    pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True) 
 
     # set loss functions + models + data + lr
     if args.loss == 'CrossEntropyLoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
-        X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.long)
+        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.long)
         loss_func = nn.CrossEntropyLoss()
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
@@ -169,7 +167,7 @@ def main():
 
     elif args.loss == 'BCEWithLogitsLoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
-        X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
+        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
         loss_func_ = nn.BCEWithLogitsLoss()
         loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
         model = DiscreteLinearModel(X.shape[1], 1)
@@ -179,7 +177,7 @@ def main():
 
     elif args.loss == 'MSELoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
-        X, y = torch.tensor(X,device='cuda',dtype=torch.float), torch.tensor(y,device='cuda',dtype=torch.float)
+        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
         y = y.unsqueeze(1)
         loss_func = nn.MSELoss()
         model = ContinuousLinearModel(X.shape[1], 1)

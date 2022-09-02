@@ -73,10 +73,11 @@ def download_wandb_records():
         run_df = []
         # iterate through all rows in online database
         with tqdm(total=len([_ for _ in run.history().iterrows()]), leave=False) as pbar:
+            base_info = {}
+            for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
+                base_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
             for i, row in run.history().iterrows():
-                row_info = {}
-                for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
-                    row_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
+                row_info = deepcopy(base_info)
                 row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
                 run_df.append(row_info)
                 pbar.update(1)
@@ -196,7 +197,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
         # download_wandb_summary()
         wandb_records = download_wandb_records()
     else:
-        wandb_records = runs_df = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
+        wandb_records = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
     # =================================================
     # create datasets
     sgd_data, best_sgd = format_dataframe(wandb_records,

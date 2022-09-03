@@ -16,6 +16,7 @@ from load_data import load_libsvm
 from sgd_fmdopt import SGD_FMDOpt
 from ada_fmdopt import Ada_FMDOpt
 from lsopt import LSOpt
+from sadagrad import Sadagrad
 from helpers import get_grad_norm, get_grad_list, get_random_string, update_lr
 from torch.optim import SGD, Adam, Adagrad
 import os
@@ -162,7 +163,7 @@ def main():
         model.to('cuda')
         # L, V  = torch.eig(torch.mm(X.t().cpu(), X.cpu()), eigenvectors=True)
         # L = torch.max(L[:,0]).to('cuda') / 4
-        L = torch.norm(X.cpu(), p='fro').to('cuda')  / 4
+        L = torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda')  / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     elif args.loss == 'BCEWithLogitsLoss':
@@ -172,7 +173,7 @@ def main():
         loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
         model = DiscreteLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L = torch.norm(X.cpu(), p='fro').to('cuda') / 4
+        L = torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda') / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     elif args.loss == 'MSELoss':
@@ -182,7 +183,7 @@ def main():
         loss_func = nn.MSELoss()
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L = torch.norm(X.cpu(), p='fro').to('cuda')
+        L = torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda')
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     # train with an optimizer
@@ -205,7 +206,6 @@ def main():
             decay_lr = 1 if args.eta_schedule=='stochastic' else 0)
 
     elif args.algo == 'LSOpt':
-        L = torch.norm(X.cpu(), p='fro').to('cuda')
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':args.eta_schedule,
             'total_steps':args.total_steps}
@@ -213,10 +213,17 @@ def main():
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds=args.epochs, batch_size=args.batch_size, single_out=True)
 
+    if args.algo == 'Sadagrad':
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else  1e-2
+        optim = Sadagrad(model.parameters(), lr=args.stepsize)
+        model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
+            total_rounds = args.epochs, batch_size=args.batch_size,
+            decay_lr = 0)
+
     elif args.algo == 'SGD_FMDOpt':
         #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        L = torch.norm(X.cpu(), p='fro').to('cuda')
+        L = torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda')
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else args.stepsize * L
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
@@ -233,7 +240,7 @@ def main():
         assert args.eta_schedule=='constant'
         #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else  1e-3
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e2
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
@@ -247,7 +254,7 @@ def main():
 
     elif args.algo == 'Adam':
         assert args.eta_schedule == 'constant'
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e-3
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else  1e-2
         optim = torch.optim.Adam(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.epochs, batch_size=args.batch_size )

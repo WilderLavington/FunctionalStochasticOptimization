@@ -136,6 +136,7 @@ def get_args():
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--fullbatch', type=int, default=0)
     parser.add_argument('--normalize_epochs_lengths', type=int, default=1)
+    parser.add_argument('--min_epochs', type=int, default=5)
     # parse
     args, knk = parser.parse_known_args()
     #
@@ -192,11 +193,11 @@ def main():
     # to account for batch-size (e.g. make sure we take more steps with bigger batches)
     if args.normalize_epochs_lengths:
         args.m = 1 if args.algo in ['SGD', 'LSOpt', 'Adam', 'Adagrad'] else args.m
-        args.epochs = int(args.episodes * (1 / args.m) * (args.batch_size / y.shape[0])) + 1
+        args.epochs = int(args.episodes * (1 / args.m) * (args.batch_size / y.shape[0])) + 5
     else:
-        args.epochs = int(args.episodes * (args.batch_size / y.shape[0])) + 1
+        args.epochs = int(args.episodes * (args.batch_size / y.shape[0])) + args.min_epochs
         assert self.eta_schedule != 'exponential'
-    args.total_steps = int(args.episodes * (y.shape[0] / args.batch_size))
+    args.total_steps = int(args.episodes * (y.shape[0] / args.batch_size) + args.min_epochs * (y.shape[0] / args.batch_size))
 
     #
     if args.algo == 'SGD':

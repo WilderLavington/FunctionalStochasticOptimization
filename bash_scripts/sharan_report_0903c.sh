@@ -8,7 +8,6 @@ wandb: Created sweep with ID: eoubtfoh
 wandb: View sweep at: https://wandb.ai/wilderlavington/FunctionalStochasticOptimization/sweeps/eoubtfoh
 wandb: Run sweep agent with: wandb agent wilderlavington/FunctionalStochasticOptimization/eoubtfoh
 
-
 # run local
 wandb agent wilderlavington/FunctionalStochasticOptimization/eoubtfoh
 

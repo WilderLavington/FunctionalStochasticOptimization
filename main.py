@@ -214,7 +214,7 @@ def main():
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
             total_rounds=args.epochs, batch_size=args.batch_size, single_out=True)
 
-    if args.algo == 'Sadagrad':
+    elif args.algo == 'Sadagrad':
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else  1e-2
         optim = Sadagrad(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,

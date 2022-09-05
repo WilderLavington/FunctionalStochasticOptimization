@@ -17,7 +17,7 @@ import matplotlib.patches as mpatches
 import itertools
 USER='wilderlavington'
 PROJECT='FunctionalStochasticOptimization'
-SUMMARY_FILE='sharan_report_0901.csv'
+SUMMARY_FILE='sharan_report_0904.csv'
 import time
 
 K=1
@@ -71,7 +71,7 @@ def download_wandb_records():
         # get the associated runs
         run = api.run(USER+'/'+PROJECT+'/'+runs_df.loc[runs_df.iloc[ex,0],:]['id'])
         run_df = []
-        # iterate through all rows in online database 
+        # iterate through all rows in online database
         base_info = {}
         for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
             base_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
@@ -192,7 +192,7 @@ def plot(fig_name='example',x='optim_steps', y='avg_loss',
     # =================================================
     # download data in
     if download_data:
-        # download_wandb_summary()
+        download_wandb_summary()
         wandb_records = download_wandb_records()
     else:
         wandb_records = pd.read_csv('logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)

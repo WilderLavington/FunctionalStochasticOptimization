@@ -136,7 +136,8 @@ def get_args():
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--fullbatch', type=int, default=0)
     parser.add_argument('--normalize_epochs_lengths', type=int, default=1)
-    parser.add_argument('--min_epochs', type=int, default=5)
+    parser.add_argument('--min_epochs', type=int, default=100)
+    parser.add_argument('--group', type=str, default='main')
     # parse
     args, knk = parser.parse_known_args()
     #
@@ -152,7 +153,7 @@ def main():
     np.random.seed(args.seed)
 
     # get weights
-    wandb.init(project=args.project, entity=args.entity, config=args)
+    wandb.init(project=args.project, entity=args.entity, config=args, group=args.group)
     pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
 
     # set loss functions + models + data + lr
@@ -193,14 +194,15 @@ def main():
     # to account for batch-size (e.g. make sure we take more steps with bigger batches)
     if args.normalize_epochs_lengths:
         args.m = 1 if args.algo in ['SGD', 'LSOpt', 'Adam', 'Adagrad'] else args.m
-        args.epochs = int(args.episodes * (1 / args.m) * (args.batch_size / y.shape[0])) + 5
+        args.epochs = max(int(args.episodes * (1 / args.m) * (args.batch_size / y.shape[0])), args.min_epochs)
     else:
-        args.epochs = int(args.episodes * (args.batch_size / y.shape[0])) + args.min_epochs
+        args.epochs = max(int(args.episodes * (args.batch_size / y.shape[0])), args.min_epochs)
         assert self.eta_schedule != 'exponential'
     args.total_steps = int(args.episodes * (y.shape[0] / args.batch_size) + args.min_epochs * (y.shape[0] / args.batch_size))
 
     #
     if args.algo == 'SGD':
+        print(args.stepsize)
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.epochs, batch_size=args.batch_size,

@@ -243,7 +243,7 @@ def main():
         assert args.eta_schedule=='constant'
         #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e2
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e-2
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
@@ -257,14 +257,14 @@ def main():
 
     elif args.algo == 'Adam':
         assert args.eta_schedule == 'constant'
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else  1e-2
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else  1e-3
         optim = torch.optim.Adam(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.epochs, batch_size=args.batch_size )
 
     elif args.algo == 'Adagrad':
         assert args.eta_schedule == 'constant'
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e-3
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e-2
         optim = torch.optim.Adagrad(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.epochs, batch_size=args.batch_size )

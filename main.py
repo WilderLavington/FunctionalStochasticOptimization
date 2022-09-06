@@ -159,7 +159,7 @@ def main():
     args, parser = get_args()
     L_map = {'mushrooms': torch.tensor(21764.3105, device='cuda'),
              'ijcnn': torch.tensor(3476.3210, device='cuda'),
-             'rcv1': torch.tensor( , device='cuda')}
+             'rcv1': torch.tensor(166.4695, device='cuda')}
 
     # se
     torch.manual_seed(args.seed)
@@ -239,7 +239,7 @@ def main():
         #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
         L = torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda')
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else args.stepsize * L
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1.
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
@@ -255,7 +255,7 @@ def main():
         assert args.eta_schedule=='constant'
         #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1e-2
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1.
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}

@@ -100,7 +100,7 @@ class Ada_FMDOpt(torch.optim.Optimizer):
 
         # set  eta schedule
         eta = self.eta * (self.grad_sum).pow(0.5)
-
+        # print('func-opt', 1 / (self.eta * (self.grad_sum).pow(0.5)) )
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             # f = n by m

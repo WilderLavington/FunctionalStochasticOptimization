@@ -9,10 +9,18 @@ def get_random_string(length):
     result_str = ''.join(random.choice(letters) for i in range(length))
     return result_str
 
-def update_lr(optimizer, epoch, initial_lr):
+def update_stoch_lr(optimizer, steps, initial_lr):
     """Decreases the learning rate as 1 / sqrt(t) """
     for param_group in optimizer.param_groups:
-        param_group['lr'] = initial_lr / torch.sqrt(epoch)
+        param_group['lr'] = initial_lr / torch.sqrt(steps)
+        # print('update_stoch_lr', param_group['lr'])
+    return optimizer
+
+def update_exp_lr(optimizer, steps, total_steps, initial_lr):
+    """Decreases the learning rate as  """
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = initial_lr * torch.tensor((1/ total_steps)**(steps/ total_steps))
+        # print('update_exp_lr', param_group['lr'])
     return optimizer
 
 # helpers

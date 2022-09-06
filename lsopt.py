@@ -9,7 +9,7 @@ from helpers import *
 # linesearch optimizer
 class LSOpt(torch.optim.Optimizer):
     def __init__(self, params, lr=1, n_batches_per_epoch=None,
-                 c=0.001, beta_update=0.9, expand_coeff=1.8,
+                 c=0.5, beta_update=0.9, expand_coeff=1.8,
                  eta_schedule='constant', total_steps=None):
         params = list(params)
         super().__init__(params, {})
@@ -98,7 +98,7 @@ class LSOpt(torch.optim.Optimizer):
         if self.eta_schedule == 'constant':
             eta = 1
         elif self.eta_schedule == 'stochastic':
-            eta = torch.sqrt(torch.tensor(self.state['steps']).float())
+            eta = 1/torch.sqrt(torch.tensor(self.state['steps']).float())
         elif self.eta_schedule == 'exponential':
             eta = torch.tensor((1/self.total_steps)**(self.state['steps']/self.total_steps)).float()
         else:

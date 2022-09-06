@@ -59,6 +59,7 @@ class Sadagrad(torch.optim.Optimizer):
         else:
             self.grad_sum = self.squared_grad_norm(self.params)
 
+        # print('sadagrad', self.lr / ( self.grad_sum).pow(0.5))
         # save the current parameters:
         params_current = deepcopy(self.params)
         grad_current = deepcopy(get_grad_list(self.params))

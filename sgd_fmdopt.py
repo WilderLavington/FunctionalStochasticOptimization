@@ -43,6 +43,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.state['inner_step_size'] = None
         self.state['grad_evals'] = 0
         self.state['function_evals'] = 0
+        self.state['outer_step_size'] = None
 
     @staticmethod
     def compute_grad_norm(grad_list):
@@ -98,7 +99,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         elif self.eta_schedule == 'stochastic':
             eta = self.eta * torch.sqrt(torch.tensor(self.state['outer_steps']).float())
         elif self.eta_schedule == 'exponential':
-            eta = self.eta * torch.tensor((1/self.total_steps)**(self.state['outer_steps']/self.total_steps)).float()
+            eta = self.eta * torch.tensor((1/self.total_steps)**(-self.state['outer_steps']/self.total_steps)).float()
         else:
             raise Exception
 
@@ -129,6 +130,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             assert isinstance(self.inner_optim.state['function_evals'], int)
             self.state['function_evals'] = self.inner_optim.state['function_evals']
             self.state['inner_step_size'] = self.inner_optim.state['step_size']
+            self.state['outer_stepsize'] = 1/eta
         except:
             self.state['function_evals'] += 1
             self.state['inner_step_size'] = self.inner_lr

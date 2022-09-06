@@ -17,11 +17,11 @@ from sgd_fmdopt import SGD_FMDOpt
 from ada_fmdopt import Ada_FMDOpt
 from lsopt import LSOpt
 from sadagrad import Sadagrad
-from helpers import get_grad_norm, get_grad_list, get_random_string, update_lr
+from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_lr, update_stoch_lr
 from torch.optim import SGD, Adam, Adagrad
 import os
 
-def train_model(args, model, optim, loss_func, X, y, decay_lr=False, single_out=False,
+def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', single_out=False,
             call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
 
     # log stuff
@@ -29,7 +29,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False, single_out=
     data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
         shuffle=True, drop_last=True)
     logs, s, starting_time = [], 0,  time()
-    import_vals = ['inner_steps', 'avg_loss', 'function_evals', 'grad_evals',
+    import_vals = ['inner_steps', 'avg_loss', 'function_evals', 'grad_evals', 'lr',
             'step_time', 'inner_step_size', 'inner_backtracks', 'outer_stepsize']
 
     # iterate over epochs
@@ -96,8 +96,17 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False, single_out=
             # step optimizer over closure
             optim.step(closure)
             s += 1
-            if decay_lr:
-                optim = update_lr(optim, torch.tensor(s).float(), torch.tensor(args.stepsize).float())
+            if update_lr_type == 'constant':
+                pass
+            elif update_lr_type == 'stochastic':
+                optim = update_stoch_lr(optim, torch.tensor(s).float(), torch.tensor(args.stepsize).float())
+            elif update_lr_type == 'exponential':
+                optim = update_exp_lr(optim, torch.tensor(s).float(), torch.tensor(total_rounds*y.shape[0]/batch_size).int(), torch.tensor(args.stepsize).float())
+            else:
+                raise Exception
+        # early stopping conditions
+        if (avg_loss / y.shape[0]) < 1e-6:
+            break
 
     # reformat stored data
     parsed_logs = {}
@@ -106,6 +115,7 @@ def train_model(args, model, optim, loss_func, X, y, decay_lr=False, single_out=
             parsed_logs[key] = torch.tensor([i[key] for i in logs])
         except:
             pass
+
     # return info
     return model, parsed_logs
 
@@ -175,7 +185,7 @@ def main():
         loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
         model = DiscreteLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L = torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda') / 4
+        L = 1# torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda') / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     elif args.loss == 'MSELoss':
@@ -185,7 +195,7 @@ def main():
         loss_func = nn.MSELoss()
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L = torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda')
+        L = 1. #torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda')
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     # train with an optimizer
@@ -202,11 +212,10 @@ def main():
 
     #
     if args.algo == 'SGD':
-        print(args.stepsize)
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.epochs, batch_size=args.batch_size,
-            decay_lr = 1 if args.eta_schedule=='stochastic' else 0)
+            update_lr_type = args.eta_schedule)
 
     elif args.algo == 'LSOpt':
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
@@ -221,7 +230,7 @@ def main():
         optim = Sadagrad(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
             total_rounds = args.epochs, batch_size=args.batch_size,
-            decay_lr = 0)
+            update_lr_type = 'constant')
 
     elif args.algo == 'SGD_FMDOpt':
         #

@@ -157,6 +157,9 @@ def main():
 
     # get arguments
     args, parser = get_args()
+    L_map = {'mushrooms': torch.tensor(21764.3105, device='cuda'),
+             'ijcnn': torch.tensor(3476.3210, device='cuda'),
+             'rcv1': torch.tensor( , device='cuda')}
 
     # se
     torch.manual_seed(args.seed)
@@ -173,9 +176,7 @@ def main():
         loss_func = nn.CrossEntropyLoss()
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
-        # L, V  = torch.eig(torch.mm(X.t().cpu(), X.cpu()), eigenvectors=True)
-        # L = torch.max(L[:,0]).to('cuda') / 4
-        L = torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda')  / 4
+        L = L_map[args.dataset_name] / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     elif args.loss == 'BCEWithLogitsLoss':
@@ -185,7 +186,7 @@ def main():
         loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
         model = DiscreteLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L = 1# torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda') / 4
+        L = L_map[args.dataset_name] / 4
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     elif args.loss == 'MSELoss':
@@ -195,8 +196,10 @@ def main():
         loss_func = nn.MSELoss()
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L = 1. #torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda')
+        L = L_map[args.dataset_name]
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
+    else:
+        raise Exception
 
     # train with an optimizer
     args.batch_size = y.shape[0] if args.fullbatch else args.batch_size

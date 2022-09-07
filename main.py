@@ -212,7 +212,7 @@ def main():
         args.epochs = max(int(args.episodes * (args.batch_size / y.shape[0])), args.min_epochs)
         assert self.eta_schedule != 'exponential'
     args.total_steps = args.epochs * (y.shape[0] / args.batch_size)
-     
+
     #
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
@@ -239,7 +239,7 @@ def main():
     elif args.algo == 'SGD_FMDOpt':
         #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        L = torch.norm(torch.mm(X.t().cpu(), X.cpu()), p='fro').to('cuda')
+        L = L_map[args.dataset_name]
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1.
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,

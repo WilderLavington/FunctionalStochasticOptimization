@@ -10,7 +10,7 @@ parameters:
     values:
     - 25000
   algo:
-    values: 
+    values:
     - SGD_FMDOpt
   normalize_epochs_lengths:
     values:
@@ -47,5 +47,4 @@ parameters:
     - rcv1
   eta_schedule:
     values:
-    - stochastic
-    - exponential
+    - stochastic 

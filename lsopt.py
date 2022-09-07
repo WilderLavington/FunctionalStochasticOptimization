@@ -136,6 +136,7 @@ class LSOpt(torch.optim.Optimizer):
             # apply rescaling of the step-size
             for p_next, p_current, g_current in zip(self.params, params_current, grad_current):
                 p_next.data = p_current - eta * step_size * g_current
+
         #
         self.state['step_size'] = step_size
         # print(self.state['function_evals'] )

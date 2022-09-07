@@ -42,7 +42,5 @@ parameters:
     values:
     - 0.5
   eta_schedule:
-    values:
-    - constant
-    - stochastic
+    values: 
     - exponential

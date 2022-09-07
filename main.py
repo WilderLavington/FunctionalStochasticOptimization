@@ -211,8 +211,8 @@ def main():
     else:
         args.epochs = max(int(args.episodes * (args.batch_size / y.shape[0])), args.min_epochs)
         assert self.eta_schedule != 'exponential'
-    args.total_steps = int(args.episodes * (y.shape[0] / args.batch_size) + args.min_epochs * (y.shape[0] / args.batch_size))
-
+    args.total_steps = args.epochs * (y.shape[0] / args.batch_size)
+     
     #
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
@@ -229,6 +229,7 @@ def main():
             total_rounds=args.epochs, batch_size=args.batch_size, single_out=True)
 
     elif args.algo == 'Sadagrad':
+        assert args.eta_schedule=='constant'
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else  1e-2
         optim = Sadagrad(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
@@ -249,11 +250,11 @@ def main():
                 eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
-            total_rounds = args.epochs, batch_size = args.batch_size)
+            total_rounds = args.epochs, batch_size = args.batch_size,
+            update_lr_type='constant')
 
     elif args.algo == 'Ada_FMDOpt':
         assert args.eta_schedule=='constant'
-        #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1.
         if args.inner_opt =='LSOpt':
@@ -265,7 +266,8 @@ def main():
                 eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
                 surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
-            total_rounds = args.epochs, batch_size = args.batch_size)
+            total_rounds = args.epochs, batch_size = args.batch_size,
+            update_lr_type='constant')
 
     elif args.algo == 'Adam':
         assert args.eta_schedule == 'constant'

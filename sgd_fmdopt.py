@@ -89,7 +89,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
 
         # compute loss + grad for eta computation
         _, f_t, inner_closure = closure(call_backward=False)
-
+        
         # produce some 1 by m (n=batch-size, m=output of f)
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
 

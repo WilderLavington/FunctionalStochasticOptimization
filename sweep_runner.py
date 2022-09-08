@@ -53,6 +53,20 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
         file.write(command + ' \n')
         file.write('exit')
         file.close()
+    elif machine=='narval':
+        # set account for borg cluster
+        file = open('eval_dir/job_'+job_name+'.sh',"w+")
+        file.write('#!/bin/bash \n')
+        file.write('#SBATCH --account=rrg-kevinlb \n')
+        file.write('#SBATCH --gres=gpu:1 \n')
+        file.write('#SBATCH --mem-per-cpu=4G \n')
+        file.write('#SBATCH --cpus-per-task=5 \n')
+        file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
+        file.write('conda activate ubcml \n')
+        file.write('cd ' + directory + ' \n')
+        file.write(command + ' \n')
+        file.write('exit')
+        file.close()
     else:
         #
         if account is None:
@@ -92,11 +106,11 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
 
 def main():
     parser = argparse.ArgumentParser(description='job runner')
-    parser.add_argument('--directory', default='~/scratch/Alpha-Dependent-SAC/')
+    parser.add_argument('--directory', default='/home/wilder1/scratch/FunctionalStochasticOptimization')
     parser.add_argument('--command', default='echo "hello world" ')
-    parser.add_argument('--machine', default='cedar')
+    parser.add_argument('--machine', default='narval')
     parser.add_argument('--time', default='00-08:00')
-    parser.add_argument('--account', default='rrg-schmidtm')
+    parser.add_argument('--account', default='rrg-kevinlb')
     parser.add_argument('--num',default='1')
     args = parser.parse_args()
     for i in range(int(args.num)):

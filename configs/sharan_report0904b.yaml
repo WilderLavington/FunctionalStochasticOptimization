@@ -47,4 +47,4 @@ parameters:
     - rcv1
   eta_schedule:
     values:
-    - stochastic 
+    - exponential 

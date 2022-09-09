@@ -89,7 +89,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
 
         # compute loss + grad for eta computation
         _, f_t, inner_closure = closure(call_backward=False)
-        
+
         # produce some 1 by m (n=batch-size, m=output of f)
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
 
@@ -120,10 +120,16 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             return surr
 
         # now we take multiple steps over surrogate
+        last_loss = None
         for m in range(0,self.m):
             current_loss = self.inner_optim.step(surrogate)
             self.state['inner_steps'] += 1
             self.state['grad_evals'] += 1
+            if last_loss:
+                if last_loss < current_loss:
+                    print('Warning: increase in the surrogate.')
+            else:
+                last_loss = current_loss
 
         # try logging (generalized for different inner-optimizers )
         try:

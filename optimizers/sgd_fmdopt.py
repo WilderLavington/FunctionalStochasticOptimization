@@ -7,7 +7,7 @@ import time
 
 # local imports
 from helpers import *
-from lsopt import LSOpt
+from optimizers.lsopt import LSOpt
 
 # linesearch optimizer
 class SGD_FMDOpt(torch.optim.Optimizer):

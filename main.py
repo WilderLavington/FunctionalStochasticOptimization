@@ -1,171 +1,45 @@
+
+# general imports
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from copy import deepcopy
-torch.manual_seed(1)
 from tqdm import tqdm
 import wandb
 import torch.nn as nn
-import argparse
 import numpy as np
 from time import time
 import pathlib
-# get local info
-from models import DiscreteLinearModel, ContinuousLinearModel
-from load_data import load_libsvm
-from sgd_fmdopt import SGD_FMDOpt
-from ada_fmdopt import Ada_FMDOpt
-from lsopt import LSOpt
-from sadagrad import Sadagrad
-from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_lr, update_stoch_lr
 from torch.optim import SGD, Adam, Adagrad
 import os
 
-def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', single_out=False,
-            call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
-
-    # log stuff
-    dataset = torch.utils.data.TensorDataset(X, y)
-    data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
-        shuffle=True, drop_last=True)
-    logs, s, starting_time = [], 0,  time()
-    import_vals = ['inner_steps', 'avg_loss', 'function_evals', 'grad_evals', 'lr',
-            'step_time', 'inner_step_size', 'inner_backtracks', 'outer_stepsize']
-
-    # iterate over epochs
-    for t in tqdm(range(total_rounds)):
-
-        # log everything
-        if t % log_rate == 0:
-            avg_loss = 0.
-            grad_norm = 0.
-            for X_batch, y_batch in data_generator:
-                # put data onto the
-                X_batch, y_batch = X_batch.cuda(), y_batch.cuda()
-                def closure(call_backward=True):
-                    # optim.zero_grad()
-                    loss = loss_func(model(X_batch), y_batch)
-                    if call_backward==True:
-                        loss.backward()
-                    return loss
-                # add loss to average
-                avg_loss += closure(call_backward=True).detach().cpu().numpy()
-            # compute norm of cumulative gradient
-            grad_norm += get_grad_norm(model.parameters()).detach().cpu().numpy()
-            log_info = {'avg_loss': avg_loss / y.shape[0],
-                        'optim_steps': s, 'function_evals': s, 'grad_evals': s,
-                        'inner_backtracks': 0, 'inner_steps': 1,
-                        'grad_norm': grad_norm / y.shape[0], 'eta_scale': args.stepsize,
-                        'time_elapsed':  time() - starting_time}
-            log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
-            # log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
-            # # log info
-            try:
-                wandb.log(log_info)
-            except:
-                raise Exception
-            logs.append(log_info)
-            print('=========================================================')
-            print(log_info)
-            print('=========================================================')
-
-        # step through data by sampling without replacement
-        for X_batch, y_batch in tqdm(data_generator,leave=False):
-
-            # put data onto the
-            X_batch, y_batch = X_batch.cuda(), y_batch.cuda()
-
-            # create closure for line-search/lbfgs
-            def closure(call_backward=True, single_out=single_out):
-                optim.zero_grad()
-                model_outputs = model(X_batch)
-                def inner_closure(model_outputs):
-                    loss = loss_func(model_outputs, y_batch)
-                    return loss
-                loss = inner_closure(model_outputs)
-                if call_backward==True:
-                    loss.backward()
-
-                if not single_out:
-                    return loss, model_outputs, inner_closure
-                else:
-                    return loss
-
-            if call_closure:
-                closure()
-            # step optimizer over closure
-            optim.step(closure)
-            s += 1
-            if update_lr_type == 'constant':
-                pass
-            elif update_lr_type == 'stochastic':
-                optim = update_stoch_lr(optim, torch.tensor(s).float(), torch.tensor(args.stepsize).float())
-            elif update_lr_type == 'exponential':
-                optim = update_exp_lr(optim, torch.tensor(s).float(), torch.tensor(total_rounds*y.shape[0]/batch_size).int(), torch.tensor(args.stepsize).float())
-            else:
-                raise Exception
-        # early stopping conditions
-        if (avg_loss / y.shape[0]) < 1e-6:
-            break
-
-    # reformat stored data
-    parsed_logs = {}
-    for key in log_info.keys():
-        try:
-            parsed_logs[key] = torch.tensor([i[key] for i in logs])
-        except:
-            pass
-
-    # return info
-    return model, parsed_logs
-
-def get_args():
-    # grab parse.
-    parser = argparse.ArgumentParser(description='PyTorch Soft Actor-Critic Args')
-    # optimization args
-    parser.add_argument('--algo', type=str, default='SGD', help='SGD,Adam,SGD_FMDOpt')
-    parser.add_argument('--episodes', type=int, default=100)
-    parser.add_argument('--batch_size', type=int, default=100)
-    parser.add_argument('--loss', type=str, default='CrossEntropyLoss')
-    parser.add_argument('--project', type=str, default='FunctionalOptimization')
-    parser.add_argument('--entity', type=str, default='wilderlavington')
-    parser.add_argument('--log_eta', type=float, default=-4)
-    parser.add_argument('--m', type=int, default=5)
-    parser.add_argument('--init_step_size', type=float, default=1)
-    parser.add_argument('--inner_opt', type=str, default='LSOpt')
-    parser.add_argument('--c', type=float, default=0.1)
-    parser.add_argument('--beta_update', type=float, default=0.9)
-    parser.add_argument('--expand_coeff', type=float, default=2.0)
-    parser.add_argument('--stoch_reg', type=int, default=1)
-    parser.add_argument('--use_optimal_stepsize', type=int, default=1)
-    parser.add_argument('--eta_schedule', type=str, default='constant')
-    parser.add_argument('--dataset_name', type=str, default='mushrooms')
-    parser.add_argument('--file_name', type=str, default='example')
-    parser.add_argument('--folder_name', type=str, default='examples/')
-    parser.add_argument('--randomize_folder', type=int, default=1)
-    parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--fullbatch', type=int, default=0)
-    parser.add_argument('--normalize_epochs_lengths', type=int, default=1)
-    parser.add_argument('--min_epochs', type=int, default=100)
-    parser.add_argument('--group', type=str, default='main')
-    # parse
-    args, knk = parser.parse_known_args()
-    #
-    return args, parser
+# get local imports
+from models import DiscreteLinearModel, ContinuousLinearModel, LinearNueralNetworkModel
+from load_data import load_libsvm, generate_synthetic_mfac
+from optimizers.sgd_fmdopt import SGD_FMDOpt
+from optimizers.ada_fmdopt import Ada_FMDOpt
+from optimizers.lsopt import LSOpt
+from optimizers.sadagrad import Sadagrad
+from parser import *
+from train import *
+from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_lr, update_stoch_lr
 
 def main():
 
     # get arguments
     args, parser = get_args()
+
+    # set expensive to compute hyper-parameters
     L_map = {'mushrooms': torch.tensor(21764.3105, device='cuda'),
              'ijcnn': torch.tensor(3476.3210, device='cuda'),
-             'rcv1': torch.tensor(166.4695, device='cuda')}
+             'rcv1': torch.tensor(166.4695, device='cuda'),
+             'matrixfac': torch.tensor(1000, device='cuda')}
 
-    # se
+    # set seeds
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    # get weights
+    # initialize weights and biases runs
     wandb.init(project=args.project, entity=args.entity, config=args, group=args.group)
     pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
 
@@ -176,8 +50,7 @@ def main():
         loss_func = nn.CrossEntropyLoss()
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
-        L = L_map[args.dataset_name] / 4
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map[args.dataset_name] / 4)
 
     elif args.loss == 'BCEWithLogitsLoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
@@ -186,34 +59,44 @@ def main():
         loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
         model = DiscreteLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L = L_map[args.dataset_name] / 4
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map[args.dataset_name] / 4)
 
     elif args.loss == 'MSELoss':
         X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
-        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
-        y = y.unsqueeze(1)
+        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float).unsqueeze(1)
         loss_func = nn.MSELoss()
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L = L_map[args.dataset_name]
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map[args.dataset_name])
+
+    elif args.loss == 'MatrixFactorization':
+        X, y = generate_synthetic_mfac(xdim=matfac_xdim, ydim=matfac_ydim, nsamples=matfac_nsamples, A_condition_number=matfac_A_condition_number)
+        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
+        loss_func = nn.MSELoss()
+        print(X.shape, y.shape)
+        model = LinearNueralNetworkModel(X.shape[1], [16], 10)
+        print(model)
+        model.to('cuda')
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map['matrixfac'])
+
     else:
         raise Exception
 
-    # train with an optimizer
+    # set batch size to fullbatch for gradient decent
     args.batch_size = y.shape[0] if args.fullbatch else args.batch_size
 
     # to account for batch-size (e.g. make sure we take more steps with bigger batches)
     if args.normalize_epochs_lengths:
-        args.m = 1 if args.algo in ['SGD', 'LSOpt', 'Adam', 'Adagrad'] else args.m
+        args.m = 1 if args.algo in ['SGD', 'LSOpt', 'Adam', 'Adagrad', 'Sadagrad'] else args.m
         args.epochs = max(int(args.episodes * (1 / args.m) * (args.batch_size / y.shape[0])), args.min_epochs)
     else:
         args.epochs = max(int(args.episodes * (args.batch_size / y.shape[0])), args.min_epochs)
         assert self.eta_schedule != 'exponential'
-    args.total_steps = args.epochs * (y.shape[0] / args.batch_size)
 
-    #
+    # compute total steps given the # of epochs
+    args.total_steps = int(args.epochs * (y.shape[0] / args.batch_size))
+
+    # set optimization algorithm
     if args.algo == 'SGD':
         optim = torch.optim.SGD(model.parameters(), lr=args.stepsize)
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=True,
@@ -237,7 +120,6 @@ def main():
             update_lr_type = 'constant')
 
     elif args.algo == 'SGD_FMDOpt':
-        #
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2) / args.batch_size
         L = L_map[args.dataset_name]
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1.

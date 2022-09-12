@@ -6,7 +6,7 @@ import time
 
 # local imports
 from helpers import *
-from lsopt import LSOpt
+from optimizers.lsopt import LSOpt
 
 # optimizer
 class Sadagrad(torch.optim.Optimizer):

@@ -25,10 +25,14 @@ from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_
 
 
 def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', single_out=False,
-            call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1):
+            call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1, include_data_id=False,
+            accumulate_grad=False):
+
+    # form a data index set
+    data_idxs = torch.tensor([_ for _ in range(y.shape[0])])
 
     # log stuff
-    dataset = torch.utils.data.TensorDataset(X, y)
+    dataset = torch.utils.data.TensorDataset(X, y, data_idxs)
     data_generator = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
         shuffle=True, drop_last=True)
     logs, s, starting_time = [], 0,  time()
@@ -42,11 +46,11 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
         if t % log_rate == 0:
             avg_loss = 0.
             grad_norm = 0.
-            for X_batch, y_batch in data_generator:
+            for X_batch, y_batch, data_idx_batch in data_generator:
                 # put data onto the
                 X_batch, y_batch = X_batch.cuda(), y_batch.cuda()
                 def closure(call_backward=True):
-                    # optim.zero_grad()
+                    optim.zero_grad()
                     loss = loss_func(model(X_batch), y_batch)
                     if call_backward==True:
                         loss.backward()
@@ -73,10 +77,10 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
             print('=========================================================')
 
         # step through data by sampling without replacement
-        for X_batch, y_batch in tqdm(data_generator,leave=False):
+        for X_batch, y_batch, data_idx_batch in tqdm(data_generator,leave=False):
 
             # put data onto the
-            X_batch, y_batch = X_batch.cuda(), y_batch.cuda()
+            X_batch, y_batch, data_idx_batch = X_batch.cuda(), y_batch.cuda(), data_idx_batch.cuda()
 
             # create closure for line-search/lbfgs
             def closure(call_backward=True, single_out=single_out):
@@ -88,16 +92,21 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
                 loss = inner_closure(model_outputs)
                 if call_backward==True:
                     loss.backward()
-
                 if not single_out:
                     return loss, model_outputs, inner_closure
                 else:
                     return loss
 
+            # if we need to call it before hand (SGD/Adam/Adagrad)
             if call_closure:
                 closure()
+
             # step optimizer over closure
-            optim.step(closure)
+            if not include_data_id:
+                optim.step(closure)
+            else:
+                optim.step(closure, data_idx_batch)
+
             s += 1
             if update_lr_type == 'constant':
                 pass

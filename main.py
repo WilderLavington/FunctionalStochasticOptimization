@@ -72,10 +72,8 @@ def main():
     elif args.loss == 'MatrixFactorization':
         X, y = generate_synthetic_mfac(xdim=matfac_xdim, ydim=matfac_ydim, nsamples=matfac_nsamples, A_condition_number=matfac_A_condition_number)
         X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
-        loss_func = nn.MSELoss()
-        print(X.shape, y.shape)
+        loss_func = nn.MSELoss() 
         model = LinearNueralNetworkModel(X.shape[1], [16], 10)
-        print(model)
         model.to('cuda')
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map['matrixfac'])
 

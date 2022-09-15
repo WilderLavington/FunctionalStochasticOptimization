@@ -1,0 +1,68 @@
+program: main.py
+entity: wilderlavington
+method: grid
+project: FunctionalStochasticOptimization
+metric:
+  goal: minimize
+  name: grad_norm
+parameters:
+  episodes:
+    values:
+    - 25000
+  algo:
+    values:
+    - SGD_FMDOpt
+    - Ada_FMDOpt
+  normalize_epochs_lengths:
+    values:
+    - 1
+  use_optimal_stepsize:
+    values:
+    - 0
+  m:
+    values:
+    - 1
+    - 2
+    - 5
+    - 10
+    - 20
+  seed:
+    values:
+    - 1
+    - 2
+    - 3
+  batch_size:
+    values:
+    - 5
+    - 25
+    - 125
+    - 625
+  use_optimal_stepsize:
+    values:
+    - 0
+  log_eta:
+    values:
+    - 0.
+    - 1.
+    - 2.
+    - 5.
+  loss:
+    values:
+    - MSELoss
+    - CrossEntropyLoss
+    - BCEWithLogitsLoss
+  eta_schedule:
+    values:
+    - stochastic
+    - constant
+    - exponential
+  c:
+    values:
+    - 0.1
+    # - 0.01
+    # - 0.001
+  dataset_name:
+    values:
+    - mushrooms
+    - ijcnn
+    - rcv1

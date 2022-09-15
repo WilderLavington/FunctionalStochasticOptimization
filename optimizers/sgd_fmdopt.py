@@ -120,9 +120,11 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             return surr
 
         # now we take multiple steps over surrogate
-        last_loss = None
+        last_loss = None 
         for m in range(0,self.m):
             current_loss = self.inner_optim.step(surrogate)
+            surrogate(call_backward=True)
+            print(compute_grad_norm(get_grad_list(self.params)))
             self.state['inner_steps'] += 1
             self.state['grad_evals'] += 1
             if last_loss:

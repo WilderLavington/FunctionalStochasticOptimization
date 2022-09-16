@@ -30,13 +30,15 @@ def get_args():
     parser.add_argument('--fullbatch', type=int, default=0)
     parser.add_argument('--normalize_epochs_lengths', type=int, default=1)
     parser.add_argument('--min_epochs', type=int, default=100)
-    parser.add_argument('--group', type=str, default='main') 
-    parser.add_argument('--matfac_xdim', type=int, default=10)
+    parser.add_argument('--group', type=str, default='main')
+    parser.add_argument('--matfac_xdim', type=int, default=6)
     parser.add_argument('--matfac_ydim', type=int, default=10)
     parser.add_argument('--matfac_nsamples', type=int, default=1000)
     parser.add_argument('--matfac_condition_number', type=float, default=1e-10)
 
     # parse
     args, knk = parser.parse_known_args()
+    print(knk)
+    assert len(knk) == 0
     #
     return args, parser

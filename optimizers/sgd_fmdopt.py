@@ -9,12 +9,16 @@ import time
 from helpers import *
 from optimizers.lsopt import LSOpt
 
+from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_lr, update_stoch_lr
+
+# helpers
+
 # linesearch optimizer
 class SGD_FMDOpt(torch.optim.Optimizer):
     def __init__(self, params, m=1, eta_schedule = 'constant',
                  div_op = lambda f,f1: torch.norm(f-f1).pow(2),
                  inner_optim = LSOpt, inv_eta=1e-3, stoch_reg=True,
-                 surr_optim_args={'lr':1.},
+                 surr_optim_args={'lr':1.}, reset_lr_on_step=True,
                  total_steps = 1000):
         params = list(params)
         super().__init__(params, {})
@@ -24,17 +28,19 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.m = m
         self.stoch_reg = stoch_reg
         self.total_steps = total_steps
+
         # set eta and the divergence
         self.inner_optim = inner_optim(self.params,**surr_optim_args)
         self.div_op = div_op
         self.eta =  1/inv_eta # please rename
         self.eta_schedule = eta_schedule
         self.inner_lr = surr_optim_args['lr']
+        self.reset_lr_on_step = reset_lr_on_step
 
         # preset eta (parameter-wise / diagnol only)
         for inner_opt in self.inner_optim.param_groups[0]['params']:
             inner_opt.data = inner_opt.data.to('cuda')
-
+        self.init_step_size = self.inner_optim.state['step_size']
         # store state for debugging
         self.state['outer_steps'] = 0
         self.state['inner_steps'] = 0
@@ -69,6 +75,11 @@ class SGD_FMDOpt(torch.optim.Optimizer):
                 grad = 0.
             g_list += [grad]
         return g_list
+
+    @staticmethod
+    def get_grad_norm(params):
+        glist = get_grad_list(params)
+        return compute_grad_norm(glist)
 
     @staticmethod
     def copy_params(target, source):
@@ -119,12 +130,29 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             # return loss
             return surr
 
+
         # now we take multiple steps over surrogate
-        last_loss = None 
+        self.inner_optim.state['step_size'] = self.init_step_size
+        last_loss = None
+
+        # make sure we take big steps
+        if self.reset_lr_on_step:
+            self.inner_optim.state['step_size'] = self.init_step_size
+
         for m in range(0,self.m):
+
             current_loss = self.inner_optim.step(surrogate)
-            surrogate(call_backward=True)
-            print(compute_grad_norm(get_grad_list(self.params)))
+
+            # print('logging metric', self.inner_optim.state['step_size'], self.init_step_size)
+            # print('data_size',  f_t.shape[0])
+            # self.zero_grad()
+            # surrogate(call_backward=True)
+            # print(m, get_grad_norm(self.params) / f_t.shape[0], 'this is the loss-grad-norm')
+
+            # self.zero_grad()
+            # loss, f, inner_closure = closure(call_backward=True)
+            # print(m,  get_grad_norm(self.params) / f_t.shape[0],   'this is the loss-grad-norm')
+
             self.state['inner_steps'] += 1
             self.state['grad_evals'] += 1
             if last_loss:

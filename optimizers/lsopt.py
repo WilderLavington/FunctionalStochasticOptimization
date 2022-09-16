@@ -103,7 +103,7 @@ class LSOpt(torch.optim.Optimizer):
             eta = torch.tensor((1/self.total_steps)**(self.state['steps']/self.total_steps)).float()
         else:
             raise Exception
-
+            
         # only do the check if the gradient norm is big enough
         with torch.no_grad():
 

@@ -116,8 +116,9 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
                 optim = update_exp_lr(optim, torch.tensor(s).float(), torch.tensor(total_rounds*y.shape[0]/batch_size).int(), torch.tensor(args.stepsize).float())
             else:
                 raise Exception
+
         # early stopping conditions
-        if (avg_loss / y.shape[0]) < 1e-6:
+        if (grad_norm / y.shape[0]) < 1e-6:
             break
 
     # reformat stored data

@@ -33,11 +33,15 @@ def main():
     L_map = {'mushrooms': torch.tensor(21764.3105, device='cuda'),
              'ijcnn': torch.tensor(3476.3210, device='cuda'),
              'rcv1': torch.tensor(166.4695, device='cuda'),
-             'matrixfac': torch.tensor(1000, device='cuda')}
+             'synth': torch.tensor(1000, device='cuda')}
 
     # set seeds
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
+
+    # make sure configs match for mfac
+    assert ((args.dataset_name=='synth') and (args.loss == 'MatrixFactorization')) \
+        or ((args.loss != 'MatrixFactorization') and (args.dataset_name!='synth'))
 
     # initialize weights and biases runs
     wandb.init(project=args.project, entity=args.entity, config=args, group=args.group)
@@ -70,9 +74,11 @@ def main():
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map[args.dataset_name])
 
     elif args.loss == 'MatrixFactorization':
-        X, y = generate_synthetic_mfac(xdim=matfac_xdim, ydim=matfac_ydim, nsamples=matfac_nsamples, A_condition_number=matfac_A_condition_number)
+        assert args.dataset_name == 'synth'
+        X, y = generate_synthetic_mfac(xdim=args.matfac_xdim, ydim=args.matfac_ydim,
+            nsamples=args.matfac_nsamples, A_condition_number=args.matfac_condition_number)
         X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
-        loss_func = nn.MSELoss() 
+        loss_func = nn.MSELoss()
         model = LinearNueralNetworkModel(X.shape[1], [16], 10)
         model.to('cuda')
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map['matrixfac'])
@@ -134,6 +140,22 @@ def main():
             update_lr_type='constant')
 
     elif args.algo == 'Ada_FMDOpt':
+        assert args.eta_schedule=='constant'
+        div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2) / args.batch_size
+        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1.
+        if args.inner_opt =='LSOpt':
+            surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
+                'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
+        else:
+            surr_optim_args = {'lr':args.init_step_size}
+        optim = Ada_FMDOpt(model.parameters(), inv_eta=args.stepsize, div_op=div_measure,
+                eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
+                surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps)
+        model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
+            total_rounds = args.epochs, batch_size = args.batch_size,
+            update_lr_type='constant')
+
+    elif args.algo == 'Diag_Ada_FMDOpt':
         assert args.eta_schedule=='constant'
         div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2) / args.batch_size
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1.

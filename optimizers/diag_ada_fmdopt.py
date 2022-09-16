@@ -1,4 +1,3 @@
-
 # imports
 import torch
 import numpy as np
@@ -9,16 +8,11 @@ import time
 from helpers import *
 from optimizers.lsopt import LSOpt
 
-from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_lr, update_stoch_lr
-
-# helpers
-
 # linesearch optimizer
-class SGD_FMDOpt(torch.optim.Optimizer):
+class Diag_Ada_FMDOpt(torch.optim.Optimizer):
     def __init__(self, params, m=1, eta_schedule = 'constant',
-                 div_op = lambda f,f1: torch.norm(f-f1).pow(2),
                  inner_optim = LSOpt, inv_eta=1e-3, stoch_reg=True,
-                 surr_optim_args={'lr':1.}, reset_lr_on_step=True,
+                 surr_optim_args={'lr':1.}, total_data_points=None,
                  total_steps = 1000):
         params = list(params)
         super().__init__(params, {})
@@ -27,20 +21,22 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.params = params
         self.m = m
         self.stoch_reg = stoch_reg
-        self.total_steps = total_steps
+        self.grad_sum = None
 
         # set eta and the divergence
         self.inner_optim = inner_optim(self.params,**surr_optim_args)
-        self.div_op = div_op
         self.eta =  1/inv_eta # please rename
         self.eta_schedule = eta_schedule
         self.inner_lr = surr_optim_args['lr']
-        self.reset_lr_on_step = reset_lr_on_step
 
         # preset eta (parameter-wise / diagnol only)
         for inner_opt in self.inner_optim.param_groups[0]['params']:
             inner_opt.data = inner_opt.data.to('cuda')
-        self.init_step_size = self.inner_optim.state['step_size']
+
+        # set total_data points
+        self.total_data_points = total_data_points
+        self.dual_coord = None
+
         # store state for debugging
         self.state['outer_steps'] = 0
         self.state['inner_steps'] = 0
@@ -49,7 +45,6 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.state['inner_step_size'] = None
         self.state['grad_evals'] = 0
         self.state['function_evals'] = 0
-        self.state['outer_step_size'] = None
 
     @staticmethod
     def compute_grad_norm(grad_list):
@@ -77,17 +72,12 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         return g_list
 
     @staticmethod
-    def get_grad_norm(params):
-        glist = get_grad_list(params)
-        return compute_grad_norm(glist)
-
-    @staticmethod
     def copy_params(target, source):
         """ copies nueral network parameters between to networks. """
         for target_param, param in zip(target, source):
             target_param.data.copy_(param.data)
 
-    def step(self, closure, clip_grad=False):
+    def step(self, closure, data_idxs, clip_grad=False):
 
         #======================================================
         # closure info
@@ -99,31 +89,33 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.state['outer_steps'] += 1
 
         # compute loss + grad for eta computation
-        loss_t, f_t, inner_closure = closure(call_backward=False)
+        _, f_t, inner_closure = closure(call_backward=False)
+
+        # initialize dual coordinate scaling
+        if self.dual_coord is None:
+            if len(f_t.shape)==1:
+                self.dual_coord = torch.zeros((self.total_data_points,1)).cuda().detach()
+            else:
+                self.dual_coord = torch.zeros((self.total_data_points,f_t.shape[-1])).cuda().detach()
 
         # produce some 1 by m (n=batch-size, m=output of f)
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
 
-        # set  eta schedule
-        if self.eta_schedule == 'constant':
-            eta = self.eta
-        elif self.eta_schedule == 'stochastic':
-            eta = self.eta * torch.sqrt(torch.tensor(self.state['outer_steps']).float())
-        elif self.eta_schedule == 'exponential':
-            eta = self.eta * torch.tensor((1/self.total_steps)**(-self.state['outer_steps']/self.total_steps)).float()
-        else:
-            raise Exception
+        # update dual coords
+        self.dual_coord[data_idxs] += dlt_dft.pow(2).detach()
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
+            # force
+            self.zero_grad()
             # f = n by m
             loss, f, inner_closure = closure(call_backward=False)
             # m by d -> 1
             loss = torch.sum(dlt_dft*f)
-            # remove cap F
-            reg_term = self.div_op(f,f_t.detach())
+            # force inner product
+            reg_term = (1/2) * (f - f_t.detach()).pow(2) * self.dual_coord[data_idxs].pow(0.5)
             # compute full surrogate
-            surr = loss + eta * reg_term
+            surr = loss + reg_term.mean()
             # do we differentiate
             if call_backward:
                 surr.backward()
@@ -131,40 +123,16 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             return surr
 
         # now we take multiple steps over surrogate
-        self.inner_optim.state['step_size'] = self.init_step_size
-        last_loss = None
-
-        # make sure we take big steps
-        if self.reset_lr_on_step:
-            self.inner_optim.state['step_size'] = self.init_step_size
-
-        #
-        for m in range(0,self.m):
-
-            # compute the current loss
+        for m in range(0,self.m): 
             current_loss = self.inner_optim.step(surrogate)
-
-            # add in some stopping conditions
-            if self.inner_optim.state['grad_norm'] <= 1e-6:
-                break
-
-            # update internals
             self.state['inner_steps'] += 1
             self.state['grad_evals'] += 1
-
-            # check we are improving
-            if last_loss:
-                if last_loss < current_loss:
-                    raise Exception('Increase in the surrogate.')
-            else:
-                last_loss = current_loss
 
         # try logging (generalized for different inner-optimizers )
         try:
             assert isinstance(self.inner_optim.state['function_evals'], int)
             self.state['function_evals'] = self.inner_optim.state['function_evals']
             self.state['inner_step_size'] = self.inner_optim.state['step_size']
-            self.state['outer_stepsize'] = 1/eta
         except:
             self.state['function_evals'] += 1
             self.state['inner_step_size'] = self.inner_lr

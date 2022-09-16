@@ -15,9 +15,10 @@ import os
 
 # get local imports
 from models import DiscreteLinearModel, ContinuousLinearModel, LinearNueralNetworkModel
-from load_data import load_libsvm, generate_synthetic_mfac
+from load_exp import load_model, load_dataset
 from optimizers.sgd_fmdopt import SGD_FMDOpt
 from optimizers.ada_fmdopt import Ada_FMDOpt
+from optimizers.diag_ada_fmdopt import Diag_Ada_FMDOpt
 from optimizers.lsopt import LSOpt
 from optimizers.sadagrad import Sadagrad
 from parser import *
@@ -29,11 +30,7 @@ def main():
     # get arguments
     args, parser = get_args()
 
-    # set expensive to compute hyper-parameters
-    L_map = {'mushrooms': torch.tensor(21764.3105, device='cuda'),
-             'ijcnn': torch.tensor(3476.3210, device='cuda'),
-             'rcv1': torch.tensor(166.4695, device='cuda'),
-             'synth': torch.tensor(1000, device='cuda')}
+
 
     # set seeds
     torch.manual_seed(args.seed)
@@ -47,44 +44,12 @@ def main():
     wandb.init(project=args.project, entity=args.entity, config=args, group=args.group)
     pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
 
-    # set loss functions + models + data + lr
-    if args.loss == 'CrossEntropyLoss':
-        X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
-        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.long)
-        loss_func = nn.CrossEntropyLoss()
-        model = DiscreteLinearModel(X.shape[1], y.max()+1)
-        model.to('cuda')
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map[args.dataset_name] / 4)
+    # get dataset  and model
+    X, y = load_dataset(data_set_id=args.dataset_name, data_dir='datasets/', loss=args.loss)
+    model, loss_func, L = load_model(data_set_id=args.dataset_name, loss=args.loss, X=X, y=y)
 
-    elif args.loss == 'BCEWithLogitsLoss':
-        X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
-        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
-        loss_func_ = nn.BCEWithLogitsLoss()
-        loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
-        model = DiscreteLinearModel(X.shape[1], 1)
-        model.to('cuda')
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map[args.dataset_name] / 4)
-
-    elif args.loss == 'MSELoss':
-        X, y = load_libsvm(name=args.dataset_name, data_dir='datasets/')
-        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float).unsqueeze(1)
-        loss_func = nn.MSELoss()
-        model = ContinuousLinearModel(X.shape[1], 1)
-        model.to('cuda')
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map[args.dataset_name])
-
-    elif args.loss == 'MatrixFactorization':
-        assert args.dataset_name == 'synth'
-        X, y = generate_synthetic_mfac(xdim=args.matfac_xdim, ydim=args.matfac_ydim,
-            nsamples=args.matfac_nsamples, A_condition_number=args.matfac_condition_number)
-        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
-        loss_func = nn.MSELoss()
-        model = LinearNueralNetworkModel(X.shape[1], [16], 10)
-        model.to('cuda')
-        args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L_map['matrixfac'])
-
-    else:
-        raise Exception
+    # set "optimal stepsize"
+    args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else (1/L)
 
     # set batch size to fullbatch for gradient decent
     args.batch_size = y.shape[0] if args.fullbatch else args.batch_size
@@ -164,11 +129,12 @@ def main():
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
         else:
             surr_optim_args = {'lr':args.init_step_size}
-        optim = Ada_FMDOpt(model.parameters(), inv_eta=args.stepsize, div_op=div_measure,
-                eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),  stoch_reg=args.stoch_reg,
-                surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps)
+        optim = Diag_Ada_FMDOpt(model.parameters(), inv_eta=args.stepsize,
+                eta_schedule=args.eta_schedule, inner_optim=eval(args.inner_opt),
+                surr_optim_args=surr_optim_args, m=args.m, total_steps=args.total_steps,
+                total_data_points = y.shape[0])
         model, logs = train_model(args, model, optim, loss_func, X, y, call_closure=False,
-            total_rounds = args.epochs, batch_size = args.batch_size,
+            total_rounds = args.epochs, batch_size = args.batch_size, include_data_id=True,
             update_lr_type='constant')
 
     elif args.algo == 'Adam':

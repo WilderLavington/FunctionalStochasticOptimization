@@ -6,9 +6,9 @@ metric:
   goal: minimize
   name: grad_norm
 parameters:
-  episodes:
+  min_epochs:
     values:
-    - 25000
+    - 100
   algo:
     values:
     - Ada_FMDOpt
@@ -23,7 +23,13 @@ parameters:
     - 3
   fullbatch:
     values:
-    - 1
+    - 0
+  batch_size:
+    values:
+    - 5
+    - 25
+    - 125
+    - 625
   m:
     values:
     - 1

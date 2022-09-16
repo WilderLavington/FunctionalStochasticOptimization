@@ -42,7 +42,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
     # iterate over epochs
     for t in tqdm(range(total_rounds)):
 
-        # log everything
+        # log everything 
         if t % log_rate == 0:
             avg_loss = 0.
             grad_norm = 0.

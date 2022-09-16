@@ -14,7 +14,7 @@ LIBSVM_DOWNLOAD_FN = {"rcv1"       : "rcv1_train.binary.bz2",
                       "mushrooms"  : "mushrooms",
                       "ijcnn"      : "ijcnn1.tr.bz2",
                       "w8a"        : "w8a"}
-
+                      
 # ===========================================================
 # simple baseline examples
 def load_libsvm(name, data_dir='datasets/'):
@@ -51,5 +51,53 @@ def generate_synthetic_mfac(xdim=6, ydim=10, nsamples=1000, A_condition_number=1
 	# the y's to fit
 	Ytrue = Atrue.dot(X)
 	data = (X.T, Ytrue.T)
-
 	return data
+
+# ===========================================================
+# load cifar 100
+def load_mnist(data_dir):
+    dataset = torchvision.datasets.MNIST(datadir, train=train_flag,
+                               download=True,
+                               transform=torchvision.transforms.Compose([
+                                   torchvision.transforms.ToTensor(),
+                                   torchvision.transforms.Normalize(
+                                       (0.5,), (0.5,))
+                               ]))
+    X, y = dataset.data.numpy(), dataset.targets.numpy()
+    return X, y
+
+# ===========================================================
+# load cifar 10
+def load_cifar10(data_dir):
+    transform_function = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465),
+                                 (0.2023, 0.1994, 0.2010)),
+        ])
+    dataset = torchvision.datasets.CIFAR10(
+        root=datadir,
+        train=train_flag,
+        download=True,
+        transform=transform_function)
+    X, y = dataset.data.numpy(), dataset.targets.numpy()
+    return X, y
+
+# ===========================================================
+# matrix matrix_factorization
+def load_cifar100(data_dir):
+    transform_function = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465),
+                                 (0.2023, 0.1994, 0.2010)),
+        ])
+    dataset = torchvision.datasets.CIFAR100(
+            root=datadir,
+            train=train_flag,
+            download=True,
+            transform=transform_function)
+    X, y = dataset.data.numpy(), dataset.targets.numpy()
+    return X, y

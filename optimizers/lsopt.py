@@ -26,6 +26,7 @@ class LSOpt(torch.optim.Optimizer):
         self.state['function_evals'] = 0
         self.state['grad_evals'] = 0
         self.state['steps'] = 0
+        self.state['grad_norm'] = None
         self.eta_schedule = eta_schedule
         self.total_steps = total_steps
 
@@ -103,7 +104,7 @@ class LSOpt(torch.optim.Optimizer):
             eta = torch.tensor((1/self.total_steps)**(self.state['steps']/self.total_steps)).float()
         else:
             raise Exception
-            
+
         # only do the check if the gradient norm is big enough
         with torch.no_grad():
 
@@ -139,7 +140,7 @@ class LSOpt(torch.optim.Optimizer):
 
         #
         self.state['step_size'] = step_size
-        # print(self.state['function_evals'] )
-        # print(e)
+        self.state['grad_norm'] = grad_norm
+
         # return loss
         return loss

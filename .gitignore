@@ -1,0 +1,6 @@
+wandb*
+datasets*
+logs*
+**__pycache__*
+**.ipynb_checkpoints*
+**.pdf

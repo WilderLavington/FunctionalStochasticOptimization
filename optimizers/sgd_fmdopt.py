@@ -147,7 +147,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             # print('data_size',  f_t.shape[0])
             # self.zero_grad()
             # surrogate(call_backward=True)
-            # print(m, get_grad_norm(self.params) / f_t.shape[0], 'this is the loss-grad-norm')
+            # print(m, get_grad_norm(self.params) / f_t.shape[0], 'this is the surr-loss-grad-norm')
 
             # self.zero_grad()
             # loss, f, inner_closure = closure(call_backward=True)

@@ -65,7 +65,6 @@ class SGD_FMDOpt(torch.optim.Optimizer):
                 grad = torch.tensor( 0., device='cuda')
             g_list += [grad.reshape(-1)]
         return g_list
-
     @staticmethod
     def copy_params(target, source):
         """ copies nueral network parameters between to networks. """

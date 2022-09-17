@@ -7,73 +7,18 @@ import time
 # local imports
 from helpers import *
 from optimizers.lsopt import LSOpt
-
+from optimizers.sgd_fmdopt import SGD_FMDOpt
 # linesearch optimizer
-class Ada_FMDOpt(torch.optim.Optimizer):
+class Ada_FMDOpt(SGD_FMDOpt):
     def __init__(self, params, m=1, eta_schedule = 'constant',
-                 div_op = lambda f,f1: torch.norm(f-f1).pow(2),
-                 inner_optim = LSOpt, inv_eta=1e-3, stoch_reg=True,
-                 surr_optim_args={'lr':1.},
+                 inner_optim = LSOpt, eta=1e3,
+                 surr_optim_args={'lr':1.}, reset_lr_on_step=True,
                  total_steps = 1000):
         params = list(params)
-        super().__init__(params, {})
-
+        super().__init__(params, m , eta_schedule ,  inner_optim , eta,
+                     surr_optim_args , reset_lr_on_step , total_steps )
         # create some local tools
-        self.params = params
-        self.m = m
-        self.stoch_reg = stoch_reg
         self.grad_sum = None
-
-        # set eta and the divergence
-        self.inner_optim = inner_optim(self.params,**surr_optim_args)
-        self.div_op = div_op
-        self.eta =  1/inv_eta # please rename
-        self.eta_schedule = eta_schedule
-        self.inner_lr = surr_optim_args['lr']
-
-        # preset eta (parameter-wise / diagnol only)
-        for inner_opt in self.inner_optim.param_groups[0]['params']:
-            inner_opt.data = inner_opt.data.to('cuda')
-
-        # store state for debugging
-        self.state['outer_steps'] = 0
-        self.state['inner_steps'] = 0
-        self.state['inner_backtracks'] = 0
-        self.state['step_time'] = None
-        self.state['inner_step_size'] = None
-        self.state['grad_evals'] = 0
-        self.state['function_evals'] = 0
-
-    @staticmethod
-    def compute_grad_norm(grad_list):
-        grad_norm = 0.
-        device = torch.device("cuda" if (torch.cuda.is_available()) else "cpu")
-        # assert 1==0
-        for g in grad_list:
-            if g is None:
-                continue
-            if torch.sum(torch.mul(g, g)).device != device:
-                grad_norm += torch.sum(torch.mul(g, g)).to(device)
-            else:
-                grad_norm += torch.sum(torch.mul(g, g))
-        grad_norm = torch.sqrt(grad_norm)
-        return grad_norm
-
-    @staticmethod
-    def get_grad_list(params):
-        g_list = []
-        for p in params:
-            grad = p.grad
-            if grad is None:
-                grad = 0.
-            g_list += [grad]
-        return g_list
-
-    @staticmethod
-    def copy_params(target, source):
-        """ copies nueral network parameters between to networks. """
-        for target_param, param in zip(target, source):
-            target_param.data.copy_(param.data)
 
     def step(self, closure, clip_grad=False):
 

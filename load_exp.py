@@ -16,14 +16,6 @@ from load_data import *
 from models import *
 
 # ======================
-# if we need to download anything
-LIBSVM_URL = "https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/"
-LIBSVM_DOWNLOAD_FN = {"rcv1"       : "rcv1_train.binary.bz2",
-                      "mushrooms"  : "mushrooms",
-                      "ijcnn"      : "ijcnn1.tr.bz2",
-                      "w8a"        : "w8a"}
-
-# ======================
 # set expensive to compute hyper-parameters
 L_MAP = {'mushrooms': torch.tensor(87057.2422, device='cuda'),
          'ijcnn': torch.tensor(3476.3210, device='cuda'),
@@ -108,4 +100,8 @@ def load_model(data_set_id, loss, X, y, use_dense=False):
             model = ResNet([3, 4, 6, 3], num_classes=100)
         model.to('cuda')
 
+    # rescale for safety
+    L = 2*L
+
+    # return it all
     return model, loss_func, L

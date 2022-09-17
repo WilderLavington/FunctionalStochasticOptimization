@@ -30,8 +30,6 @@ def main():
     # get arguments
     args, parser = get_args()
 
-
-
     # set seeds
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -89,9 +87,10 @@ def main():
             update_lr_type = 'constant')
 
     elif args.algo == 'SGD_FMDOpt':
-        div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2) / args.batch_size / 2.
-        L = L_map[args.dataset_name]
+        div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1.
+        # args.stepsize = 10**(-2.)
+
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
                 'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
@@ -106,7 +105,7 @@ def main():
 
     elif args.algo == 'Ada_FMDOpt':
         assert args.eta_schedule=='constant'
-        div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2) / args.batch_size / 2.
+        div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2)
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1.
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
@@ -122,7 +121,7 @@ def main():
 
     elif args.algo == 'Diag_Ada_FMDOpt':
         assert args.eta_schedule=='constant'
-        div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2) / args.batch_size / 2.
+        div_measure = lambda f, ft: torch.norm(f-ft,2).pow(2) 
         args.stepsize = 10**args.log_eta if not args.use_optimal_stepsize else 1.
         if args.inner_opt =='LSOpt':
             surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,

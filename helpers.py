@@ -26,15 +26,10 @@ def update_exp_lr(optimizer, steps, total_steps, initial_lr):
 # helpers
 def compute_grad_norm(grad_list):
     grad_norm = 0.
-    device = torch.device("cuda" if (torch.cuda.is_available()) else "cpu")
-    # assert 1==0
     for g in grad_list:
         if g is None:
             continue
-        if torch.sum(torch.mul(g, g)).device != device:
-            grad_norm += torch.sum(torch.mul(g, g)).to(device)
-        else:
-            grad_norm += torch.sum(torch.mul(g, g))
+        grad_norm += torch.sum(torch.mul(g, g))
     grad_norm = torch.sqrt(grad_norm)
     return grad_norm
 def get_grad_list(params):

@@ -37,7 +37,7 @@ L_MAP = {'mushrooms': torch.tensor(21764.3105, device='cuda'),
 # general data-loader
 def load_dataset(data_set_id, data_dir, loss):
     if data_set_id in LIBSVM_DOWNLOAD_FN.keys():
-        return procces_data(*load_libsvm(data_set_id, data_dir=data_dir), loss)
+        return procces_data(*load_libsvm(data_set_id, datadir=data_dir), loss)
     elif data_set_id == "cifar100":
         return procces_data(*load_cifar100(data_dir), loss)
     elif data_set_id == "cifar10":
@@ -69,20 +69,20 @@ def load_model(data_set_id, loss, X, y, use_dense=False):
 
     # general loss
     if loss == 'CrossEntropyLoss':
-        loss_func = nn.CrossEntropyLoss()
+        loss_func = nn.CrossEntropyLoss(reduction='sum')
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
         L = L_MAP[data_set_id] * 4
 
     elif loss == 'BCEWithLogitsLoss':
-        loss_func_ = nn.BCEWithLogitsLoss()
+        loss_func_ = nn.BCEWithLogitsLoss(reduction='sum')
         loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
         model = DiscreteLinearModel(X.shape[1], 1)
         model.to('cuda')
         L = L_MAP[data_set_id] * 4
 
     elif loss == 'MSELoss':
-        loss_func = nn.MSELoss()
+        loss_func = nn.MSELoss(reduction='sum')
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
         L = L_MAP[data_set_id]

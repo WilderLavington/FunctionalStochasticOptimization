@@ -1,5 +1,7 @@
 
-import torch.nn as nn
+from torch import nn
+from torch.nn import functional as F
+import math
 import torch
 
 # something for discrete outputs

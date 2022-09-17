@@ -9,20 +9,23 @@ import urllib
 from sklearn.svm import SVC
 from sklearn.datasets import load_svmlight_file
 from scipy.sparse import csr_matrix
+import torchvision
+from torchvision import transforms
+
 LIBSVM_URL = "https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/"
 LIBSVM_DOWNLOAD_FN = {"rcv1"       : "rcv1_train.binary.bz2",
                       "mushrooms"  : "mushrooms",
                       "ijcnn"      : "ijcnn1.tr.bz2",
                       "w8a"        : "w8a"}
-                      
+
 # ===========================================================
 # simple baseline examples
-def load_libsvm(name, data_dir='datasets/'):
-    if not os.path.exists(data_dir):
-        os.mkdir(data_dir)
+def load_libsvm(name, datadir='datasets/'):
+    if not os.path.exists(datadir):
+        os.mkdir(datadir)
 
     fn = LIBSVM_DOWNLOAD_FN[name]
-    data_path = os.path.join(data_dir, fn)
+    data_path = os.path.join(datadir, fn)
 
     if not os.path.exists(data_path):
         url = urllib.parse.urljoin(LIBSVM_URL, fn)
@@ -55,8 +58,8 @@ def generate_synthetic_mfac(xdim=6, ydim=10, nsamples=1000, A_condition_number=1
 
 # ===========================================================
 # load cifar 100
-def load_mnist(data_dir):
-    dataset = torchvision.datasets.MNIST(datadir, train=train_flag,
+def load_mnist(datadir):
+    dataset = torchvision.datasets.MNIST(datadir, train=None,
                                download=True,
                                transform=torchvision.transforms.Compose([
                                    torchvision.transforms.ToTensor(),
@@ -68,7 +71,7 @@ def load_mnist(data_dir):
 
 # ===========================================================
 # load cifar 10
-def load_cifar10(data_dir):
+def load_cifar10(datadir):
     transform_function = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
@@ -78,15 +81,15 @@ def load_cifar10(data_dir):
         ])
     dataset = torchvision.datasets.CIFAR10(
         root=datadir,
-        train=train_flag,
+        train=None,
         download=True,
         transform=transform_function)
-    X, y = dataset.data.numpy(), dataset.targets.numpy()
+    X, y = np.array(dataset.data), np.array(dataset.targets)
     return X, y
 
 # ===========================================================
 # matrix matrix_factorization
-def load_cifar100(data_dir):
+def load_cifar100(datadir):
     transform_function = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
@@ -96,8 +99,8 @@ def load_cifar100(data_dir):
         ])
     dataset = torchvision.datasets.CIFAR100(
             root=datadir,
-            train=train_flag,
+            train=None,
             download=True,
             transform=transform_function)
-    X, y = dataset.data.numpy(), dataset.targets.numpy()
+    X, y = np.array(dataset.data), np.array(dataset.targets)
     return X, y

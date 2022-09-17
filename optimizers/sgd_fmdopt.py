@@ -53,17 +53,18 @@ class SGD_FMDOpt(torch.optim.Optimizer):
 
     @staticmethod
     def compute_grad_norm(grad_list):
-        grad_norm = 0.
+        grad_norm = 0
         device = torch.device("cuda" if (torch.cuda.is_available()) else "cpu")
         # assert 1==0
         for g in grad_list:
             if g is None:
                 continue
-            if torch.sum(torch.mul(g, g)).device != device:
-                grad_norm += torch.sum(torch.mul(g, g)).to(device)
+            if g.device != device:
+                grad_norm += torch.sum(g).to(device)
             else:
-                grad_norm += torch.sum(torch.mul(g, g))
-        grad_norm = torch.sqrt(grad_norm)
+                grad_norm += torch.sum(g)
+        grad_norm = torch.sqrt(grad_norm.pow(2).sum())
+
         return grad_norm
 
     @staticmethod
@@ -130,8 +131,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             # return loss
             return surr
 
-        # now we take multiple steps over surrogate
-        self.inner_optim.state['step_size'] = self.init_step_size
+        # check improvement
         last_loss = None
 
         # make sure we take big steps

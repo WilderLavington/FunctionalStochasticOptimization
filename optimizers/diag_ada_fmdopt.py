@@ -35,6 +35,7 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
 
         # compute loss + grad for eta computation
         _, f_t, inner_closure = closure(call_backward=False)
+        batch_size = torch.tensor(f_t.shape[0], device='cuda')
 
         # initialize dual coordinate scaling
         if self.dual_coord is None:
@@ -47,10 +48,8 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
 
         # update dual coords
-        print(dlt_dft.shape,self.dual_coord.shape )
         self.dual_coord[data_idxs,:] += dlt_dft.pow(2).detach()
-        print('what.')
-        print(self.dual_coord[data_idxs])
+
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             # force
@@ -60,15 +59,9 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
             # m by d -> 1
             loss = torch.sum(dlt_dft*f)
             # force inner product
-            print(self.dual_coord[data_idxs].pow(0.5))
-            print((f - f_t.detach()).pow(2))
-            reg_term = (1/2) * (f - f_t.detach()).pow(2) * self.dual_coord[data_idxs].pow(0.5)
-
-            print(reg_term)
-            print('yeet')
-            print(reg_term)
+            # reg_term = (f - f_t.detach()).pow(2) #* self.dual_coord[data_idxs].pow(0.5)
             # compute full surrogate
-            surr = loss + reg_term.mean()
+            surr = (loss +  torch.norm(f-f_t,2).pow(2)) / batch_size
             # do we differentiate
             if call_backward:
                 surr.backward()

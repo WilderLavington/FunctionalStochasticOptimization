@@ -84,7 +84,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
 
         # compute loss + grad for eta computation
         loss_t, f_t, inner_closure = closure(call_backward=False)
-
+        batch_size = torch.tensor(f_t.shape[0], device='cuda')
         # produce some 1 by m (n=batch-size, m=output of f)
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
 
@@ -109,7 +109,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             # remove cap F
             reg_term = self.div_op(f,f_t.detach())
             # compute full surrogate
-            surr = loss + eta * reg_term
+            surr = (loss + eta * reg_term) / batch_size
             # print(loss, reg_term)
             # do we differentiate
             if call_backward:

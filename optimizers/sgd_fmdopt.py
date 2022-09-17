@@ -71,15 +71,23 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         for target_param, param in zip(target, source):
             target_param.data.copy_(param.data)
 
+    def log_info(self):
+        # try logging (generalized for different inner-optimizers )
+        try:
+            assert isinstance(self.inner_optim.state['function_evals'], int)
+            self.state['function_evals'] = self.inner_optim.state['function_evals']
+            self.state['inner_step_size'] = self.inner_optim.state['step_size']
+            self.state['outer_stepsize'] = 1/eta
+        except:
+            self.state['function_evals'] += 1
+            self.state['inner_step_size'] = self.inner_lr
+        self.state['step_time'] = timer(self.start,time.time())
+        return None
+
     def step(self, closure, clip_grad=False):
 
-        #======================================================
-        # closure info
-        # .... comments go here
-        #======================================================
-
         # set initial step size
-        start = time.time()
+        self.start = time.time()
         self.state['outer_steps'] += 1
 
         # compute loss + grad for eta computation
@@ -121,8 +129,8 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         last_loss = None
 
         # make sure we take big steps
-        # if self.reset_lr_on_step:
-        #     self.inner_optim.state['step_size'] = self.init_step_size
+        if self.reset_lr_on_step:
+            self.inner_optim.state['step_size'] = self.init_step_size
 
         #
         for m in range(0,self.m):
@@ -145,17 +153,8 @@ class SGD_FMDOpt(torch.optim.Optimizer):
                     # raise Exception('Increase in the surrogate.')
             else:
                 last_loss = current_loss
-
-        # try logging (generalized for different inner-optimizers )
-        try:
-            assert isinstance(self.inner_optim.state['function_evals'], int)
-            self.state['function_evals'] = self.inner_optim.state['function_evals']
-            self.state['inner_step_size'] = self.inner_optim.state['step_size']
-            self.state['outer_stepsize'] = 1/eta
-        except:
-            self.state['function_evals'] += 1
-            self.state['inner_step_size'] = self.inner_lr
-        self.state['step_time'] = timer(start,time.time())
+        #
+        self.log()
 
         # return loss
         return current_loss

@@ -30,7 +30,7 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
         #======================================================
 
         # set initial step size
-        start = time.time()
+        self.start = time.time()
         self.state['outer_steps'] += 1
 
         # compute loss + grad for eta computation
@@ -42,14 +42,14 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
             if len(f_t.shape)==1:
                 self.dual_coord = torch.zeros((self.total_data_points,1)).cuda().detach()
             else:
-                self.dual_coord = torch.zeros((self.total_data_points,f_t.shape[-1])).cuda().detach()
+                self.dual_coord = torch.zeros((self.total_data_points,f_t.detach().shape[-1])).cuda().detach()
 
         # produce some 1 by m (n=batch-size, m=output of f)
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
 
         # update dual coords
         self.dual_coord[data_idxs,:] += dlt_dft.pow(2).detach()
-
+         
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             # force
@@ -59,14 +59,18 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
             # m by d -> 1
             loss = torch.sum(dlt_dft*f)
             # force inner product
-            # reg_term = (f - f_t.detach()).pow(2) #* self.dual_coord[data_idxs].pow(0.5)
+            reg_term = (f - f_t.detach()).pow(2) * self.dual_coord[data_idxs].pow(0.5)
             # compute full surrogate
-            surr = (loss +  torch.norm(f-f_t,2).pow(2)) / batch_size
+            surr = (loss +  reg_term.sum()) / batch_size
             # do we differentiate
             if call_backward:
                 surr.backward()
             # return loss
             return surr
+
+        # make sure we take big steps
+        if self.reset_lr_on_step:
+            self.inner_optim.state['step_size'] = self.init_step_size
 
         # now we take multiple steps over surrogate
         for m in range(0,self.m):
@@ -74,15 +78,8 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
             self.state['inner_steps'] += 1
             self.state['grad_evals'] += 1
 
-        # try logging (generalized for different inner-optimizers )
-        try:
-            assert isinstance(self.inner_optim.state['function_evals'], int)
-            self.state['function_evals'] = self.inner_optim.state['function_evals']
-            self.state['inner_step_size'] = self.inner_optim.state['step_size']
-        except:
-            self.state['function_evals'] += 1
-            self.state['inner_step_size'] = self.inner_lr
-        self.state['step_time'] = timer(start,time.time())
+        #
+        self.log_info()
 
         # return loss
         return current_loss

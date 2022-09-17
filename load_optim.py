@@ -60,7 +60,7 @@ def load_train_args(args, model, loss_func, L, X, y):
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
         optim_args = {'eta':1/args.stepsize, 'eta_schedule':args.eta_schedule,
                       'inner_optim':eval(args.inner_opt), 'surr_optim_args':surr_optim_args,
-                      'm':args.m, 'total_steps':args.total_steps}
+                      'm':args.m, 'total_steps':args.total_steps, 'reset_lr_on_step':args.reset_lr_on_step}
         optim = SGD_FMDOpt(model.parameters(), **optim_args)
         train_args = {'args':args, 'model':model, 'optim':optim,
                 'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': False,
@@ -73,7 +73,7 @@ def load_train_args(args, model, loss_func, L, X, y):
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
         optim_args = {'eta':1/args.stepsize, 'eta_schedule': 'constant',
                       'inner_optim':eval(args.inner_opt), 'surr_optim_args':surr_optim_args,
-                      'm':args.m, 'total_steps':args.total_steps}
+                      'm':args.m, 'total_steps':args.total_steps, 'reset_lr_on_step':args.reset_lr_on_step}
         optim = Ada_FMDOpt(model.parameters(), **optim_args)
         train_args = {'args':args, 'model':model, 'optim':optim,
                 'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': False,
@@ -87,7 +87,7 @@ def load_train_args(args, model, loss_func, L, X, y):
         optim_args = {'eta':1/args.stepsize, 'eta_schedule': 'constant',
                       'inner_optim':eval(args.inner_opt), 'surr_optim_args':surr_optim_args,
                       'm':args.m, 'total_steps':args.total_steps,
-                      'total_data_points':y.shape[-1]}
+                      'total_data_points':y.shape[0], 'reset_lr_on_step':args.reset_lr_on_step}
         optim = Diag_Ada_FMDOpt(model.parameters(), **optim_args)
         train_args = {'args':args, 'model':model, 'optim':optim,
                 'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': False,

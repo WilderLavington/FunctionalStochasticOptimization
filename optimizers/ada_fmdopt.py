@@ -28,7 +28,7 @@ class Ada_FMDOpt(SGD_FMDOpt):
         #======================================================
 
         # set initial step size
-        start = time.time()
+        self.start = time.time()
         self.state['outer_steps'] += 1
 
         # compute loss + grad for eta computation
@@ -44,7 +44,7 @@ class Ada_FMDOpt(SGD_FMDOpt):
         else:
             self.grad_sum = torch.norm(dlt_dft,2).pow(2).detach()
 
-        # set  eta schedule  
+        # set  eta schedule
         eta = self.eta * (self.grad_sum).pow(0.5)
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
@@ -74,15 +74,8 @@ class Ada_FMDOpt(SGD_FMDOpt):
             self.state['inner_steps'] += 1
             self.state['grad_evals'] += 1
 
-        # try logging (generalized for different inner-optimizers )
-        try:
-            assert isinstance(self.inner_optim.state['function_evals'], int)
-            self.state['function_evals'] = self.inner_optim.state['function_evals']
-            self.state['inner_step_size'] = self.inner_optim.state['step_size']
-        except:
-            self.state['function_evals'] += 1
-            self.state['inner_step_size'] = self.inner_lr
-        self.state['step_time'] = timer(start,time.time())
+        #
+        self.log_info()
 
         # return loss
         return current_loss

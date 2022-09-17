@@ -30,7 +30,7 @@ def get_args():
     parser.add_argument('--matfac_ydim', type=int, default=10)
     parser.add_argument('--matfac_nsamples', type=int, default=1000)
     parser.add_argument('--matfac_condition_number', type=float, default=1e-10)
-
+    parser.add_argument('--reset_lr_on_step', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=100)
     parser.add_argument('--episodes', type=int, default=100)
     parser.add_argument('--normalize_epochs_lengths', type=int, default=1)

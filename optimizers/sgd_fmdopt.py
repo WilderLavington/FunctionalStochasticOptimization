@@ -16,8 +16,7 @@ from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_
 # linesearch optimizer
 class SGD_FMDOpt(torch.optim.Optimizer):
     def __init__(self, params, m=1, eta_schedule = 'constant',
-                 div_op = lambda f,f1: torch.norm(f-f1).pow(2),
-                 inner_optim = LSOpt, inv_eta=1e-3, stoch_reg=True,
+                 inner_optim = LSOpt, eta=1e3,
                  surr_optim_args={'lr':1.}, reset_lr_on_step=True,
                  total_steps = 1000):
         params = list(params)
@@ -26,13 +25,12 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         # create some local tools
         self.params = params
         self.m = m
-        self.stoch_reg = stoch_reg
         self.total_steps = total_steps
 
         # set eta and the divergence
         self.inner_optim = inner_optim(self.params,**surr_optim_args)
-        self.div_op = div_op
-        self.eta =  1/inv_eta # please rename
+        self.div_op = lambda f, ft: torch.norm(f-ft,2).pow(2)
+        self.eta = eta # please rename
         self.eta_schedule = eta_schedule
         self.inner_lr = surr_optim_args['lr']
         self.reset_lr_on_step = reset_lr_on_step
@@ -53,34 +51,20 @@ class SGD_FMDOpt(torch.optim.Optimizer):
 
     @staticmethod
     def compute_grad_norm(grad_list):
-        grad_norm = 0
-        device = torch.device("cuda" if (torch.cuda.is_available()) else "cpu")
-        # assert 1==0
-        for g in grad_list:
-            if g is None:
-                continue
-            if g.device != device:
-                grad_norm += torch.sum(g).to(device)
-            else:
-                grad_norm += torch.sum(g)
-        grad_norm = torch.sqrt(grad_norm.pow(2).sum())
-
+        grad_norm = 0.
+        grad_list = [g.reshape(-1) for g in grad_list]
+        flat_grad = torch.cat(grad_list, dim=0).reshape(-1)
+        grad_norm = torch.sqrt(flat_grad.pow(2).sum())
         return grad_norm
-
     @staticmethod
     def get_grad_list(params):
         g_list = []
         for p in params:
             grad = p.grad
             if grad is None:
-                grad = 0.
-            g_list += [grad]
+                grad = torch.tensor( 0., device='cuda')
+            g_list += [grad.reshape(-1)]
         return g_list
-
-    @staticmethod
-    def get_grad_norm(params):
-        glist = get_grad_list(params)
-        return compute_grad_norm(glist)
 
     @staticmethod
     def copy_params(target, source):
@@ -117,6 +101,8 @@ class SGD_FMDOpt(torch.optim.Optimizer):
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
+            #
+            self.zero_grad()
             # f = n by m
             loss, f, inner_closure = closure(call_backward=False)
             # m by d -> 1
@@ -125,6 +111,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             reg_term = self.div_op(f,f_t.detach())
             # compute full surrogate
             surr = loss + eta * reg_term
+            # print(loss, reg_term)
             # do we differentiate
             if call_backward:
                 surr.backward()
@@ -135,8 +122,8 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         last_loss = None
 
         # make sure we take big steps
-        if self.reset_lr_on_step:
-            self.inner_optim.state['step_size'] = self.init_step_size
+        # if self.reset_lr_on_step:
+        #     self.inner_optim.state['step_size'] = self.init_step_size
 
         #
         for m in range(0,self.m):
@@ -155,7 +142,8 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             # check we are improving
             if last_loss:
                 if last_loss < current_loss:
-                    raise Exception('Increase in the surrogate.')
+                    print('warning: increase in surrogate')
+                    # raise Exception('Increase in the surrogate.')
             else:
                 last_loss = current_loss
 

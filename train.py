@@ -46,8 +46,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
         if t % log_rate == 0:
             avg_loss = 0.
             grad_norm = 0.
-
-
+            optim.zero_grad()
             for X_batch, y_batch, data_idx_batch in data_generator:
                 # put data onto the
                 X_batch, y_batch = X_batch.cuda(), y_batch.cuda()
@@ -64,10 +63,11 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
             log_info = {'avg_loss': avg_loss / y.shape[0],
                         'optim_steps': s, 'function_evals': s, 'grad_evals': s,
                         'inner_backtracks': 0, 'inner_steps': 1,
-                        'grad_norm': grad_norm / torch.tensor(y.shape[0]).pow(0.5), 'eta_scale': args.stepsize,
+                        'grad_norm': (grad_norm / torch.tensor(y.shape[0]).pow(0.5)).item(), 
+                        'eta_scale': args.stepsize,
                         'time_elapsed':  time() - starting_time}
             log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
-            # log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
+            log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
             # # log info
             try:
                 wandb.log(log_info)
@@ -90,7 +90,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
                 optim.zero_grad()
                 model_outputs = model(X_batch)
                 def inner_closure(model_outputs):
-                    loss = loss_func(model_outputs, y_batch) 
+                    loss = loss_func(model_outputs, y_batch)
                     return loss
                 loss = inner_closure(model_outputs)
                 if call_backward==True:

@@ -25,7 +25,7 @@ LIBSVM_DOWNLOAD_FN = {"rcv1"       : "rcv1_train.binary.bz2",
 
 # ======================
 # set expensive to compute hyper-parameters
-L_MAP = {'mushrooms': torch.tensor(21764.3105, device='cuda'),
+L_MAP = {'mushrooms': torch.tensor(87057.2422, device='cuda'),
          'ijcnn': torch.tensor(3476.3210, device='cuda'),
          'rcv1': torch.tensor(166.4695, device='cuda'),
          'mfac': torch.tensor(1000, device='cuda'),

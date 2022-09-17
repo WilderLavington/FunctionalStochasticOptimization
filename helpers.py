@@ -23,21 +23,19 @@ def update_exp_lr(optimizer, steps, total_steps, initial_lr):
         # print('update_exp_lr', param_group['lr'])
     return optimizer
 
-# helpers
+# helpers 
 def compute_grad_norm(grad_list):
     grad_norm = 0.
-    for g in grad_list:
-        if g is None:
-            continue
-        grad_norm += torch.sum(torch.mul(g, g))
-    grad_norm = torch.sqrt(grad_norm)
+    grad_list = [g.reshape(-1) for g in grad_list]
+    flat_grad = torch.cat(grad_list, dim=0).reshape(-1)
+    grad_norm = torch.sqrt(flat_grad.pow(2).sum())
     return grad_norm
 def get_grad_list(params):
     g_list = []
     for p in params:
         grad = p.grad
         if grad is None:
-            grad = 0.
+            grad = torch.tensor( 0., device='cuda')
         g_list += [grad]
     return g_list
 def get_grad_norm(params):

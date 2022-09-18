@@ -1,12 +1,12 @@
 
 # create sweep
-wandb sweep /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/gridsearch/minibatch/experiment.sh
+wandb sweep /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/optimal_stepsize/fullbatch/funcopt.yaml
 
 # wandb info
-wandb: Creating sweep from: /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/sharan_report0916.yaml
-wandb: Created sweep with ID: dkzzwr25
-wandb: View sweep at: https://wandb.ai/wilderlavington/FunctionalStochasticOptimization/sweeps/dkzzwr25
-wandb: Run sweep agent with: wandb agent wilderlavington/FunctionalStochasticOptimization/dkzzwr25
+wandb: Creating sweep from: /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/optimal_stepsize/fullbatch/funcopt.yaml
+wandb: Created sweep with ID: a7dkmd3j
+wandb: View sweep at: https://wandb.ai/wilderlavington/FunctionalStochasticOptimization/sweeps/a7dkmd3j
+wandb: Run sweep agent with: wandb agent wilderlavington/FunctionalStochasticOptimization/a7dkmd3j
 
 # run local
 wandb agent wilderlavington/FunctionalStochasticOptimization/dkzzwr25

@@ -80,20 +80,19 @@ def main():
     model, logs = train_model(**train_args)
 
     # store logs
-    if args.randomize_folder:
-        #
+    if args.randomize_folder: 
         file=get_random_string(16)
         try:
             os.makedirs('logs/database/'+file)
         except FileExistsError:
             print("File already exists")
-        #
-        logs = torch.save(logs, 'logs/database/'+file+'/'+args.file_name+'.pt')
-        logs = torch.save(args, 'logs/database/'+file+'/args.pt')
+        torch.save(logs, 'logs/database/'+file+'/'+args.file_name+'.pt')
+        torch.save(args, 'logs/database/'+file+'/args.pt')
+        torch.save(model, 'logs/database/'+file+'/model.pt')
     else:
-        logs = torch.save(logs, 'logs/'+args.folder_name+args.file_name+'.pt')
-        logs = torch.save(args, 'logs/'+args.folder_name+'args.pt')
-
+        torch.save(logs, 'logs/'+args.folder_name+args.file_name+'.pt')
+        torch.save(args, 'logs/'+args.folder_name+'args.pt')
+        torch.save(args, 'logs/'+args.folder_name+'model.pt')
 
 if __name__ == "__main__":
     main()

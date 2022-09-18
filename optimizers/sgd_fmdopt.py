@@ -154,7 +154,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             else:
                 last_loss = current_loss
         #
-        self.log()
+        self.log_info()
 
         # return loss
         return current_loss

@@ -14,7 +14,7 @@ import os
 
 # get local imports
 from models import DiscreteLinearModel, ContinuousLinearModel
-from load_data import load_libsvm
+from loaders.load_data import load_libsvm
 from optimizers.sgd_fmdopt import SGD_FMDOpt
 from optimizers.ada_fmdopt import Ada_FMDOpt
 from optimizers.lsopt import LSOpt
@@ -63,7 +63,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
             log_info = {'avg_loss': avg_loss / y.shape[0],
                         'optim_steps': s, 'function_evals': s, 'grad_evals': s,
                         'inner_backtracks': 0, 'inner_steps': 1,
-                        'grad_norm': (grad_norm / torch.tensor(y.shape[0]).pow(0.5)).item(), 
+                        'grad_norm': (grad_norm / torch.tensor(y.shape[0]).pow(0.5)).item(),
                         'eta_scale': args.stepsize,
                         'time_elapsed':  time() - starting_time}
             log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})

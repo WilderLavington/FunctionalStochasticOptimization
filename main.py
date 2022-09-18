@@ -15,11 +15,11 @@ import os
 
 # get local imports
 from models import DiscreteLinearModel, ContinuousLinearModel, LinearNueralNetworkModel
-from load_exp import load_model, load_dataset
+from loaders.load_exp import load_model, load_dataset
 
 from parser import *
 from train import *
-from load_optim import *
+from loaders.load_optim import *
 from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_lr, update_stoch_lr
 
 def check_args(args):
@@ -32,6 +32,9 @@ def check_args(args):
     # make sure inner-opt is good.
     if args.algo in ['Ada_FMDOpt', 'SGD_FMDOpt', 'Diag_Ada_FMDOpt']:
         assert args.inner_opt =='LSOpt'
+    # make sure inner-opt is good.
+    if args.fullbatch:
+        assert args.batch_size == 100.
 
 def main():
 

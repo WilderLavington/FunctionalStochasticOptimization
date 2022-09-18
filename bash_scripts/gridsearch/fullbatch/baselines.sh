@@ -20,3 +20,7 @@ python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/Funct
 python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
 --command='wandb agent --count 500 wilderlavington/FunctionalStochasticOptimization/dp3u76fv' --machine='ubcml' --time='00-08:00' --account='ubcml' \
 --num=1
+
+python  sweep_runner.py --directory='/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization' \
+--command='wandb agent --count 500 wilderlavington/FunctionalStochasticOptimization/dp3u76fv' --machine='cedar' --time='00-08:00' --account='def-fwood' \
+--num=1

@@ -22,7 +22,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
     args_list = sys.argv[1:]
     if machine=='borg':
         if account is None:
-            account = 'plai' 
+            account = 'plai'
         file = open('eval_dir/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/sh \n')
         file.write('#SBATCH --partition='+account+' \n')
@@ -62,7 +62,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
     elif machine=='cedar':
         file = open('eval_dir/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
-        file.write('#SBATCH --account=def-fwood \n')
+        file.write('#SBATCH --account='+account+'\n')
         file.write('#SBATCH --gres=gpu:1 \n')
         file.write('#SBATCH --mem-per-cpu=4G \n')
         file.write('#SBATCH --cpus-per-task=5 \n')

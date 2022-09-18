@@ -1,6 +1,6 @@
 
 # create sweep
-wandb sweep /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/sharan_report0916.yaml
+wandb sweep /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/optimal_stepsize/minibatch/experiment.sh
 
 # wandb info
 wandb: Creating sweep from: /home/wlavington/Desktop/FunctionalStochasticOptimization/configs/sharan_report0916.yaml

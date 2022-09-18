@@ -21,10 +21,8 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
     # set the base runner
     args_list = sys.argv[1:]
     if machine=='borg':
-        # set account for borg cluster
         if account is None:
-            account = 'plai'
-        # set account for borg cluster
+            account = 'plai' 
         file = open('eval_dir/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/sh \n')
         file.write('#SBATCH --partition='+account+' \n')
@@ -37,13 +35,9 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
         file.write('exit')
         file.close()
     elif machine=='ubcml':
-        # set account for borg cluster
-        if account is None:
-            account = 'ubcml'
-        # set account for borg cluster
         file = open('eval_dir/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
-        file.write('#SBATCH --partition='+account+' \n')
+        file.write('#SBATCH --partition=ubcml \n')
         file.write('#SBATCH --gres=gpu:1 \n')
         file.write('#SBATCH --mem-per-cpu=4G \n')
         file.write('#SBATCH --cpus-per-task=5 \n')
@@ -54,7 +48,6 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
         file.write('exit')
         file.close()
     elif machine=='narval':
-        # set account for borg cluster
         file = open('eval_dir/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --account=rrg-kevinlb \n')
@@ -62,35 +55,25 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
         file.write('#SBATCH --mem-per-cpu=4G \n')
         file.write('#SBATCH --cpus-per-task=5 \n')
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
-        file.write('conda activate ubcml \n')
         file.write('cd ' + directory + ' \n')
+        file.write(command + ' \n')
+        file.write('exit')
+        file.close()
+    elif machine=='cedar':
+        file = open('eval_dir/job_'+job_name+'.sh',"w+")
+        file.write('#!/bin/bash \n')
+        file.write('#SBATCH --account=def-fwood \n')
+        file.write('#SBATCH --gres=gpu:1 \n')
+        file.write('#SBATCH --mem-per-cpu=4G \n')
+        file.write('#SBATCH --cpus-per-task=5 \n')
+        file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
+        file.write('cd ' + directory + ' \n')
+        file.write('wandb offline \n')
         file.write(command + ' \n')
         file.write('exit')
         file.close()
     else:
-        #
-        if account is None:
-            account = 'rrg-kevinlb'
-        elif account in ['rrg-kevinlb', 'def-fwood', 'rrg-schmidtm', 'def-schmidtm']:
-            pass
-        else:
-            raise Exception
-
-        command = 'wandb agent --count 1 ' + command
-        #
-        file = open('eval_dir/job_'+job_name+'.sh',"w+")
-        file.write('#!/bin/sh \n')
-        file.write('#SBATCH --account='+account+' \n')
-        file.write('#SBATCH --mem-per-cpu=4G \n')
-        file.write('#SBATCH --cpus-per-task=4 \n')
-        file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
-        file.write('#SBATCH --gres=gpu:1 \n')
-        file.write('source ~/sac/bin/activate \n')
-        file.write('export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/nickioan/.mujoco/mujoco210/bin \n')
-        file.write('cd ' + directory + ' \n')
-        file.write(command + ' \n')
-        file.write('exit')
-        file.close()
+        raise Exception
     # create the command
     command = 'sbatch ' + 'eval_dir/job_'+job_name+'.sh'
     # # submit the job

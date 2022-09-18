@@ -43,7 +43,7 @@ def load_train_args(args, model, loss_func, L, X, y):
         train_args = {'args':args, 'model':model, 'optim':optim,
             'loss_func': loss_func, 'X':X, 'y':y, 'call_closure':False,
             'total_rounds': args.epochs, 'batch_size':args.batch_size,
-            'update_lr_type': args.eta_schedule, 'single_out': True}
+            'update_lr_type': 'constant', 'single_out': True}
 
     elif args.algo == 'Sadagrad':
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else  1e-2

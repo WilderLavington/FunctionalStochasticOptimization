@@ -82,6 +82,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('#SBATCH --cpus-per-task=5 \n')
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
         file.write('cd ' + directory + ' \n')
+        file.write('wandb offline \n')
         file.write(command + ' \n')
         file.write('exit')
         file.close()

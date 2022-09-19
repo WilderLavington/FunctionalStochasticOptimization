@@ -64,7 +64,7 @@ def load_model(data_set_id, loss, X, y, use_dense=False):
         loss_func = nn.CrossEntropyLoss(reduction='sum')
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
-        L = L_MAP[data_set_id] * 4
+        L = L_MAP[data_set_id] * 4 * torch.unique(y).shape[0]
 
     elif loss == 'BCEWithLogitsLoss':
         loss_func_ = nn.BCEWithLogitsLoss(reduction='sum')
@@ -77,7 +77,7 @@ def load_model(data_set_id, loss, X, y, use_dense=False):
         loss_func = nn.MSELoss(reduction='sum')
         model = ContinuousLinearModel(X.shape[1], 1)
         model.to('cuda')
-        L = L_MAP[data_set_id]
+        L = L_MAP[data_set_id] * 2
 
     # update model for stuff that needs it
     if data_set_id == 'mfac':

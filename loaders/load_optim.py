@@ -31,7 +31,8 @@ def load_train_args(args, model, loss_func, L, X, y):
         train_args = {'args':args, 'model':model, 'optim':optim,
             'loss_func': loss_func, 'X':X, 'y':y, 'call_closure':True,
             'total_rounds': args.epochs, 'batch_size':args.batch_size,
-            'update_lr_type': args.eta_schedule, 'single_out': True}
+            'update_lr_type': args.eta_schedule, 'single_out': True,
+            'normalize_training_loss': True}
 
     elif args.algo == 'LSOpt':
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else args.init_step_size
@@ -43,7 +44,8 @@ def load_train_args(args, model, loss_func, L, X, y):
         train_args = {'args':args, 'model':model, 'optim':optim,
             'loss_func': loss_func, 'X':X, 'y':y, 'call_closure':False,
             'total_rounds': args.epochs, 'batch_size':args.batch_size,
-            'update_lr_type': 'constant', 'single_out': True}
+            'update_lr_type': 'constant', 'single_out': True,
+            'normalize_training_loss': True}
 
     elif args.algo == 'Sadagrad':
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else  1e-2
@@ -52,10 +54,12 @@ def load_train_args(args, model, loss_func, L, X, y):
         train_args = {'args':args, 'model':model, 'optim':optim,
             'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': True,
             'total_rounds': args.epochs, 'batch_size':args.batch_size,
-            'update_lr_type': 'constant', 'single_out': True}
+            'update_lr_type': 'constant', 'single_out': True,
+            'normalize_training_loss': True}
 
     elif args.algo == 'SGD_FMDOpt':
-        args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else 10**(-1.)
+        optimal_stepsize = 1/4 if args.loss=='MSELoss' else (1/8) * (1 / torch.unique(y).shape[0])
+        args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
         optim_args = {'eta':1/args.stepsize, 'eta_schedule':args.eta_schedule,
@@ -65,10 +69,12 @@ def load_train_args(args, model, loss_func, L, X, y):
         train_args = {'args':args, 'model':model, 'optim':optim,
                 'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': False,
                 'total_rounds': args.epochs, 'batch_size':args.batch_size,
-                'update_lr_type': 'constant', 'single_out': False}
+                'update_lr_type': 'constant', 'single_out': False,
+                'normalize_training_loss': False}
 
     elif args.algo == 'Ada_FMDOpt':
-        args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else 10**(2.)
+        optimal_stepsize = 1/4 if args.loss=='MSELoss' else (1/8) * (1 / torch.unique(y).shape[0])
+        args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
         optim_args = {'eta':1/args.stepsize, 'eta_schedule': 'constant',
@@ -78,10 +84,12 @@ def load_train_args(args, model, loss_func, L, X, y):
         train_args = {'args':args, 'model':model, 'optim':optim,
                 'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': False,
                 'total_rounds': args.epochs, 'batch_size':args.batch_size,
-                'update_lr_type': 'constant', 'single_out': False}
+                'update_lr_type': 'constant', 'single_out': False,
+                'normalize_training_loss': False}
 
     elif args.algo == 'Diag_Ada_FMDOpt':
-        args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else 10**(2.)
+        optimal_stepsize = 1/4 if args.loss=='MSELoss' else (1/8) * (1 / torch.unique(y).shape[0])
+        args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
         optim_args = {'eta':1/args.stepsize, 'eta_schedule': 'constant',
@@ -93,7 +101,7 @@ def load_train_args(args, model, loss_func, L, X, y):
                 'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': False,
                 'total_rounds': args.epochs, 'batch_size':args.batch_size,
                 'update_lr_type': 'constant', 'single_out': False,
-                'include_data_id': True}
+                'include_data_id': True, 'normalize_training_loss': False}
 
     elif args.algo == 'Adam':
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else  1e-3
@@ -102,7 +110,8 @@ def load_train_args(args, model, loss_func, L, X, y):
         train_args = {'args':args, 'model':model, 'optim':optim,
             'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': True,
             'total_rounds': args.epochs, 'batch_size':args.batch_size,
-            'update_lr_type': 'constant', 'single_out': True}
+            'update_lr_type': 'constant', 'single_out': True,
+            'normalize_training_loss': True}
 
     elif args.algo == 'Adagrad':
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else  1e-2
@@ -111,7 +120,8 @@ def load_train_args(args, model, loss_func, L, X, y):
         train_args = {'args':args, 'model':model, 'optim':optim,
             'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': True,
             'total_rounds': args.epochs, 'batch_size':args.batch_size,
-            'update_lr_type': 'constant', 'single_out': True}
+            'update_lr_type': 'constant', 'single_out': True,
+            'normalize_training_loss': True}
     else:
         raise Exception()
 

@@ -26,7 +26,7 @@ from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_
 
 def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', single_out=False,
             call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1, include_data_id=False,
-            accumulate_grad=False):
+            accumulate_grad=False, normalize_training_loss=False):
 
     # form a data index set
     data_idxs = torch.tensor([_ for _ in range(y.shape[0])])
@@ -91,6 +91,8 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
                 model_outputs = model(X_batch)
                 def inner_closure(model_outputs):
                     loss = loss_func(model_outputs, y_batch)
+                    if normalize_training_loss:
+                        loss /= X_batch.shape[0]
                     return loss
                 loss = inner_closure(model_outputs)
                 if call_backward==True:
@@ -123,7 +125,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
             # check for nans
             assert step_loss == step_loss
             assert grad_norm == grad_norm
-            
+
         # early stopping conditions
         if (grad_norm) < 1e-6:
             break

@@ -58,7 +58,8 @@ def load_train_args(args, model, loss_func, L, X, y):
             'normalize_training_loss': True}
 
     elif args.algo == 'SGD_FMDOpt':
-        optimal_stepsize = 1/4 if args.loss=='MSELoss' else (1/8) * (1 / torch.unique(y).shape[0])
+        optimal_stepsize = 1/4 if args.loss=='MSELoss' else (1/4) * (1 / 2)**torch.unique(y).shape[0]
+        print(optimal_stepsize, torch.unique(y).shape[0])
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}

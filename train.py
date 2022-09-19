@@ -106,9 +106,9 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
 
             # step optimizer over closure
             if not include_data_id:
-                optim.step(closure)
+                step_loss = optim.step(closure)
             else:
-                optim.step(closure, data_idx_batch)
+                step_loss = optim.step(closure, data_idx_batch)
 
             s += 1
             if update_lr_type == 'constant':
@@ -120,6 +120,10 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
             else:
                 raise Exception
 
+            # check for nans
+            assert step_loss == step_loss
+            assert grad_norm == grad_norm
+            
         # early stopping conditions
         if (grad_norm) < 1e-6:
             break

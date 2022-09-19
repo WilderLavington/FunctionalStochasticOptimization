@@ -35,7 +35,7 @@ parameters:
   use_optimal_stepsize:
     values:
     - 0
-  log_eta:
+  log_lr:
     values:
     - -3.
     - -2.

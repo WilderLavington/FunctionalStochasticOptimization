@@ -24,8 +24,8 @@ from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_
 
 def check_args(args):
     # make sure configs match for mfac work
-    assert ((args.dataset_name=='synth') and (args.loss == 'MatrixFactorization')) \
-        or ((args.loss != 'MatrixFactorization') and (args.dataset_name!='synth'))
+    if args.dataset_name=='mfac':
+        assert args.loss=='MSELoss'
     # check optim configs
     if args.algo in ['Sadagrad', 'Ada_FMDOpt', 'Diag_Ada_FMDOpt', 'Adam', 'Adagrad']:
         assert args.eta_schedule == 'constant'
@@ -35,6 +35,9 @@ def check_args(args):
     # make sure inner-opt is good.
     if args.fullbatch:
         assert args.batch_size == 100.
+    # make sure we are matching the problem correctly
+    if args.dataset_name in ['mnist', 'cifar10', 'cifar100']:
+        assert args.loss == 'CrossEntropyLoss'
 
 def main():
 
@@ -55,7 +58,7 @@ def main():
     # get dataset  and model
     X, y = load_dataset(data_set_id=args.dataset_name, data_dir='datasets/', loss=args.loss)
     model, loss_func, L = load_model(data_set_id=args.dataset_name, loss=args.loss, X=X, y=y)
-
+    
     # set "optimal stepsize"
     args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else (1/L)
 
@@ -80,7 +83,7 @@ def main():
     model, logs = train_model(**train_args)
 
     # store logs
-    if args.randomize_folder: 
+    if args.randomize_folder:
         file=get_random_string(16)
         try:
             os.makedirs('logs/database/'+file)

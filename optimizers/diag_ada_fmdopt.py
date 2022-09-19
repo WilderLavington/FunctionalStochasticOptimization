@@ -49,7 +49,7 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
 
         # update dual coords
         self.dual_coord[data_idxs,:] += dlt_dft.pow(2).detach()
-         
+        
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             # force

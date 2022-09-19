@@ -48,6 +48,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.state['grad_evals'] = 0
         self.state['function_evals'] = 0
         self.state['outer_step_size'] = None
+        self.state['surrogate_increase_flag'] = 0
 
     @staticmethod
     def compute_grad_norm(grad_list):
@@ -89,7 +90,8 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         # set initial step size
         self.start = time.time()
         self.state['outer_steps'] += 1
-
+        self.state['surrogate_increase_flag'] = 0
+        
         # compute loss + grad for eta computation
         loss_t, f_t, inner_closure = closure(call_backward=False)
         batch_size = torch.tensor(f_t.shape[0], device='cuda')
@@ -146,11 +148,10 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             self.state['inner_steps'] += 1
             self.state['grad_evals'] += 1
 
-            # check we are improving
+            # check we are improving in terms of the surrogate
             if last_loss:
                 if last_loss < current_loss:
-                    print('warning: increase in surrogate')
-                    # raise Exception('Increase in the surrogate.')
+                    self.state['surrogate_increase_flag'] = 1
             else:
                 last_loss = current_loss
         #

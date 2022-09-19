@@ -5,3 +5,4 @@ logs*
 **.ipynb_checkpoints*
 **.pdf
 **.pyc
+optimizers/__pycache__*

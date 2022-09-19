@@ -15,11 +15,12 @@ from pathlib import Path
 import time
 import psutil
 
+# alrighty then
 import yaml
 from pathlib import Path
 import itertools
 
-
+# 
 def create_config_list(path):
     with open(path, 'r') as stream:
         try:

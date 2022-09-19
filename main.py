@@ -58,7 +58,7 @@ def main():
     # get dataset  and model
     X, y = load_dataset(data_set_id=args.dataset_name, data_dir='datasets/', loss=args.loss)
     model, loss_func, L = load_model(data_set_id=args.dataset_name, loss=args.loss, X=X, y=y)
-    
+
     # set "optimal stepsize"
     args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else (1/L)
 

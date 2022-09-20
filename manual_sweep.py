@@ -44,13 +44,13 @@ def config2command(config):
 
 def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', commands=[], directory='.', time='00-05:59'):
     # make thhe directory if it does not exist
-    Path('eval_dir').mkdir(parents=True, exist_ok=True)
+    Path('sbatch_scripts').mkdir(parents=True, exist_ok=True)
     # set the base runner
     args_list = sys.argv[1:]
     if machine=='borg':
         if account is None:
             account = 'plai'
-        file = open('eval_dir/job_'+job_name+'.sh',"w+")
+        file = open('sbatch_scripts/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/sh \n')
         file.write('#SBATCH --partition='+account+' \n')
         file.write('#SBATCH --gres=gpu:1 \n')
@@ -68,7 +68,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('exit')
         file.close()
     elif machine=='ubcml':
-        file = open('eval_dir/job_'+job_name+'.sh',"w+")
+        file = open('sbatch_scripts/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --partition=ubcml \n')
         file.write('#SBATCH --gres=gpu:1 \n')
@@ -87,7 +87,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('exit')
         file.close()
     elif machine=='narval':
-        file = open('eval_dir/job_'+job_name+'.sh',"w+")
+        file = open('sbatch_scripts/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --account=rrg-kevinlb \n')
         file.write('#SBATCH --gres=gpu:1 \n')
@@ -106,7 +106,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('exit')
         file.close()
     elif machine=='cedar':
-        file = open('eval_dir/job_'+job_name+'.sh',"w+")
+        file = open('sbatch_scripts/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --account='+account+'\n')
         file.write('#SBATCH --gres=gpu:1 \n')
@@ -127,27 +127,32 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
     else:
         raise Exception
     # create the command
-    command = 'sbatch ' + 'eval_dir/job_'+job_name+'.sh'
+    command = 'sbatch ' + 'sbatch_scripts/job_'+job_name+'.sh'
     # # submit the job
     exit_status = subprocess.call(command, shell=True)
     exit_status = subprocess.call('echo "\nsubmitted:"', shell=True)
-    command = 'cat eval_dir/job_'+job_name+'.sh'
+    command = 'cat sbatch_scripts/job_'+job_name+'.sh'
     exit_status = subprocess.call(command, shell=True)
     exit_status = subprocess.call('echo "\n"', shell=True)
-    # now delete the file
-    os.remove('eval_dir/job_'+job_name+'.sh')
     # nothing to return
     return None
 
-def generate_experiments(yaml_file, machine='cedar', account='rrg-schmidtm', directory='.', time='00-05:59'):
+def args_check(args_dict):
+    check = True
+    if args_dict['algo'] in ['Sadagrad', 'Ada_FMDOpt', 'Diag_Ada_FMDOpt', 'Adam', 'Adagrad']:
+        check = check and (args_dict['eta_schedule'] == 'constant')
+    return check
+
+def generate_experiments(yaml_file, job_name='job-ex', machine='cedar', account='rrg-schmidtm', directory='.', time='00-05:59'):
 
     # create list of configs from yaml
     configs = create_config_list(yaml_file)
     commands = []
     # convert configs to command and generate a job
     for idx, config in enumerate(configs):
-        commands.append(config2command(config) + ' --group='+machine)
-    eval_generation(job_name=str(idx), machine=machine, account=account, commands=commands, directory=directory, time=time)
+        if args_check(config):
+            commands.append(config2command(config) + ' --group='+machine)
+    eval_generation(job_name=job_name+'-'+str(len(commands)), machine=machine, account=account, commands=commands, directory=directory, time=time)
 
 def main():
     parser = argparse.ArgumentParser(description='job runner')
@@ -155,9 +160,10 @@ def main():
     parser.add_argument('--machine', default='narval')
     parser.add_argument('--time', default='00-08:00')
     parser.add_argument('--account', default='rrg-kevinlb')
+    parser.add_argument('--job_name', default='rrg-kevinlb')
     parser.add_argument('--yaml_file',default='configs/reality_check/funcopt.yaml')
     args = parser.parse_args()
-    generate_experiments(args.yaml_file, machine=args.machine, account=args.account,
+    generate_experiments(args.yaml_file,job_name=args.job_name,  machine=args.machine, account=args.account,
         directory=args.directory, time=args.time)
 
 if __name__ == "__main__":

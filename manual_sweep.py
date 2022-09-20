@@ -20,7 +20,7 @@ import yaml
 from pathlib import Path
 import itertools
 
-# 
+#
 def create_config_list(path):
     with open(path, 'r') as stream:
         try:
@@ -42,7 +42,7 @@ def config2command(config):
         args_list.append("--{0}={1}".format(key, val))
     return 'python main.py ' + ' '.join(args_list)
 
-def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', command='', directory='.', time='00-05:59'):
+def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', commands=[], directory='.', time='00-05:59'):
     # make thhe directory if it does not exist
     Path('eval_dir').mkdir(parents=True, exist_ok=True)
     # set the base runner
@@ -57,8 +57,14 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('#SBATCH --mem-per-cpu=4G \n')
         file.write('#SBATCH --cpus-per-gpu=5 \n')
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
+        file.write('#SBATCH --array=0-'+str(len(commands))+' \n')
         file.write('cd ' + directory + ' \n')
-        file.write(command + ' \n')
+        ##
+        for idx, command in enumerate(commands):
+            file.write('if [ $SLURM_ARRAY_TASK_ID -eq '+str(idx)+' ] \n')
+            file.write('then \n')
+            file.write('    ' + command +' \n')
+            file.write('fi \n')
         file.write('exit')
         file.close()
     elif machine=='ubcml':
@@ -69,9 +75,15 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('#SBATCH --mem-per-cpu=4G \n')
         file.write('#SBATCH --cpus-per-task=5 \n')
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
+        file.write('#SBATCH --array=0-'+str(len(commands))+' \n')
         file.write('conda activate ubcml \n')
         file.write('cd ' + directory + ' \n')
-        file.write(command + ' \n')
+        ##
+        for idx, command in enumerate(commands):
+            file.write('if [ $SLURM_ARRAY_TASK_ID -eq '+str(idx)+' ] \n')
+            file.write('then \n')
+            file.write('    ' + command +' \n')
+            file.write('fi \n')
         file.write('exit')
         file.close()
     elif machine=='narval':
@@ -84,7 +96,12 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
         file.write('cd ' + directory + ' \n')
         file.write('wandb offline \n')
-        file.write(command + ' \n')
+        ##
+        for idx, command in enumerate(commands):
+            file.write('if [ $SLURM_ARRAY_TASK_ID -eq '+str(idx)+' ] \n')
+            file.write('then \n')
+            file.write('    ' + command +' \n')
+            file.write('fi \n')
         file.write('exit')
         file.close()
     elif machine=='cedar':
@@ -95,9 +112,15 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('#SBATCH --mem-per-cpu=4G \n')
         file.write('#SBATCH --cpus-per-task=5 \n')
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
+        file.write('#SBATCH --array=0-'+str(len(commands))+' \n')
         file.write('cd ' + directory + ' \n')
         file.write('wandb offline \n')
-        file.write(command + ' \n')
+        ##
+        for idx, command in enumerate(commands):
+            file.write('if [ $SLURM_ARRAY_TASK_ID -eq '+str(idx)+' ] \n')
+            file.write('then \n')
+            file.write('    ' + command +' \n')
+            file.write('fi \n')
         file.write('exit')
         file.close()
     else:
@@ -119,11 +142,11 @@ def generate_experiments(yaml_file, machine='cedar', account='rrg-schmidtm', dir
 
     # create list of configs from yaml
     configs = create_config_list(yaml_file)
-
+    commands = []
     # convert configs to command and generate a job
     for idx, config in enumerate(configs):
-        command = config2command(config) + ' --group='+machine
-        eval_generation(job_name=str(idx), machine=machine, account=account, command=command, directory=directory, time=time)
+        commands.append(config2command(config) + ' --group='+machine)
+    eval_generation(job_name=str(idx), machine=machine, account=account, commands=commands, directory=directory, time=time)
 
 def main():
     parser = argparse.ArgumentParser(description='job runner')

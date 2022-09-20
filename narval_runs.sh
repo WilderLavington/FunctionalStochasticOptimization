@@ -4,9 +4,9 @@
 # python manual_sweep.py --yaml_file=configs/reality_check/baselines.yaml
 
 # optimal stepsize checks
-# python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/fullbatch/funcopt.yaml
+python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/fullbatch/funcopt.yaml
 python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/minibatch/funcopt.yaml
-# python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/fullbatch/baselines.yaml
+python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/fullbatch/baselines.yaml
 python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/minibatch/baselines.yaml
 
 # gridsearch checks

@@ -28,13 +28,13 @@ python manual_sweep.py --yaml_file=configs/mfac/gridsearch/fullbatch/baselines.y
 python manual_sweep.py --yaml_file=configs/mfac/gridsearch/minibatch/baselines.yaml --job_name=16
 
 # optimal stepsize checks
-python manual_sweep.py --yaml_file=configs/mnist/optimal_stepsize/fullbatch/funcopt.yaml --job_name=1
-python manual_sweep.py --yaml_file=configs/mnist/optimal_stepsize/minibatch/funcopt.yaml --job_name=1
-python manual_sweep.py --yaml_file=configs/mnist/optimal_stepsize/fullbatch/baselines.yaml --job_name=1
-python manual_sweep.py --yaml_file=configs/mnist/optimal_stepsize/minibatch/baselines.yaml --job_name=1
+python manual_sweep.py --yaml_file=configs/mnist/optimal_stepsize/fullbatch/funcopt.yaml --job_name=17
+python manual_sweep.py --yaml_file=configs/mnist/optimal_stepsize/minibatch/funcopt.yaml --job_name=18
+python manual_sweep.py --yaml_file=configs/mnist/optimal_stepsize/fullbatch/baselines.yaml --job_name=19
+python manual_sweep.py --yaml_file=configs/mnist/optimal_stepsize/minibatch/baselines.yaml --job_name=20
 
 # gridsearch checks
-python manual_sweep.py --yaml_file=configs/mnist/gridsearch/fullbatch/funcopt.yaml --job_name=1
-python manual_sweep.py --yaml_file=configs/mnist/gridsearch/minibatch/funcopt.yaml --job_name=1
-python manual_sweep.py --yaml_file=configs/mnist/gridsearch/fullbatch/baselines.yaml --job_name=1
-python manual_sweep.py --yaml_file=configs/mnist/gridsearch/minibatch/baselines.yaml --job_name=1
+python manual_sweep.py --yaml_file=configs/mnist/gridsearch/fullbatch/funcopt.yaml --job_name=21
+python manual_sweep.py --yaml_file=configs/mnist/gridsearch/minibatch/funcopt.yaml --job_name=22
+python manual_sweep.py --yaml_file=configs/mnist/gridsearch/fullbatch/baselines.yaml --job_name=23
+python manual_sweep.py --yaml_file=configs/mnist/gridsearch/minibatch/baselines.yaml --job_name=24

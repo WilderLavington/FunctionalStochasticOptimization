@@ -8,6 +8,7 @@ import time
 from helpers import *
 from optimizers.lsopt import LSOpt
 from optimizers.sgd_fmdopt import SGD_FMDOpt
+
 # linesearch optimizer
 class Ada_FMDOpt(SGD_FMDOpt):
     def __init__(self, params, m=1, eta_schedule = 'constant',

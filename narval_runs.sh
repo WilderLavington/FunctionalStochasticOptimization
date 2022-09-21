@@ -1,12 +1,12 @@
 
 # simple checks
-python manual_sweep.py --yaml_file=configs/reality_check/funcopt.yaml --job_name=01
-python manual_sweep.py --yaml_file=configs/reality_check/baselines.yaml --job_name=02
+# python manual_sweep.py --yaml_file=configs/reality_check/funcopt.yaml --job_name=01
+# python manual_sweep.py --yaml_file=configs/reality_check/baselines.yaml --job_name=02
 
 # optimal stepsize checks
-python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/fullbatch/funcopt.yaml --job_name=1
+# python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/fullbatch/funcopt.yaml --job_name=1
 python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/minibatch/funcopt.yaml --job_name=2
-python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/fullbatch/baselines.yaml --job_name=3
+# python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/fullbatch/baselines.yaml --job_name=3
 python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/minibatch/baselines.yaml --job_name=4
 
 # gridsearch checks

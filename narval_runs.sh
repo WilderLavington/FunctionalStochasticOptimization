@@ -5,9 +5,9 @@
 
 # optimal stepsize checks
 # python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/fullbatch/funcopt.yaml --job_name=1
-python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/minibatch/funcopt.yaml --job_name=2
+# python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/minibatch/funcopt.yaml --job_name=2
 # python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/fullbatch/baselines.yaml --job_name=3
-python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/minibatch/baselines.yaml --job_name=4
+# python manual_sweep.py --yaml_file=configs/svmlib/optimal_stepsize/minibatch/baselines.yaml --job_name=4
 
 # gridsearch checks
 python manual_sweep.py --yaml_file=configs/svmlib/gridsearch/fullbatch/funcopt.yaml --job_name=5
@@ -16,10 +16,10 @@ python manual_sweep.py --yaml_file=configs/svmlib/gridsearch/fullbatch/baselines
 python manual_sweep.py --yaml_file=configs/svmlib/gridsearch/minibatch/baselines.yaml --job_name=8
 
 # optimal stepsize checks
-python manual_sweep.py --yaml_file=configs/mfac/optimal_stepsize/fullbatch/funcopt.yaml --job_name=9
-python manual_sweep.py --yaml_file=configs/mfac/optimal_stepsize/minibatch/funcopt.yaml --job_name=10
-python manual_sweep.py --yaml_file=configs/mfac/optimal_stepsize/fullbatch/baselines.yaml --job_name=11
-python manual_sweep.py --yaml_file=configs/mfac/optimal_stepsize/minibatch/baselines.yaml --job_name=12
+# python manual_sweep.py --yaml_file=configs/mfac/optimal_stepsize/fullbatch/funcopt.yaml --job_name=9
+# python manual_sweep.py --yaml_file=configs/mfac/optimal_stepsize/minibatch/funcopt.yaml --job_name=10
+# python manual_sweep.py --yaml_file=configs/mfac/optimal_stepsize/fullbatch/baselines.yaml --job_name=11
+# python manual_sweep.py --yaml_file=configs/mfac/optimal_stepsize/minibatch/baselines.yaml --job_name=12
 
 # gridsearch checks
 python manual_sweep.py --yaml_file=configs/mfac/gridsearch/fullbatch/funcopt.yaml --job_name=13

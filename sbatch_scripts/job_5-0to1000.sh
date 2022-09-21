@@ -4,7 +4,7 @@
 #SBATCH --mem-per-cpu=4G
 #SBATCH --cpus-per-task=5
 #SBATCH --time=00-08:00     # time (DD-HH:MM)
-#SBATCH --array=0-1000 
+#SBATCH --array=700-1000 
 cd /home/wilder1/scratch/FunctionalStochasticOptimization
 wandb offline
 if [ $SLURM_ARRAY_TASK_ID -eq 0 ]

@@ -37,7 +37,8 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
         shuffle=True, drop_last=True)
     logs, s, starting_time = [], 0,  time()
     import_vals = ['inner_steps', 'avg_loss', 'function_evals', 'grad_evals', 'lr',
-            'step_time', 'inner_step_size', 'inner_backtracks', 'outer_stepsize']
+            'step_time', 'inner_step_size', 'inner_backtracks', 'outer_stepsize',
+            'eta']
 
     # iterate over epochs
     for t in tqdm(range(total_rounds)):
@@ -66,6 +67,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
                         'grad_norm': (grad_norm / torch.tensor(y.shape[0])).item(),
                         'eta_scale': args.stepsize,
                         'time_elapsed':  time() - starting_time}
+
             log_info.update({key:optim.state[key] for key in optim.state.keys() if key in import_vals})
             log_info.update({'function_evals+grad_evals': log_info['function_evals']+log_info['grad_evals']})
             # # log info
@@ -78,6 +80,8 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
             print('number of Epochs:', t)
             print(log_info)
             print('=========================================================')
+
+
 
         # step through data by sampling without replacement
         for X_batch, y_batch, data_idx_batch in tqdm(data_generator,leave=False):
@@ -127,7 +131,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
             assert grad_norm == grad_norm
 
         # early stopping conditions
-        if (grad_norm) < 1e-6:
+        if (grad_norm / torch.tensor(y.shape[0])).item() < 1e-6: 
             break
 
     # reformat stored data

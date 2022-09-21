@@ -16,6 +16,8 @@ def get_args():
     parser.add_argument('--inner_opt', type=str, default='LSOpt')
     parser.add_argument('--c', type=float, default=0.1)
     parser.add_argument('--beta_update', type=float, default=0.9)
+    parser.add_argument('--outer_c', type=float, default=0.1)
+    parser.add_argument('--outer_beta_update', type=float, default=0.9)
     parser.add_argument('--expand_coeff', type=float, default=2.0)
     parser.add_argument('--use_optimal_stepsize', type=int, default=1)
     parser.add_argument('--eta_schedule', type=str, default='constant')

@@ -69,6 +69,8 @@ class Ada_FMDOpt(SGD_FMDOpt):
         if self.reset_lr_on_step:
             self.inner_optim.state['step_size'] = self.init_step_size
 
+        last_loss = np.Inf
+
         # now we take multiple steps over surrogate
         for m in range(0,self.m):
             # compute loss

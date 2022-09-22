@@ -100,7 +100,7 @@ class SLS_FMDOpt(SGD_FMDOpt):
             current_loss = self.inner_optim.step(surrogate)
 
             # add in some stopping conditions
-            if self.inner_optim.state['grad_norm'] <= 1e-6:
+            if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
                 break
 
             # update internals

@@ -91,7 +91,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.start = time.time()
         self.state['outer_steps'] += 1
         self.state['surrogate_increase_flag'] = 0
-        
+
         # compute loss + grad for eta computation
         loss_t, f_t, inner_closure = closure(call_backward=False)
         batch_size = torch.tensor(f_t.shape[0], device='cuda')
@@ -141,7 +141,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             current_loss = self.inner_optim.step(surrogate)
 
             # add in some stopping conditions
-            if self.inner_optim.state['grad_norm'] <= 1e-6:
+            if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
                 break
 
             # update internals

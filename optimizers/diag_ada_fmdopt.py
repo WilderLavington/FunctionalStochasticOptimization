@@ -49,7 +49,7 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
 
         # update dual coords
         self.dual_coord[data_idxs,:] += dlt_dft.pow(2).detach()
-        
+
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             # force
@@ -74,9 +74,22 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
 
         # now we take multiple steps over surrogate
         for m in range(0,self.m):
+            # get loss
             current_loss = self.inner_optim.step(surrogate)
+            # add in some stopping conditions
+            if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
+                break
+
+            # update internals
             self.state['inner_steps'] += 1
             self.state['grad_evals'] += 1
+
+            # check we are improving in terms of the surrogate
+            if last_loss:
+                if last_loss < current_loss:
+                    self.state['surrogate_increase_flag'] = 1
+            else:
+                last_loss = current_loss
 
         #
         self.log_info()

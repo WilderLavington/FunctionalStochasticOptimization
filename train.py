@@ -81,8 +81,6 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
             print(log_info)
             print('=========================================================')
 
-
-
         # step through data by sampling without replacement
         for X_batch, y_batch, data_idx_batch in tqdm(data_generator,leave=False):
 
@@ -131,7 +129,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
             assert grad_norm == grad_norm
 
         # early stopping conditions
-        if (grad_norm / torch.tensor(y.shape[0])).item() < 1e-6: 
+        if (grad_norm / torch.tensor(y.shape[0])).item() < 1e-6:
             break
 
     # reformat stored data

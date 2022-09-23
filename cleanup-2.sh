@@ -30,7 +30,7 @@ then
 fi
 if [ $SLURM_ARRAY_TASK_ID -eq 6 ]
 then
-    python main.py --min_epochs=500 --algo=Adam--normalize_epochs_lengths=1 --seed=3 --fullbatch=1 --use_optimal_stepsize=1 --loss=BCEWithLogitsLoss --dataset_name=rcv1 --c=0.5 --eta_schedule=constant --group=narval
+    python main.py --min_epochs=500 --algo=Adam --normalize_epochs_lengths=1 --seed=3 --fullbatch=1 --use_optimal_stepsize=1 --loss=BCEWithLogitsLoss --dataset_name=rcv1 --c=0.5 --eta_schedule=constant --group=narval
 fi
 if [ $SLURM_ARRAY_TASK_ID -eq 7 ]
 then

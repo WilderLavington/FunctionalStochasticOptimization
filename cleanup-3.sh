@@ -4,7 +4,7 @@
 #SBATCH --mem-per-cpu=4G
 #SBATCH --cpus-per-task=5
 #SBATCH --time=00-08:00     # time (DD-HH:MM)
-#SBATCH --array=0-15
+#SBATCH --array=0-14
 cd /ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization
 pwd
 conda activate ubcml

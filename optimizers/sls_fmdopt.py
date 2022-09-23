@@ -78,8 +78,7 @@ class SLS_FMDOpt(SGD_FMDOpt):
             # remove cap F
             reg_term = self.div_op(f,f_t.detach())
             # compute full surrogate
-            surr = (loss + eta * reg_term) / batch_size
-            # print(loss, reg_term)
+            surr = (loss + eta * reg_term) / batch_size 
             # do we differentiate
             if call_backward:
                 surr.backward()

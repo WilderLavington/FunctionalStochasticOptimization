@@ -4,7 +4,7 @@
 #SBATCH --mem-per-cpu=4G
 #SBATCH --cpus-per-task=5
 #SBATCH --time=00-08:00     # time (DD-HH:MM)
-#SBATCH --array=0-9
+#SBATCH --array=0-15
 cd /ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization
 conda activate ubcml
 if [ $SLURM_ARRAY_TASK_ID -eq 0 ]

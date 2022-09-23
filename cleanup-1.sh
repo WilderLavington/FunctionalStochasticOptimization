@@ -6,6 +6,7 @@
 #SBATCH --time=00-08:00     # time (DD-HH:MM)
 #SBATCH --array=0-15
 cd /ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization
+pwd
 conda activate ubcml
 if [ $SLURM_ARRAY_TASK_ID -eq 0 ]
 then

@@ -14,6 +14,7 @@ parameters:
     - Ada_FMDOpt
     - SGD_FMDOpt
     - Diag_Ada_FMDOpt
+    - SLS_FMDOpt
   normalize_epochs_lengths:
     values:
     - 1
@@ -27,10 +28,7 @@ parameters:
     - 0
   batch_size:
     values:
-    - 5
-    - 25
-    - 125
-    - 625
+    - 125 
   m:
     values:
     - 1

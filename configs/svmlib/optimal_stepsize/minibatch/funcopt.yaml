@@ -28,7 +28,7 @@ parameters:
     - 0
   batch_size:
     values:
-    - 125 
+    - 25 
   m:
     values:
     - 1

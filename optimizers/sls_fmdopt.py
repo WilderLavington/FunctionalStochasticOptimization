@@ -30,12 +30,13 @@ class SLS_FMDOpt(SGD_FMDOpt):
         self.expand_coeff = expand_coeff
 
     def compute_functional_stepsize(self, inner_closure, f_t, dlt_dft):
-        eta_prop = self.eta * self.expand_coeff
+        eta_prop = self.eta / self.expand_coeff
         for i in range(100):
-            lhs = inner_closure(f_t - eta_prop * dlt_dft)
-            rhs = inner_closure(f_t) - self.c * torch.norm(dlt_dft).pow(2)
+            lhs = inner_closure(f_t - (1/eta_prop) * dlt_dft)
+            rhs = inner_closure(f_t) - (1/eta_prop) * self.c * torch.norm(dlt_dft).pow(2)
+            print(lhs - rhs, eta_prop)
             if lhs < rhs:
-                eta_prop *= eta_prop * self.beta_update
+                eta_prop /= self.beta_update
             else:
                 break
         return eta_prop
@@ -66,7 +67,9 @@ class SLS_FMDOpt(SGD_FMDOpt):
             eta = self.eta * torch.tensor((1/self.total_steps)**(-self.state['outer_steps']/self.total_steps)).float()
         else:
             raise Exception
+
         self.state['eta'] = eta
+
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             #
@@ -78,10 +81,11 @@ class SLS_FMDOpt(SGD_FMDOpt):
             # remove cap F
             reg_term = self.div_op(f,f_t.detach())
             # compute full surrogate
-            surr = (loss + eta * reg_term) / batch_size 
+            surr = (loss + eta * reg_term) / batch_size
             # do we differentiate
             if call_backward:
                 surr.backward()
+            # print(loss, eta, reg_term)
             # return loss
             return surr
 

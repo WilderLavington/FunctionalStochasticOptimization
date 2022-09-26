@@ -120,7 +120,6 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             reg_term = self.div_op(f,f_t.detach())
             # compute full surrogate
             surr = (loss + eta * reg_term) / batch_size
-            # print(loss, reg_term)
             # do we differentiate
             if call_backward:
                 surr.backward()

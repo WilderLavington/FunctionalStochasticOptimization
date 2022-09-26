@@ -77,8 +77,10 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
 
         # now we take multiple steps over surrogate
         for m in range(0,self.m):
+
             # get loss
             current_loss = self.inner_optim.step(surrogate)
+
             # add in some stopping conditions
             if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
                 break

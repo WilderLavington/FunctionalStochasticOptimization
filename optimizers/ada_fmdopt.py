@@ -47,7 +47,7 @@ class Ada_FMDOpt(SGD_FMDOpt):
 
         # set  eta schedule
         eta = self.eta * (self.grad_sum).pow(0.5)
-
+        print(eta, self.inner_optim.state['step_size'])
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             #

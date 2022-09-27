@@ -13,7 +13,8 @@ parameters:
     values:
     - Ada_FMDOpt
     - SGD_FMDOpt
-    - Diag_Ada_FMDOpt
+    # - Diag_Ada_FMDOpt
+    - SLS_FMDOpt
   normalize_epochs_lengths:
     values:
     - 1

@@ -151,7 +151,7 @@ def generate_experiments(yaml_file, job_name='job-ex', machine='cedar', account=
     # convert configs to command and generate a job
     for idx, config in enumerate(configs):
         if args_check(config):
-            commands.append(config2command(config) + ' --group='+machine)
+            commands.append(config2command(config) + ' --group=AIstats_'+machine)
     eval_generation(job_name=job_name+'-'+str(len(commands)), machine=machine, account=account, commands=commands, directory=directory, time=time)
 
 def main():

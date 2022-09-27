@@ -34,7 +34,6 @@ class SLS_FMDOpt(SGD_FMDOpt):
         for i in range(100):
             lhs = inner_closure(f_t - (1/eta_prop) * dlt_dft)
             rhs = inner_closure(f_t) - (1/eta_prop) * self.c * torch.norm(dlt_dft).pow(2)
-            print(lhs - rhs, eta_prop)
             if lhs < rhs:
                 eta_prop /= self.beta_update
             else:
@@ -81,7 +80,7 @@ class SLS_FMDOpt(SGD_FMDOpt):
             # remove cap F
             reg_term = self.div_op(f,f_t.detach())
             # compute full surrogate
-            surr = (loss + eta * reg_term) / batch_size
+            surr = (loss / eta + reg_term) / batch_size
             # do we differentiate
             if call_backward:
                 surr.backward()

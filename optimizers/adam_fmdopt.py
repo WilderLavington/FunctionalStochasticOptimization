@@ -75,7 +75,7 @@ class Adam_FMDOpt(SGD_FMDOpt):
             # force inner product
             reg_term = (f - f_t.detach()).pow(2) * dual_coord
             # compute full surrogate
-            surr = (loss +  reg_term.sum()) / batch_size
+            surr = (loss + reg_term.sum()) / batch_size
             # do we differentiate
             if call_backward:
                 surr.backward()

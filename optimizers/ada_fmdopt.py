@@ -47,7 +47,7 @@ class Ada_FMDOpt(SGD_FMDOpt):
 
         # set  eta schedule
         eta = self.eta * (self.grad_sum).pow(0.5)
-        print(eta, self.inner_optim.state['step_size'])
+
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             #
@@ -56,16 +56,17 @@ class Ada_FMDOpt(SGD_FMDOpt):
             loss, f, inner_closure = closure(call_backward=False)
             # m by d -> 1
             loss = torch.sum(dlt_dft*f)
-            # remove cap F
+            # remove cap F 
             reg_term = self.div_op(f,f_t.detach())
             # compute full surrogate
-            surr = (loss + eta * reg_term) / batch_size
+            surr = (loss / eta + reg_term) / batch_size
             # do we differentiate
             if call_backward:
                 surr.backward()
             # return loss
             return surr
 
+        # ok.
         if self.reset_lr_on_step:
             self.inner_optim.state['step_size'] = self.init_step_size
 

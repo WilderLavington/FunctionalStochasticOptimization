@@ -38,6 +38,7 @@ def get_args():
     parser.add_argument('--normalize_epochs_lengths', type=int, default=1)
     parser.add_argument('--min_epochs', type=int, default=1)
     parser.add_argument('--min_episodes', type=int, default=1)
+    parser.add_argument('--label', type=str, default='ex')
     # parse
     args, knk = parser.parse_known_args()
     print(knk)

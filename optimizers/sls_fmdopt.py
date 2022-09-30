@@ -34,8 +34,10 @@ class SLS_FMDOpt(SGD_FMDOpt):
         for i in range(100):
             lhs = inner_closure(f_t - (1/eta_prop) * dlt_dft)
             rhs = inner_closure(f_t) - (1/eta_prop) * self.c * torch.norm(dlt_dft).pow(2)
-            if lhs < rhs:
+            if lhs > rhs:
                 eta_prop /= self.beta_update
+            elif (1/eta_prop) <= 1e-6:
+                break
             else:
                 break
         return eta_prop
@@ -56,7 +58,7 @@ class SLS_FMDOpt(SGD_FMDOpt):
 
         # solve for eta
         self.eta = self.compute_functional_stepsize(inner_closure, f_t, dlt_dft)
-
+        print(self.eta)
         # set  eta schedule
         if self.eta_schedule == 'constant':
             eta = self.eta

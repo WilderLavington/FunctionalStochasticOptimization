@@ -119,7 +119,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             # remove cap F
             reg_term = self.div_op(f,f_t.detach())
             # compute full surrogate
-            surr = (loss / eta + reg_term) / batch_size
+            surr = (loss / eta + reg_term ) / batch_size # + 1e-3 * torch.norm(f,2).pow(2) 
             # do we differentiate
             if call_backward:
                 surr.backward()
@@ -134,11 +134,13 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             self.inner_optim.state['step_size'] = self.init_step_size
 
         #
+        # print('yee')
         for m in range(0,self.m):
 
             # compute the current loss
             current_loss = self.inner_optim.step(surrogate)
 
+            # print(current_loss)
             # add in some stopping conditions
             if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
                 break
@@ -149,10 +151,15 @@ class SGD_FMDOpt(torch.optim.Optimizer):
 
             # check we are improving in terms of the surrogate
             if last_loss:
+
                 if last_loss < current_loss:
                     self.state['surrogate_increase_flag'] = 1
+                    # assert (last_loss > current_loss)
+                last_loss = current_loss
+
             else:
                 last_loss = current_loss
+
         #
         self.log_info()
 

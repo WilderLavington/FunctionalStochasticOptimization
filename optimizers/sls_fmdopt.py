@@ -58,7 +58,7 @@ class SLS_FMDOpt(SGD_FMDOpt):
 
         # solve for eta
         self.eta = self.compute_functional_stepsize(inner_closure, f_t, dlt_dft)
-        print(self.eta)
+
         # set  eta schedule
         if self.eta_schedule == 'constant':
             eta = self.eta
@@ -85,8 +85,7 @@ class SLS_FMDOpt(SGD_FMDOpt):
             surr = (loss / eta + reg_term) / batch_size
             # do we differentiate
             if call_backward:
-                surr.backward()
-            # print(loss, eta, reg_term)
+                surr.backward() 
             # return loss
             return surr
 

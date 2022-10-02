@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account=def-fwood
+#SBATCH --account=def-schmidtm
 #SBATCH --gres=gpu:1
 #SBATCH --mem-per-cpu=4G
 #SBATCH --cpus-per-task=5

@@ -52,7 +52,6 @@ class Sadagrad(torch.optim.Optimizer):
 
     def step(self, closure, clip_grad=False):
 
-
         # update grad-norm
         if self.grad_sum:
             self.grad_sum += self.squared_grad_norm(self.params)

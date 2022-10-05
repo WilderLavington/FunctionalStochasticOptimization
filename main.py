@@ -52,7 +52,8 @@ def main():
     check_args(args)
 
     # initialize weights and biases runs
-    wandb.init(project=args.project, entity=args.entity, config=args, group=args.group)
+    wandb.init(project=args.project, entity=args.entity, config=args,
+                group=args.group) #, dir=args.log_dir
     pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
 
     # get dataset  and model

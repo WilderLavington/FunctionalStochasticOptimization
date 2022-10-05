@@ -39,6 +39,9 @@ def get_args():
     parser.add_argument('--min_epochs', type=int, default=1)
     parser.add_argument('--min_episodes', type=int, default=1)
     parser.add_argument('--label', type=str, default='ex')
+    parser.add_argument('--log_dir', type=str, default='./wandb')
+    parser.add_argument('--gulf2_prox_steps', type=int, default=25)
+    parser.add_argument('--gulf2_alpha', type=float, default=0.3)
     # parse
     args, knk = parser.parse_known_args()
     print(knk)

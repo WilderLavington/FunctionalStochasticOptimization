@@ -23,7 +23,6 @@ from parser import *
 from train import *
 from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_lr, update_stoch_lr
 
-
 def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', single_out=False,
             call_closure=False, total_rounds = 1000, batch_size=100, log_rate=1, include_data_id=False,
             accumulate_grad=False, normalize_training_loss=False):

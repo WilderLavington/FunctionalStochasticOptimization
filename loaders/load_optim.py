@@ -21,6 +21,8 @@ from optimizers.lsopt import LSOpt
 from optimizers.sadagrad import Sadagrad
 from optimizers.sls_fmdopt import SLS_FMDOpt
 from optimizers.adam_fmdopt import Adam_FMDOpt
+from optimizers.online_newton_fmdopt import Online_Newton_FMDOpt
+from optimizers.gulf2 import GULF2
 
 # ======================
 # set expensive to compute hyper-parameters
@@ -59,8 +61,22 @@ def load_train_args(args, model, loss_func, L, X, y):
             'update_lr_type': 'constant', 'single_out': True,
             'normalize_training_loss': True}
 
+    elif args.algo == 'GULF2':
+        optimal_stepsize = 1e-3
+        args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
+        surr_optim_args = {'lr':args.stepsize}
+        optim_args = {'surr_optim_args':surr_optim_args,
+            'prox_steps': args.gulf2_prox_steps, 'alpha':args.gulf2_alpha, 'reg_lambda':1e-2}
+        optim = GULF2(model.parameters(), **optim_args)
+        train_args = {'args':args, 'model':model, 'optim':optim,
+                'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': False,
+                'total_rounds': args.epochs, 'batch_size':args.batch_size,
+                'update_lr_type': 'constant', 'single_out': False,
+                'normalize_training_loss': False}
+
     elif args.algo == 'SGD_FMDOpt':
         optimal_stepsize = 1/4 if args.loss=='MSELoss' else 2.
+        optimal_stepsize = 1 / (1-1/torch.tensor(y).unique().shape[0]) if args.loss=='CrossEntropyLoss' else optimal_stepsize
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
@@ -105,8 +121,25 @@ def load_train_args(args, model, loss_func, L, X, y):
                 'update_lr_type': 'constant', 'single_out': False,
                 'include_data_id': True, 'normalize_training_loss': False}
 
+    elif args.algo == 'Online_Newton_FMDOpt':
+        assert args.loss == 'BCEWithLogitsLoss'
+        optimal_stepsize = 1.
+        args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
+        surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
+            'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
+        optim_args = {'eta':1/args.stepsize, 'eta_schedule': 'constant',
+                      'inner_optim':eval(args.inner_opt), 'surr_optim_args':surr_optim_args,
+                      'm':args.m, 'total_steps':args.total_steps,
+                      'total_data_points':y.shape[0], 'reset_lr_on_step':args.reset_lr_on_step}
+        optim = Online_Newton_FMDOpt(model.parameters(), **optim_args)
+        train_args = {'args':args, 'model':model, 'optim':optim,
+                'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': False,
+                'total_rounds': args.epochs, 'batch_size':args.batch_size,
+                'update_lr_type': 'constant', 'single_out': False,
+                'include_data_id': True, 'normalize_training_loss': False}
+
     elif args.algo == 'SLS_FMDOpt':
-        optimal_stepsize = 2. if args.loss=='MSELoss' else 2.
+        optimal_stepsize = 2.
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}

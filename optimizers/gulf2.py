@@ -15,21 +15,21 @@ from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_
 
 # linesearch optimizer
 class GULF2(torch.optim.Optimizer):
-    def __init__(self, params, reg_alpha=1e-2, eta=1e3, p=2,
+    def __init__(self, params, reg_lambda=1e-2,
                  surr_optim_args={'lr':1.},
-                 total_steps = 1000):
+                 prox_steps = 25, alpha=0.3):
         params = list(params)
         super().__init__(params, {})
 
         # create some local tools
         self.params = params
-        self.total_steps = total_steps
-        self.p = p
-
+        self.params_t = deepcopy(params)
+        self.prox_steps = prox_steps
+        self.current_step = 0
+        self.reg_lambda = reg_lambda
+        self.alpha =alpha
         # set eta and the divergence
-        self.inner_optim = torch.optim.SGD(self.params, **surr_optim_args)
-        self.div_op = lambda f, ft: torch.norm(f-ft,2).pow(2)
-        self.eta = eta # please rename
+        self.inner_optim = torch.optim.Adam(self.params, **surr_optim_args)
 
         # store state for debugging
         self.state['outer_steps'] = 0
@@ -59,32 +59,26 @@ class GULF2(torch.optim.Optimizer):
         for target_param, param in zip(target, source):
             target_param.data.copy_(param.data)
 
-    def log_info(self):
-        # try logging (generalized for different inner-optimizers )
-        try:
-            assert isinstance(self.inner_optim.state['function_evals'], int)
-            self.state['function_evals'] = self.inner_optim.state['function_evals']
-            self.state['inner_step_size'] = self.inner_optim.state['step_size']
-            self.state['outer_stepsize'] = 1/eta
-        except:
-            self.state['function_evals'] += 1
-            self.state['inner_step_size'] = self.inner_lr
-        self.state['step_time'] = timer(self.start,time.time())
-        return None
-
     def step(self, closure, clip_grad=False):
 
         # set initial step size
         self.start = time.time()
         self.state['outer_steps'] += 1
         self.state['surrogate_increase_flag'] = 0
+        self.current_step += 1
+        # check if we are updating f_t
+        if self.current_step == self.prox_steps:
+            self.copy_params(self.params_t, self.params)
 
-        # compute loss + grad for eta computation
+        # compute wierd prox term
+        current_params = deepcopy(self.params)
+        self.copy_params(self.params, self.params_t)
         loss_t, f_t, inner_closure = closure(call_backward=False)
-        batch_size = torch.tensor(f_t.shape[0], device='cuda')
-
-        # produce some 1 by m (n=batch-size, m=output of f)
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
+
+        # put original params back
+        self.copy_params(self.params, current_params)
+        batch_size = torch.tensor(f_t.shape[0], device='cuda')
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
@@ -93,18 +87,16 @@ class GULF2(torch.optim.Optimizer):
             # f = n by m
             loss, f, inner_closure = closure(call_backward=False)
             # m by d -> 1
-            loss = torch.sum(dlt_dft*f) / self.eta
-            # remove cap F
-            reg_term = self.div_op(f,f_t.detach())
+            prox_term = torch.sum(dlt_dft*f)
             # compute full surrogate
-            surr = (loss + reg_term) / batch_size
+            surr = (loss + (1-self.alpha) * prox_term) / batch_size
             #
-            R = torch.norm(torch.nn.utils.parameters_to_vector(self.params), self.p).pow(self.p)
+            R = torch.norm(torch.nn.utils.parameters_to_vector(self.params), 2).pow(2)
             # do we differentiate
             if call_backward:
-                (surr + self.reg_alpha * R).backward()
+                (surr + self.reg_lambda * R).backward()
             # return loss
-            return surr + self.reg_alpha * R
+            return surr + self.reg_lambda * R
 
         # compute the current loss
         current_loss = self.inner_optim.step(surrogate)
@@ -113,9 +105,6 @@ class GULF2(torch.optim.Optimizer):
         self.state['inner_steps'] += 1
         self.state['grad_evals'] += 1
         self.state['function_evals'] += 1
-
-        #
-        self.log_info()
 
         # return loss
         return current_loss

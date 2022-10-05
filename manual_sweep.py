@@ -42,7 +42,7 @@ def config2command(config):
         args_list.append("--{0}={1}".format(key, val))
     return 'python main.py ' + ' '.join(args_list)
 
-def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', commands=[], directory='.', time='00-05:59'):
+def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', commands=[], directory='.', time='00-05:59', log_dir='./wandb'):
     # make thhe directory if it does not exist
     Path('sbatch_scripts').mkdir(parents=True, exist_ok=True)
     # set the base runner
@@ -63,7 +63,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         for idx, command in enumerate(commands):
             file.write('if [ $SLURM_ARRAY_TASK_ID -eq '+str(idx)+' ] \n')
             file.write('then \n')
-            file.write('    ' + command +' \n')
+            file.write('    ' + command +' --log_dir='+log_dir+' \n')
             file.write('fi \n')
         file.write('exit')
         file.close()
@@ -82,7 +82,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         for idx, command in enumerate(commands):
             file.write('if [ $SLURM_ARRAY_TASK_ID -eq '+str(idx)+' ] \n')
             file.write('then \n')
-            file.write('    ' + command +' \n')
+            file.write('    ' + command +' --log_dir='+log_dir+' \n')
             file.write('fi \n')
         file.write('exit')
         file.close()
@@ -101,7 +101,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         for idx, command in enumerate(commands):
             file.write('if [ $SLURM_ARRAY_TASK_ID -eq '+str(idx)+' ] \n')
             file.write('then \n')
-            file.write('    ' + command +' \n')
+            file.write('    ' + command +' --log_dir='+log_dir+' \n')
             file.write('fi \n')
         file.write('exit')
         file.close()
@@ -120,7 +120,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         for idx, command in enumerate(commands):
             file.write('if [ $SLURM_ARRAY_TASK_ID -eq '+str(idx)+' ] \n')
             file.write('then \n')
-            file.write('    ' + command +' \n')
+            file.write('    ' + command +' --log_dir='+log_dir+' \n')
             file.write('fi \n')
         file.write('exit')
         file.close()
@@ -152,7 +152,9 @@ def generate_experiments(yaml_file, job_name='job-ex', machine='cedar', account=
     for idx, config in enumerate(configs):
         if args_check(config):
             commands.append(config2command(config) + ' --group=AIstats_'+machine)
-    eval_generation(job_name=job_name+'-'+str(len(commands)), machine=machine, account=account, commands=commands, directory=directory, time=time)
+    eval_generation(job_name=job_name+'-'+str(len(commands)), machine=machine,
+            account=account, commands=commands, directory=directory, time=time,
+            log_dir='./wandb'+yaml_file)
 
 def main():
     parser = argparse.ArgumentParser(description='job runner')

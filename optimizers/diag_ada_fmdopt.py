@@ -57,11 +57,11 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
             # f = n by m
             loss, f, inner_closure = closure(call_backward=False)
             # m by d -> 1
-            loss = torch.sum(dlt_dft*f)
+            loss = torch.sum(dlt_dft*f / ( self.eta * self.dual_coord[data_idxs].pow(0.5)))
             # force inner product
-            reg_term = (f - f_t.detach()).pow(2) * self.dual_coord[data_idxs].pow(0.5)
+            reg_term = (f - f_t.detach()).pow(2)
             # compute full surrogate
-            surr = (loss +  reg_term.sum()) / batch_size
+            surr = (loss + reg_term.sum()) / batch_size
             # do we differentiate
             if call_backward:
                 surr.backward()

@@ -10,8 +10,6 @@ from helpers import *
 from optimizers.lsopt import LSOpt
 from optimizers.sgd_fmdopt import SGD_FMDOpt
 
-# helpers
-
 # linesearch optimizer
 class SLS_FMDOpt(SGD_FMDOpt):
     def __init__(self, params, m=1, eta_schedule = 'constant',
@@ -25,9 +23,11 @@ class SLS_FMDOpt(SGD_FMDOpt):
         # create some local tools
         self.grad_sum = None
         self.init_eta = eta
-        self.c =c
+        self.c = c
         self.beta_update = beta_update
         self.expand_coeff = expand_coeff
+        self.min_eta = 1e-4
+        self.max_eta = 1e4
 
     def compute_functional_stepsize(self, inner_closure, f_t, dlt_dft):
         eta_prop = self.eta / self.expand_coeff
@@ -56,8 +56,10 @@ class SLS_FMDOpt(SGD_FMDOpt):
         # produce some 1 by m (n=batch-size, m=output of f)
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
 
-        # solve for eta
+        # solve for eta + project it to make sure it does not explode
         self.eta = self.compute_functional_stepsize(inner_closure, f_t, dlt_dft)
+        self.eta = max(self.min_eta, self.eta)
+        self.eta = min(self.max_eta, self.eta)
 
         # set  eta schedule
         if self.eta_schedule == 'constant':
@@ -85,7 +87,7 @@ class SLS_FMDOpt(SGD_FMDOpt):
             surr = (loss / eta + reg_term) / batch_size
             # do we differentiate
             if call_backward:
-                surr.backward() 
+                surr.backward()
             # return loss
             return surr
 

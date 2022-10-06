@@ -52,9 +52,18 @@ def main():
     check_args(args)
 
     # initialize weights and biases runs
+    log_path = 'wandb_logs/'+args.dataset_name+'/'+args.algo+'/'+args.loss
+    pathlib.Path(log_path).mkdir(parents=True, exist_ok=True)
+
+    # If you don't want your script to sync to the cloud
+    os.environ['WANDB_DIR'] = log_path
     wandb.init(project=args.project, entity=args.entity, config=args,
                 group=args.group) #, dir=args.log_dir
+
+    # local logging
     pathlib.Path('logs/'+args.folder_name).mkdir(parents=True, exist_ok=True)
+
+
 
     # get dataset  and model
     X, y = load_dataset(data_set_id=args.dataset_name, data_dir='datasets/', loss=args.loss)

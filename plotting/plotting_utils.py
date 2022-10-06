@@ -20,9 +20,9 @@ import time
 import matplotlib as mpl
 import matplotlib.ticker as ticker
 
-IGNORE_COMMITS = ['aa1a56691020671d034686a09ed960dc3bd8e9b2',
-                  '09a3f1ee3ea6d957a86f01ef77e10987a27c0085',
-                  'f7ee088eaf912223c8017bbda0f0eba8d822af61']
+# IGNORE_COMMITS = ['aa1a56691020671d034686a09ed960dc3bd8e9b2',
+#                   '09a3f1ee3ea6d957a86f01ef77e10987a27c0085',
+#                   'f7ee088eaf912223c8017bbda0f0eba8d822af61']
 
 def download_wandb_summary(user, project, summary_file,
         labels=['workshop-fig'+str(i) for i in range(8)]):
@@ -35,15 +35,15 @@ def download_wandb_summary(user, project, summary_file,
     for run in tqdm(runs):
         run = api.run(user+'/'+project+"/"+run.id)
         conf = {k: v for k, v in run.config.items()}
-        if 'label' in conf.keys():
-            if (conf['label'] in labels) and (run.commit not in IGNORE_COMMITS):
-                summary_list.append(run.summary._json_dict)
-                config_list.append(conf)
-                name_list.append(run.name)
-                id_list.append(run.id)
-                commits.append(run.commit)
-        else:
-            pass
+        # if 'label' in conf.keys():
+        #     if (conf['label'] in labels) and (run.commit not in IGNORE_COMMITS):
+        summary_list.append(run.summary._json_dict)
+        config_list.append(conf)
+        name_list.append(run.name)
+        id_list.append(run.id)
+        commits.append(run.commit)
+        # else:
+            # pass
     assert len(summary_list)
     commits_df = pd.DataFrame.from_records(commits)
     summary_df = pd.DataFrame.from_records(summary_list)

@@ -26,16 +26,13 @@ parameters:
     - 3
   fullbatch:
     values:
-    - 0
-  batch_size:
-    values:
-    - 5
-    - 25
-    - 125
-    - 625
+    - 1
   use_optimal_stepsize:
     values:
     - 0
+  label:
+    values:
+    - 'workshop-fig7'
   log_lr:
     values:
     - -3.
@@ -48,7 +45,6 @@ parameters:
   loss:
     values:
     - MSELoss
-    - BCEWithLogitsLoss
   dataset_name:
     values:
     - mfac
@@ -57,6 +53,4 @@ parameters:
     - 0.5
   eta_schedule:
     values:
-    - exponential
     - constant
-    - stochastic

@@ -11,9 +11,11 @@ parameters:
     - 500
   algo:
     values:
-    - Ada_FMDOpt
-    - SGD_FMDOpt
-    - Diag_Ada_FMDOpt
+    - LSOpt
+    - SGD
+    - Sadagrad
+    - Adam
+    - Adagrad
   normalize_epochs_lengths:
     values:
     - 1
@@ -25,30 +27,39 @@ parameters:
   fullbatch:
     values:
     - 0
+  label:
+    values:
+    - 'workshop-fig7'
   batch_size:
     values:
     - 5
     - 25
     - 125
     - 625
-  m:
-    values:
-    - 1
-    - 2
-    - 5
-    - 10
-    - 20
   use_optimal_stepsize:
     values:
-    - 1
+    - 0
+  log_lr:
+    values:
+    - -3.
+    - -2.
+    - -1.
+    - 0.0
+    - 1.
+    - 2.
+    - 3.
   loss:
     values:
     - MSELoss
+    - BCEWithLogitsLoss
   dataset_name:
     values:
-    - mfac 
+    - mfac
+  c:
+    values:
+    - 0.5
   eta_schedule:
     values:
+    - exponential
     - constant
     - stochastic
-    - exponential

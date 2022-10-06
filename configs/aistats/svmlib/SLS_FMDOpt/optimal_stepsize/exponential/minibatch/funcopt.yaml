@@ -10,7 +10,7 @@ parameters:
     values:
     - 500
   algo:
-    values: 
+    values:
     - SLS_FMDOpt
   normalize_epochs_lengths:
     values:

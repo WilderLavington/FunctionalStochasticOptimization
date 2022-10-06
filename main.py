@@ -57,6 +57,7 @@ def main():
 
     # If you don't want your script to sync to the cloud
     os.environ['WANDB_DIR'] = log_path
+    os.environ['WANDB_MODE'] = 'offline'
     wandb.init(project=args.project, entity=args.entity, config=args,
                 group=args.group) #, dir=args.log_dir
 

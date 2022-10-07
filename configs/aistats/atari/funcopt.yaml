@@ -1,0 +1,38 @@
+program: online_imitation_learning/atari_ex.py
+entity: wilderlavington
+method: grid
+project: FunctionalStochasticOptimization
+metric:
+  goal: minimize
+  name: grad_norm
+parameters:
+  algo:
+    values:
+    - SSO_OGD
+    - SSO_SLS
+    - SSO_Sadagrad
+  m:
+    values:
+    - 5
+    - 25
+  log_lr:
+    values:
+    - 2.
+    - 1.
+    - 0.
+    - -1.
+    - -2.
+    - -3.
+    - -4.
+  label:
+    values:
+    - 'aistats-atari'
+  use_optimal_stepsize:
+    values:
+    - 0
+  c:
+    values:
+    - 0.5
+  eta_schedule:
+    values:
+    - constant

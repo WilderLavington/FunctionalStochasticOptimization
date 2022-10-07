@@ -74,8 +74,7 @@ class LSOpt(torch.optim.Optimizer):
         # =================================================
         # replace step with expanded current step for speed
         step_size = self.expand_coeff * self.state['step_size']
-
-        # get loss and compute gradients
+        # get loss and comput   e gradients
         loss = closure(call_backward=True)
         self.state['grad_evals'] += 1
         self.state['steps'] += 1
@@ -118,7 +117,6 @@ class LSOpt(torch.optim.Optimizer):
                 # Line search
                 found, step_size = check_armijo_conditions(step_size, loss, grad_norm,
                                   loss_next, self.c, self.beta_b)
-
                 # =================================================
                 # stopping conditions
                 if found or (step_size < 1e-6):
@@ -133,7 +131,7 @@ class LSOpt(torch.optim.Optimizer):
 
         #
         self.state['step_size'] = step_size
-        self.state['minibatch_grad_norm'] = grad_norm
+        self.state['minibatch_grad_norm'] = grad_norm 
         self.state['eta'] = 1/step_size
         # return loss
         return loss

@@ -43,7 +43,7 @@ def config2command(config):
     if config['label'] != 'aistats-atari':
         return 'python main.py ' + ' '.join(args_list)
     else:
-        return 'python online_imitation_learning/atari_ex.py ' + ' '.join(args_list)
+        return 'python atari/atari_ex.py ' + ' '.join(args_list)
 
 def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', commands=[], directory='.', time='00-05:59', log_dir='./wandb'):
     # make thhe directory if it does not exist

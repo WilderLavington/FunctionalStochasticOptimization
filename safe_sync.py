@@ -20,7 +20,6 @@ def sync_wandb(wandb_dir):
     for subdir, dirs, files in os.walk(wandb_dir):
         for file in files:
             filename = os.path.join(subdir, file)
-            print(filename)
             if "offline-run" in filename:
                 filename = filename.split('/')[:-1]
                 idx = [idx for idx in range(len(filename)) if "offline-run" in filename[idx] ][-1]
@@ -28,7 +27,6 @@ def sync_wandb(wandb_dir):
                 yaml_files.append(filename)
             else:
                 continue
-
     print(yaml_files)
     for file in yaml_files:
         command = 'wandb sync ./'+file+ ' --id offlinerun_'+file.split('_')[-1]

@@ -14,7 +14,7 @@ def main():
 
     # args and the parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('--eval_algo_flag', type=int, default=1, metavar='N')
+    parser.add_argument('--eval_algo_flag', type=int, default=0, metavar='N')
     args, _ = parser.parse_known_args()
 
     # pretrain expert of train il policy

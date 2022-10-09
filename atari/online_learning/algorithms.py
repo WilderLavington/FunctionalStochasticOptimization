@@ -426,7 +426,7 @@ class AdaOGD(OGD):
 
 class AdamOGD(OGD):
     def __init__(self, env, args):
-        super(AdaOGD, self).__init__(env, args)
+        super(AdamOGD, self).__init__(env, args)
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self.lr)
         self.algo = 'AdamOGD'
 
@@ -519,7 +519,7 @@ class FTL(OnlineLearningAlgo):
         dataset = torch.utils.data.TensorDataset(tensor_states, tensor_expert_actions)
         self.data_generator = torch.utils.data.DataLoader(dataset, batch_size=self.args.mini_batch_size, shuffle=True)
         # otherwise run iterative
-        for epoch in range(self.epochs_per_update): 
+        for epoch in range(self.epochs_per_update):
             loss, grad_norm = self.iterative_step(tensor_states, tensor_expert_actions)
             self.updates += 1
             ftl_loss += loss.detach()

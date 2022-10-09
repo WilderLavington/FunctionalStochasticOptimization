@@ -1,7 +1,7 @@
 program: atari/atari_ex.py
 entity: wilderlavington
 method: grid
-project: FunctionalStochasticOptimization
+project: FunctionalOptimization
 metric:
   goal: minimize
   name: grad_norm
@@ -9,12 +9,13 @@ parameters:
   algo:
     values:
     - SSO_OGD
-    - SSO_SLS
-    - SSO_Sadagrad
   m:
     values:
+    - 1
+    - 2
+    - 3
+    - 4
     - 5
-    - 25
   log_lr:
     values:
     - 2.
@@ -33,12 +34,13 @@ parameters:
   c:
     values:
     - 0.5
+    - 0.1
   episodes:
     values:
-    - 100
+    - 25
   samples_per_update:
     values:
-    - 500
+    - 1000
   eta_schedule:
     values:
     - constant

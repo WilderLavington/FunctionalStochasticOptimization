@@ -81,7 +81,7 @@ def load_model(data_set_id, loss, X, y, use_dense=False):
 
     # update model for stuff that needs it
     if data_set_id == 'mfac':
-        model = LinearNueralNetworkModel(X.shape[1], [16], 10)
+        model = LinearNueralNetworkModel(X.shape[1], [10], 10, bias=False)
         model.to('cuda')
         L = L_MAP[data_set_id]
     elif data_set_id == 'mnist':

@@ -1,7 +1,7 @@
 program: main.py
 entity: wilderlavington
 method: grid
-project: FunctionalStochasticOptimization
+project: FunctionalOptimization
 metric:
   goal: minimize
   name: grad_norm
@@ -11,7 +11,7 @@ parameters:
     - 500
   algo:
     values:
-    - Diag_Ada_FMDOpt 
+    - Diag_Ada_FMDOpt
   normalize_epochs_lengths:
     values:
     - 1

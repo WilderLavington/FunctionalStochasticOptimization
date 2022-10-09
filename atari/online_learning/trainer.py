@@ -14,7 +14,7 @@ import os
 from online_learning.parser import get_args
 from online_learning.load_expert import pretrain_args
 from online_learning.utils import stat_dicts, timer
-from online_learning.algorithms import OGD, AdaOGD, FTL, FTRL, AFTRL, SFTRL
+from online_learning.algorithms import OGD, AdaOGD, AdamOGD, FTL, FTRL, AFTRL, SFTRL
 from online_learning.online_sso import OSLS, GULF2_OGD, SSO_OGD, SSO_SLS, SSO_Sadagrad
 
 

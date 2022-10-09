@@ -49,7 +49,7 @@ def check_armijo_conditions(step_size, loss, grad_norm,
 
 # linesearch optimizer
 class LSOpt(torch.optim.Optimizer):
-    def __init__(self, params, init_step_size=1,
+    def __init__(self, params, lr=1,
                  c=0.1, beta_update=0.9, expand_coeff=1.8):
         params = list(params)
         super().__init__(params, {})
@@ -61,30 +61,37 @@ class LSOpt(torch.optim.Optimizer):
         self.c = c
         self.expand_coeff = expand_coeff
         self.beta_b = beta_update
-        self.init_step_size = init_step_size
+        self.init_step_size = lr
         # store state for debugging
         self.state['step'] = 0
-        self.state['step_size'] = init_step_size
+        self.state['step_size'] = lr
         self.state['n_forwards'] = 0
         self.state['n_backwards'] = 0
 
     def step(self, closure, clip_grad=False):
+
         # set initial step size
-        step_size = self.state['step_size']
+        step_size = self.expand_coeff * self.state['step_size']
+
         # get loss and compute gradients
         loss = closure(call_backward=True)
+
         #
         if clip_grad:
             torch.nn.utils.clip_grad_norm_(self.params, 0.25)
+
         # save the current parameters:
         params_current = deepcopy(self.params)
         grad_current = deepcopy(get_grad_list(self.params))
         grad_norm = compute_grad_norm(grad_current)
+        self.state['minibatch_grad_norm'] = grad_norm
+
         # only do the check if the gradient norm is big enough
         with torch.no_grad():
 
             # take some steps
             for e in range(100):
+
                 # =================================================
                 # try a prospective step
                 for p_next, p_current, g_current in zip(self.params, params_current, grad_current):
@@ -115,7 +122,7 @@ class LSOpt(torch.optim.Optimizer):
 
         # =================================================
         # replace step with expanded current step for speed
-        self.state['step_size'] = self.expand_coeff * step_size
+        self.state['step_size'] = step_size 
         self.state['step'] += 1
         # return loss
         return loss

@@ -37,20 +37,20 @@ def get_args():
     parser.add_argument('--seed', type=int, default=np.random.randint(1000000), metavar='N', help='random seed (default: 123456)')
     parser.add_argument('--multi_seed_run', type=int, default=3, metavar='N', help='random seed (default: 123456)')
     parser.add_argument('--group', type=str, default='static-args', metavar='N')
-    parser.add_argument("--env_name", help="environment ID", type=str, default="BreakoutNoFrameskip-v4")
-    parser.add_argument('--expert_type', type=str, default='sac')
+    parser.add_argument("--env_name", help="environment ID", type=str, default="PongNoFrameskip-v4")
+    parser.add_argument('--expert_type', type=str, default='ppo')
 
 
     # online imitation learning stuff
-    parser.add_argument('--beta', type=float, default=1.0)
+    parser.add_argument('--beta', type=float, default=0.0)
     parser.add_argument('--beta_update', type=float, default=0.0)
     parser.add_argument('--stochastic_interaction', type=int, default=1, metavar='N', help='random seed (default: 123456)')
-    parser.add_argument('--replay_size', type=int, default=1000, metavar='N', help='size of replay buffer (default: 10000000)')
+    parser.add_argument('--replay_size', type=int, default=10000000, metavar='N', help='size of replay buffer (default: 10000000)')
     parser.add_argument('--expert_mode', type=int, default=0)
 
     # policy model info
     parser.add_argument('--hidden_size', type=int, default=256, metavar='N', help='hidden size (default: 256)')
-    parser.add_argument('--model_type', type=str, default='nn', metavar='N')
+    parser.add_argument('--model_type', type=str, default='linear', metavar='N')
     parser.add_argument('--bandwidth', type=float, default=0., metavar='N')
     parser.add_argument('--transform_dist', type=int, default=1, metavar='N')
     parser.add_argument('--nonlin', type=str, default='relu', metavar='N')

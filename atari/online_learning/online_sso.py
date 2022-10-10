@@ -214,7 +214,7 @@ class SSO_SLS(SSO_OGD):
         self.eta_schedule = 'stochastic'
         self.eta = 1 / self.lr
         surr_optim_args = {'lr':self.lr, 'c':args.c, 'n_batches_per_epoch': self.episodes,
-            'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
+            'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule': args.eta_schedule}
         optim_args = {'eta':self.eta, 'eta_schedule':args.eta_schedule, 'c': self.outer_c,
                       'surr_optim_args':surr_optim_args,
                       'm': args.m, 'total_steps': self.episodes, 'reset_lr_on_step': True}
@@ -235,7 +235,7 @@ class SSO_Sadagrad(SSO_OGD):
         self.eta_schedule = 'constant'
         self.eta = 1 / self.lr
         surr_optim_args = {'lr':args.lr, 'c':args.c, 'n_batches_per_epoch': self.episodes,
-            'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
+            'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':args.eta_schedule}
         optim_args = {'eta':1/args.lr, 'eta_schedule':args.eta_schedule,
                       'surr_optim_args':surr_optim_args,
                       'm': 25, 'total_steps': self.episodes, 'reset_lr_on_step': True}

@@ -63,6 +63,10 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_F
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Adam/optimal_stepsize/constant/fullbatch/baselines.yaml --job_name=fig_9c
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Adam/optimal_stepsize/constant/minibatch/baselines.yaml --job_name=fig_9d
 
+# gulf2 - constant
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/GULF2/optimal_stepsize/constant/fullbatch/baselines.yaml --job_name=fig_9e
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/GULF2/optimal_stepsize/constant/minibatch/baselines.yaml --job_name=fig_9f
+
 # MFAC
 python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/minibatch/funcopt.yaml --job_name=fig_10a
 python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/minibatch/baselines.yaml --job_name=fig_10b

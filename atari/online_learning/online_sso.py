@@ -172,10 +172,10 @@ class SSO_OGD(OGD):
             self.optimizer.zero_grad()
             # grab loss
             policy_logits = self.policy(states)
-            loss = -1 * self.policy.log_prob_forward(policy_logits, expert_actions.reshape(-1)).mean()
+            loss = -1 * self.policy.log_prob_forward(policy_logits, expert_actions.reshape(-1)).sum()
             # make an inner-closure stepper
             def inner_closure(model_outputs):
-                inner_loss = -1 * self.policy.log_prob_forward(model_outputs,expert_actions.reshape(-1)).mean()
+                inner_loss = -1 * self.policy.log_prob_forward(model_outputs,expert_actions.reshape(-1)).sum()
                 return inner_loss
             # create grad
             if call_backward==True:
@@ -212,7 +212,7 @@ class SSO_SLS(SSO_OGD):
         self.expand_coeff = 1.8
         self.outer_c = 0.5
         self.eta_schedule = 'stochastic'
-        self.eta = 1 / self.lr 
+        self.eta = 1 / self.lr
         surr_optim_args = {'lr':self.lr, 'c':args.c, 'n_batches_per_epoch': self.episodes,
             'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
         optim_args = {'eta':self.eta, 'eta_schedule':args.eta_schedule, 'c': self.outer_c,

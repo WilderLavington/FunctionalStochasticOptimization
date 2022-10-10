@@ -1,0 +1,42 @@
+program: atari/atari_ex.py
+entity: wilderlavington
+method: grid
+project: FunctionalStochasticOptimization
+metric:
+  goal: minimize
+  name: grad_norm
+parameters:
+  algo:
+    values:
+    - OGD
+    - AdaOGD
+    - AdamOGD
+    - OSLS
+    - GULF2_OGD
+  log_lr:
+    values:
+    - 2.
+    - 1.
+    - 0.
+    - -1.
+    - -2.
+    - -3.
+    - -4.
+  label:
+    values:
+    - 'aistats-atari'
+  use_optimal_stepsize:
+    values:
+    - 0
+  c:
+    values:
+    - 0.5
+  episodes:
+    values:
+    - 100
+  samples_per_update:
+    values:
+    - 500
+  eta_schedule:
+    values:
+    - constant

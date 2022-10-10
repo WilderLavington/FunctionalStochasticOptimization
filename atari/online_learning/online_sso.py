@@ -143,14 +143,15 @@ class SSO_OGD(OGD):
         self.algo = 'SSO_OGD'
         self.episodes = self.args.episodes
         self.batch_size = self.samples
-        self.beta_update = 0.8
-        self.expand_coeff = 1.8
-        self.eta_schedule = 'stochastic'
+        # self.beta_update = 0.8
+        # self.expand_coeff = 1.8
+        self.eta_schedule = 'constant'
         self.eta = 1 / self.lr
-        surr_optim_args = {'lr':args.lr, 'c':args.c,
-            'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff }
-        optim_args = {'eta':1/args.lr, 'eta_schedule':args.eta_schedule,
-                      'surr_optim_args':surr_optim_args,  'inner_optim': LSOpt,
+        # surr_optim_args = {'lr':args.lr, 'c':args.c,
+        #     'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff }
+        surr_optim_args = {'lr':3e-4}
+        optim_args = {'eta':1/args.lr, 'eta_schedule':args.eta_schedule, 'include_rel_reg':True,
+                      'surr_optim_args':surr_optim_args,  'inner_optim': torch.optim.Adam,
                       'm': self.args.m, 'total_steps': self.episodes, 'reset_lr_on_step': True}
         self.optimizer = SGD_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
@@ -177,7 +178,9 @@ class SSO_OGD(OGD):
             def inner_closure(model_outputs):
                 inner_loss = -1 * self.policy.log_prob_forward(model_outputs,expert_actions.reshape(-1)).sum()
                 return inner_loss
-            # create grad
+            # print(' original loss - loss', -1 * self.policy.log_prob(states, expert_actions.reshape(-1)).sum() )
+            # print(' precomputed loss - loss', self.compute_loss(states, expert_actions))
+            # create gradftl_loss = self.compute_loss(batch_states.to(self.device), batch_expert_actions.to(self.device))
             if call_backward==True:
                 loss.backward()
             # for line-search
@@ -186,7 +189,7 @@ class SSO_OGD(OGD):
             else:
                 return loss
         # step optimizer
-        self.optimizer.step(closure)
+        surrogate_loss = self.optimizer.step(closure)
         # compute grad_norm
         self.optimizer.zero_grad()
         loss = -1 * self.policy.log_prob(states, expert_actions.reshape(-1)).mean()
@@ -195,7 +198,8 @@ class SSO_OGD(OGD):
         # step optimizer
         self.updates += 1
         # store
-        self.info = {'sso_ogd_loss':  loss,
+        self.info = {'sso_sls_loss':  loss,
+                     'sso_surrogate_loss': surrogate_loss,
                      'grad_norm': grad_norm}
         # return computed loss
         return loss
@@ -208,8 +212,8 @@ class SSO_SLS(SSO_OGD):
         self.algo = 'SSO_SLS'
         self.episodes = self.args.episodes
         self.batch_size = self.samples
-        self.beta_update = 0.8
-        self.expand_coeff = 1.8
+        # self.beta_update = 0.8
+        # self.expand_coeff = 1.8
         self.outer_c = 0.5
         self.eta_schedule = 'stochastic'
         self.eta = 1 / self.lr
@@ -229,8 +233,8 @@ class SSO_Sadagrad(SSO_OGD):
         self.algo = 'SSO_Sadagrad'
         self.episodes = self.args.episodes
         self.batch_size = self.samples
-        self.beta_update = 0.8
-        self.expand_coeff = 1.8
+        # self.beta_update = 0.8
+        # self.expand_coeff = 1.8
         self.outer_c = 0.5
         self.eta_schedule = 'constant'
         self.eta = 1 / self.lr

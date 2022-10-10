@@ -123,7 +123,7 @@ def load_train_args(args, model, loss_func, L, X, y):
                 'normalize_training_loss': False}
 
     elif args.algo == 'Diag_Ada_FMDOpt':
-        optimal_stepsize = 1e2
+        optimal_stepsize = 1
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}

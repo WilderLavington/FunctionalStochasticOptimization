@@ -8,7 +8,7 @@ def get_args():
     # optimization args
     parser.add_argument('--algo', type=str, default='SGD', help='SGD,Adam,SGD_FMDOpt')
     parser.add_argument('--loss', type=str, default='CrossEntropyLoss')
-    parser.add_argument('--project', type=str, default='FunctionalOptimization')
+    parser.add_argument('--project', type=str, default='FuncOptCleanRuns')
     parser.add_argument('--entity', type=str, default='wilderlavington')
     parser.add_argument('--log_lr', type=float, default=-4)
     parser.add_argument('--m', type=int, default=5)

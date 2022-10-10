@@ -54,7 +54,7 @@ class Policy(nn.Module):
         if not torch.is_tensor(state):
             state = torch.tensor(state).to(self.device)
             action = torch.tensor(action).to(self.device)
-        logits = self.forward(state) 
+        logits = self.forward(state)
         dist = torch.distributions.Categorical(logits=logits)
         return dist.log_prob(action)
 
@@ -76,8 +76,8 @@ class LinearPolicy(Policy):
         self.output_linear = nn.Linear(self.ft_out, num_actions)
         self.model_type = 'LinearPolicy'
         self.learn_ft = False
-        self.output_linear.weight.data.mul_(0.0)
-        self.output_linear.bias.data.mul_(0.0)
+        # self.output_linear.weight.data.mul_(0.0)
+        # self.output_linear.bias.data.mul_(0.0)
     def transform_state(self, state):
         if torch.is_tensor(state):
             state = state.cpu().numpy()

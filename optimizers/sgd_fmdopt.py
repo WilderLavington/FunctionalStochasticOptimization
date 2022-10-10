@@ -18,7 +18,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
     def __init__(self, params, m=1, eta_schedule = 'constant',
                  inner_optim = LSOpt, eta=1e3,
                  surr_optim_args={'lr':1.}, reset_lr_on_step=True,
-                 total_steps = 1000):
+                 total_steps = 1000, include_rel_reg=False):
         params = list(params)
         super().__init__(params, {})
 
@@ -26,7 +26,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.params = params
         self.m = m
         self.total_steps = total_steps
-
+        self.include_rel_reg = include_rel_reg
         # set eta and the divergence
         self.inner_optim = inner_optim(self.params,**surr_optim_args)
         self.div_op = lambda f, ft: torch.norm(f-ft,2).pow(2)
@@ -97,7 +97,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         batch_size = torch.tensor(f_t.shape[0], device='cuda')
         # produce some 1 by m (n=batch-size, m=output of f)
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
-
+        assert dlt_dft.shape == f_t.shape
         # set  eta schedule
         if self.eta_schedule == 'constant':
             eta = self.eta
@@ -113,13 +113,15 @@ class SGD_FMDOpt(torch.optim.Optimizer):
             #
             self.zero_grad()
             # f = n by m
-            loss, f, inner_closure = closure(call_backward=False)
+            base_loss, f, inner_closure = closure(call_backward=False)
             # m by d -> 1
             loss = torch.sum(dlt_dft*f)
             # remove cap F
-            reg_term = self.div_op(f,f_t.detach())
+            reg_term =  self.div_op(f,f_t.detach())
+            if self.include_rel_reg:
+                reg_term += 1e-3 * torch.norm(f,2).pow(2)
             # compute full surrogate
-            surr = (loss / eta + reg_term ) / batch_size # + 1e-3 * torch.norm(f,2).pow(2)
+            surr = (loss / eta + reg_term ) / batch_size
             # do we differentiate
             if call_backward:
                 surr.backward()
@@ -137,13 +139,12 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         # print('yee')
         for m in range(0,self.m):
 
-            # compute the current loss
+            # compute the current loss 
             current_loss = self.inner_optim.step(surrogate)
-
-            # print(current_loss)
             # add in some stopping conditions
-            if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
-                break
+            if 'minibatch_grad_norm' in self.inner_optim.state.keys():
+                if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
+                    break
 
             # update internals
             self.state['inner_steps'] += 1

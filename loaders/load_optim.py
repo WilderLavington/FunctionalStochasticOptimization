@@ -23,6 +23,7 @@ from optimizers.sls_fmdopt import SLS_FMDOpt
 from optimizers.adam_fmdopt import Adam_FMDOpt
 from optimizers.online_newton_fmdopt import Online_Newton_FMDOpt
 from optimizers.gulf2 import GULF2
+from optimizers.mirror_descent_fmdopt import MD_FMDOpt
 
 # ======================
 # set expensive to compute hyper-parameters
@@ -60,6 +61,22 @@ def load_train_args(args, model, loss_func, L, X, y):
             'total_rounds': args.epochs, 'batch_size':args.batch_size,
             'update_lr_type': 'constant', 'single_out': True,
             'normalize_training_loss': True}
+
+    elif args.algo == 'MD_FMDOpt':
+        assert args.loss == 'CrossEntropyLoss'
+        optimal_stepsize = 1.
+        args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
+        surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
+            'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
+        optim_args = {'eta':1/args.stepsize, 'eta_schedule':args.eta_schedule,
+                      'inner_optim':eval(args.inner_opt), 'surr_optim_args':surr_optim_args,
+                      'm':args.m, 'total_steps':args.total_steps, 'reset_lr_on_step':args.reset_lr_on_step}
+        optim = MD_FMDOpt(model.parameters(), **optim_args)
+        train_args = {'args':args, 'model':model, 'optim':optim,
+                'loss_func': loss_func, 'X':X, 'y':y, 'call_closure': False,
+                'total_rounds': args.epochs, 'batch_size':args.batch_size,
+                'update_lr_type': 'constant', 'single_out': False,
+                'normalize_training_loss': False, 'include_data_id': False}
 
     elif args.algo == 'GULF2':
         optimal_stepsize = 1e-3

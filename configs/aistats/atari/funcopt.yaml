@@ -9,32 +9,38 @@ parameters:
   algo:
     values:
     - SSO_OGD
-    - OSLS
+    - SSO_SLS
   m:
     values:
     - 1
+    - 2
+    - 3
+    - 4
+    - 5
   log_lr:
     values:
-    - 2.
-    - 1.
     - 0.
     - -1.
     - -2.
     - -3.
     - -4.
+    - -5.
   label:
     values:
     - 'aistats-atari'
   use_optimal_stepsize:
     values:
     - 0
+  outer_c:
+    values:
+    - 0.5
   c:
     values:
     - 0.5
     - 0.1
   episodes:
     values:
-    - 25
+    - 50
   samples_per_update:
     values:
     - 1000

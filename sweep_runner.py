@@ -92,7 +92,7 @@ def main():
     parser.add_argument('--directory', default='/home/wilder1/scratch/FunctionalStochasticOptimization')
     parser.add_argument('--command', default='echo "hello world" ')
     parser.add_argument('--machine', default='narval')
-    parser.add_argument('--time', default='00-08:00')
+    parser.add_argument('--time', default='00-12:00')
     parser.add_argument('--account', default='rrg-kevinlb')
     parser.add_argument('--num',default='1')
     args = parser.parse_args()

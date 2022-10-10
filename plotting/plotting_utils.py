@@ -35,15 +35,18 @@ def download_wandb_summary(user, project, summary_file,
     for run in tqdm(runs):
         run = api.run(user+'/'+project+"/"+run.id)
         conf = {k: v for k, v in run.config.items()}
-        # if 'label' in conf.keys():
-        #     if (conf['label'] in labels) and (run.commit not in IGNORE_COMMITS):
-        summary_list.append(run.summary._json_dict)
-        config_list.append(conf)
-        name_list.append(run.name)
-        id_list.append(run.id)
-        commits.append(run.commit)
-        # else:
-            # pass
+        if 'label' in conf.keys():
+            # if (conf['label'] in labels) and (run.commit not in IGNORE_COMMITS):
+            summary_list.append(run.summary._json_dict)
+            config_list.append(conf)
+            name_list.append(run.name)
+            id_list.append(run.id)
+            if run.commit is not None:
+                commits.append(run.commit)
+            else:
+                commits.append('None')
+        else:
+            pass
     assert len(summary_list)
     commits_df = pd.DataFrame.from_records(commits)
     summary_df = pd.DataFrame.from_records(summary_list)

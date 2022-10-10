@@ -27,7 +27,7 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/optimal_ste
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/optimal_stepsize/exponential/minibatch/baselines.yaml --job_name=fig_3d
 # SLS - stochastic
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/optimal_stepsize/stochastic/fullbatch/baselines.yaml --job_name=fig_3e
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/optimal_stepsize/stochastic/minibatch/baselines.yaml --job_name=fig_4f
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/optimal_stepsize/stochastic/minibatch/baselines.yaml --job_name=fig_3f
 
 # SLS-SSO - constant
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/optimal_stepsize/constant/fullbatch/funcopt.yaml --job_name=fig_4a

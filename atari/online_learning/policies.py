@@ -54,8 +54,7 @@ class Policy(nn.Module):
         if not torch.is_tensor(state):
             state = torch.tensor(state).to(self.device)
             action = torch.tensor(action).to(self.device)
-        logits = self.forward(state)
-        logits = torch.clamp(logits, min=-20,max=20)
+        logits = self.forward(state) 
         dist = torch.distributions.Categorical(logits=logits)
         return dist.log_prob(action)
 

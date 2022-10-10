@@ -11,7 +11,7 @@ parameters:
     - 500
   algo:
     values:
-    - Adagrad
+    - Adam
   normalize_epochs_lengths:
     values:
     - 1

@@ -91,6 +91,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
                 optim.zero_grad()
                 model_outputs = model(X_batch)
                 def inner_closure(model_outputs):
+                    # print(model_outputs.shape, y_batch.shape)
                     loss = loss_func(model_outputs, y_batch)
                     if normalize_training_loss:
                         loss /= data_idx_batch.shape[0]

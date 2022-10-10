@@ -212,8 +212,7 @@ class SSO_SLS(SSO_OGD):
         self.expand_coeff = 1.8
         self.outer_c = 0.5
         self.eta_schedule = 'stochastic'
-        self.eta = 1 / self.lr
-        print(self.lr, self.eta)
+        self.eta = 1 / self.lr 
         surr_optim_args = {'lr':self.lr, 'c':args.c, 'n_batches_per_epoch': self.episodes,
             'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
         optim_args = {'eta':self.eta, 'eta_schedule':args.eta_schedule, 'c': self.outer_c,
@@ -242,4 +241,3 @@ class SSO_Sadagrad(SSO_OGD):
                       'm': 25, 'total_steps': self.episodes, 'reset_lr_on_step': True}
         self.optimizer = Ada_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
- 

@@ -35,6 +35,10 @@ def check_args(args):
     # make sure inner-opt is good.
     if args.fullbatch:
         assert args.batch_size == 100.
+    if args.algo == 'Online_Newton_FMDOpt':
+        assert args.loss in ['BCEWithLogitsLoss', 'CrossEntropyLoss']
+    if args.algo == 'OMD_FMDOpt':
+        assert args.loss in ['BCELoss', 'NLLLoss']
     # make sure we are matching the problem correctly
     if args.dataset_name in ['mnist', 'cifar10', 'cifar100']:
         assert args.loss == 'CrossEntropyLoss'
@@ -57,7 +61,7 @@ def main():
 
     # If you don't want your script to sync to the cloud
     os.environ['WANDB_DIR'] = log_path
-    os.environ['WANDB_MODE'] = 'offline'
+    os.environ['WANDB_MODE'] = 'online'
     wandb.init(project=args.project, entity=args.entity, config=args,
                 group=args.group) #, dir=args.log_dir
 

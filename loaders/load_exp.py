@@ -15,6 +15,7 @@ import torch
 from loaders.load_data import *
 from models import *
 
+
 # ======================
 # set expensive to compute hyper-parameters
 L_MAP = {'mushrooms': torch.tensor(87057.2422, device='cuda'),
@@ -47,7 +48,11 @@ def load_dataset(data_set_id, data_dir, loss):
 def procces_data(X, y, loss):
     if loss == 'CrossEntropyLoss':
         X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.long)
+    elif loss == 'NLLLoss':
+        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.long)
     elif loss == 'BCEWithLogitsLoss':
+        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
+    elif loss == 'BCELoss':
         X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
     elif loss == 'MSELoss':
         X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float).unsqueeze(1)
@@ -64,12 +69,25 @@ def load_model(data_set_id, loss, X, y, use_dense=False):
         loss_func = nn.CrossEntropyLoss(reduction='sum')
         model = DiscreteLinearModel(X.shape[1], y.max()+1)
         model.to('cuda')
-        L = L_MAP[data_set_id] * 4 * torch.unique(y).shape[0]
+        L = L_MAP[data_set_id] * 2 * (1 - 1 / torch.unique(y).shape[0])
+
+    elif loss == 'NLLLoss':
+        loss_func = nn.NLLLoss(reduction='sum')
+        model = SoftmaxDiscreteLinearModel(X.shape[1], y.max()+1)
+        model.to('cuda')
+        L = L_MAP[data_set_id] * 2 * (1 - 1 / torch.unique(y).shape[0])
 
     elif loss == 'BCEWithLogitsLoss':
         loss_func_ = nn.BCEWithLogitsLoss(reduction='sum')
         loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
         model = DiscreteLinearModel(X.shape[1], 1)
+        model.to('cuda')
+        L = L_MAP[data_set_id] * 4
+
+    elif loss == 'BCELoss':
+        loss_func_ = nn.BCELoss(reduction='sum')
+        loss_func = lambda t, y: loss_func_(t.reshape(-1), y.reshape(-1))
+        model = SoftmaxDiscreteLinearModel(X.shape[1], 1)
         model.to('cuda')
         L = L_MAP[data_set_id] * 4
 

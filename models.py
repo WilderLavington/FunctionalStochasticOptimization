@@ -5,6 +5,42 @@ import math
 import torch
 
 # something for discrete outputs
+class SoftmaxDiscreteLinearModel(nn.Module):
+    def __init__(self, num_inputs, num_actions):
+        super(SoftmaxDiscreteLinearModel, self).__init__()
+        # set info
+        self.num_inputs = num_inputs
+        self.num_actions = num_actions
+        self.output_linear = nn.Linear(num_inputs, num_actions)
+        self.model_type = 'SoftmaxDiscreteLinearModel'
+        if num_actions == 1:
+            self.sm = torch.nn.Sigmoid()
+        else:
+            self.sm = nn.Softmax(dim=1)
+    def sample(self, state):
+        probs = self.forward(state)
+        dist = torch.distributions.Categorical(probs)
+        action = dist.sample()
+        return dist.sample(), dist.log_prob(action), torch.argmax(logits,dim=-1)
+    def log_prob(self, state, action):
+        if not torch.is_tensor(state):
+            state = torch.tensor(state).to(self.device)
+            action = torch.tensor(action).to(self.device)
+        probs = self.forward(state)
+        dist = torch.distributions.Categorical(probs)
+        return dist.log_prob(action)
+    def transform_state(self, state):
+        return state
+    def forward(self, state):
+        state = self.transform_state(state)
+        logits = self.output_linear(state)
+        # logits = torch.clamp(logits, min=-8,max=2)
+        probs = self.sm(logits)
+        if self.num_actions == 1:
+            probs = probs.reshape(-1) 
+        return probs
+
+# something for discrete outputs
 class DiscreteLinearModel(nn.Module):
     def __init__(self, num_inputs, num_actions):
         super(DiscreteLinearModel, self).__init__()

@@ -193,7 +193,7 @@ def create_test_env(
     :return:
     """
     # Avoid circular import
-    from online_learning.rl_baselines3_zoo.utils.exp_manager import ExperimentManager
+    from atari.online_learning.rl_baselines3_zoo.utils.exp_manager import ExperimentManager
 
     # Create the environment and wrap it if necessary
     env_wrapper = get_wrapper_class(hyperparams)

@@ -41,10 +41,10 @@ from torch import nn as nn  # noqa: F401
 # Register custom envs
 sys.path.append(os.path.dirname(os.path.dirname('../')))
 sys.path.append(os.path.dirname(os.path.dirname('../../')))
-import online_learning.rl_baselines3_zoo.utils.import_envs  # noqa: F401 pytype: disable=import-error
-from online_learning.rl_baselines3_zoo.utils.callbacks import SaveVecNormalizeCallback, TrialEvalCallback
-from online_learning.rl_baselines3_zoo.utils.hyperparams_opt import HYPERPARAMS_SAMPLER
-from online_learning.rl_baselines3_zoo.utils.utils import ALGOS, get_callback_list, get_latest_run_id, get_wrapper_class, linear_schedule
+import atari.online_learning.rl_baselines3_zoo.utils.import_envs  # noqa: F401 pytype: disable=import-error
+from atari.online_learning.rl_baselines3_zoo.utils.callbacks import SaveVecNormalizeCallback, TrialEvalCallback
+from atari.online_learning.rl_baselines3_zoo.utils.hyperparams_opt import HYPERPARAMS_SAMPLER
+from atari.online_learning.rl_baselines3_zoo.utils.utils import ALGOS, get_callback_list, get_latest_run_id, get_wrapper_class, linear_schedule
 
 
 class ExperimentManager(object):

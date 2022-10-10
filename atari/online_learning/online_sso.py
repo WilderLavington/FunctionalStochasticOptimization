@@ -145,14 +145,13 @@ class SSO_OGD(OGD):
         self.batch_size = self.samples
         # self.beta_update = 0.8
         # self.expand_coeff = 1.8
-        self.eta_schedule = 'constant'
+        self.eta_schedule = 'stochastic'
         self.eta = 1 / self.lr
-        # surr_optim_args = {'lr':args.lr, 'c':args.c,
-        #     'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff }
-        surr_optim_args = {'lr':3e-4}
-        optim_args = {'eta':1/args.lr, 'eta_schedule':args.eta_schedule, 'include_rel_reg':True,
-                      'surr_optim_args':surr_optim_args,  'inner_optim': torch.optim.Adam,
-                      'm': self.args.m, 'total_steps': self.episodes, 'reset_lr_on_step': True}
+        surr_optim_args = {'lr':1., 'c':args.c, 'n_batches_per_epoch': self.episodes,
+            'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule': args.eta_schedule}
+        optim_args = {'eta':self.eta, 'eta_schedule':args.eta_schedule, 
+                      'surr_optim_args':surr_optim_args,
+                      'm': args.m, 'total_steps': self.episodes, 'reset_lr_on_step': True}
         self.optimizer = SGD_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
 
@@ -217,7 +216,7 @@ class SSO_SLS(SSO_OGD):
         self.outer_c = 0.5
         self.eta_schedule = 'stochastic'
         self.eta = 1 / self.lr
-        surr_optim_args = {'lr':self.lr, 'c':args.c, 'n_batches_per_epoch': self.episodes,
+        surr_optim_args = {'lr': 1., 'c':args.c, 'n_batches_per_epoch': self.episodes,
             'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule': args.eta_schedule}
         optim_args = {'eta':self.eta, 'eta_schedule':args.eta_schedule, 'c': self.outer_c,
                       'surr_optim_args':surr_optim_args,
@@ -238,7 +237,7 @@ class SSO_Sadagrad(SSO_OGD):
         self.outer_c = 0.5
         self.eta_schedule = 'constant'
         self.eta = 1 / self.lr
-        surr_optim_args = {'lr':args.lr, 'c':args.c, 'n_batches_per_epoch': self.episodes,
+        surr_optim_args = {'lr': 1, 'c':args.c, 'n_batches_per_epoch': self.episodes,
             'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':args.eta_schedule}
         optim_args = {'eta':1/args.lr, 'eta_schedule':args.eta_schedule,
                       'surr_optim_args':surr_optim_args,

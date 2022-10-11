@@ -75,65 +75,6 @@ class OSLS(OGD):
                      'grad_norm': grad_norm}
 
         # return computed loss
-        return loss
-
-class GULF2_OGD(OGD):
-
-    def __init__(self, env, args):
-        super(GULF2_OGD,self).__init__(env, args)
-        self.lr = 10**args.log_lr
-        self.algo = 'GULF2_OGD'
-        self.episodes = self.args.episodes
-        self.batch_size = self.samples
-        self.eta = 1 / self.lr
-        surr_optim_args = {'lr':args.lr}
-        optim_args = {'surr_optim_args':surr_optim_args,
-            'prox_steps': 25, 'alpha': 0.3, 'reg_lambda': 1e-2}
-        self.optimizer = GULF2(self.policy.parameters(), **optim_args)
-        self.single_out = 0
-
-    def update_parameters(self, new_examples):
-        # grab examples
-        _, (states, expert_actions, _, _), self.avg_return = new_examples
-        self.replay_size = int(self.args.samples_per_update)
-        self.interactions += int(self.args.samples_per_update)
-        # move everything to device
-        self.optimizer.zero_grad()
-        self.policy.to(self.device)
-        states, expert_actions = states.to('cuda'), expert_actions.to('cuda')
-        # create closure for line-search
-        def closure(call_backward=True, single_out=self.single_out):
-            # zero out gradient
-            self.optimizer.zero_grad()
-            # grab loss
-            policy_logits = self.policy(states)
-            loss = self.policy.log_prob_forward(policy_logits, expert_actions).sum()
-            # make an inner-closure stepper
-            def inner_closure(model_outputs):
-                inner_loss = -1 * self.policy.log_prob_forward(model_outputs,expert_actions).sum()
-                return inner_loss
-            # create grad
-            if call_backward==True:
-                loss.backward()
-            # for line-search
-            if not self.single_out:
-                return loss, policy_logits, inner_closure
-            else:
-                return loss
-        # step optimizer
-        self.optimizer.step(closure)
-        # compute grad_norm
-        self.optimizer.zero_grad()
-        loss = -1 * self.policy.log_prob(states, expert_actions).mean()
-        loss.backward()
-        grad_norm = self.compute_grad().detach().pow(2).mean()
-        # step optimizer
-        self.updates += 1
-        # store
-        self.info = {'sso_ogd_loss':  loss,
-                     'grad_norm': grad_norm}
-        # return computed loss
-        return loss
 
 class SSO_OGD(OGD):
 
@@ -143,62 +84,69 @@ class SSO_OGD(OGD):
         self.algo = 'SSO_OGD'
         self.episodes = self.args.episodes
         self.batch_size = self.samples
-        # self.beta_update = 0.8
-        # self.expand_coeff = 1.8
-        self.eta_schedule = 'stochastic'
-        self.eta = 1 / self.lr
-        surr_optim_args = {'lr':1., 'c':0.5,
-            'beta_update':args.sls_beta_update, 'expand_coeff':1.}
-        optim_args = {'eta':self.eta, 'eta_schedule':args.eta_schedule,
-                      'surr_optim_args':surr_optim_args, 'inner_optim': LSOpt,
-                      'm': args.m, 'total_steps': self.episodes, 'reset_lr_on_step': True}
-        self.optimizer = SGD_FMDOpt(self.policy.parameters(), **optim_args)
+        self.eta = 1 #/ self.lr
+        # surr_optim_args = {'lr': 1., 'c':args.c,
+        #     'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff }
+        surr_optim_args = {'lr': 10**(-3.) }
+        self.optimizer = torch.optim.Adam(self.policy.parameters(), **surr_optim_args) #SGD_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
 
     def update_parameters(self, new_examples):
+
         # grab examples
         _, (states, expert_actions, _, _), self.avg_return = new_examples
         self.replay_size = int(self.args.samples_per_update)
         self.interactions += int(self.args.samples_per_update)
+
         # move everything to device
-        self.optimizer.zero_grad()
         self.policy.to(self.device)
         states, expert_actions = states.to('cuda'), expert_actions.to('cuda')
-        # reset_lr
-        self.optimizer.inner_optim.state['step_size'] = self.lr
-        # create closure for line-search
-        def closure(call_backward=True, single_out=self.single_out):
-            # zero out gradient
+
+        # compute target
+        target_t = self.policy(states)
+
+        # make hook for jacobian
+        def inner_closure(model_outputs):
+            loss = -1 * self.policy.log_prob_forward(target_t, expert_actions.reshape(-1)).sum()
+            return loss
+
+        # get linearization term
+        self.optimizer.zero_grad()
+        dlt_dft = torch.autograd.functional.jacobian(inner_closure, target_t).detach() # n by m
+        assert dlt_dft.shape == target_t.shape
+
+        # step surrogate
+        for m in range(self.args.m):
+            #
             self.optimizer.zero_grad()
-            # grab loss
-            policy_logits = self.policy(states)
-            loss = -1 * self.policy.log_prob_forward(policy_logits, expert_actions.reshape(-1)).sum()
-            # make an inner-closure stepper
-            def inner_closure(model_outputs):
-                inner_loss = -1 * self.policy.log_prob_forward(model_outputs,expert_actions.reshape(-1)).sum()
-                return inner_loss
-            if call_backward==True:
-                loss.backward()
-            # for line-search
-            if not self.single_out:
-                return loss, policy_logits, inner_closure
-            else:
-                return loss
-        # step optimizer
-        surrogate_loss = self.optimizer.step(closure)
+            # linearized term
+            target = self.policy(states)
+            loss = dlt_dft*target
+            # regularization term
+            reg_term = (target-target_t.detach()).pow(2)
+            # compute full surrogate
+            surr = (loss / self.eta + reg_term ).mean()
+            # backprop
+            surr.backward()
+            # step
+            self.optimizer.step() 
+
         # compute grad_norm
         self.optimizer.zero_grad()
-        loss = -1 * self.policy.log_prob(states, expert_actions.reshape(-1)).mean()
+        target_t = self.policy(states)
+        loss = -1 * self.policy.log_prob_forward(target_t, expert_actions.reshape(-1)).mean()
         loss.backward()
         grad_norm = self.compute_grad().detach().pow(2).mean()
+
         # step optimizer
         self.updates += 1
+
         # store
-        self.info = {'sso_sls_loss':  loss,
-                     'sso_surrogate_loss': surrogate_loss,
+        self.info = {'sso_ogd_loss':  loss,
                      'grad_norm': grad_norm}
         # return computed loss
         return loss
+
 
 class SSO_SLS(SSO_OGD):
 

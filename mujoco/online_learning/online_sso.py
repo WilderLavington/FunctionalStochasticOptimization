@@ -32,10 +32,11 @@ class SSO_OGD(OGD):
         self.episodes = self.args.episodes
         self.batch_size = self.samples
         self.eta = 1 #/ self.lr
-        # surr_optim_args = {'lr': 1., 'c':args.c,
-        #     'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff }
-        surr_optim_args = {'lr': 10**(-3.) }
-        self.optimizer = torch.optim.Adam(self.policy.parameters(), **surr_optim_args) #SGD_FMDOpt(self.policy.parameters(), **optim_args)
+        surr_optim_args = {'lr': 1., 'c':args.c,
+            'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff }
+        # surr_optim_args = {'lr': 10**(-3.) }
+        self.optimizer = LSOpt(self.policy.parameters(), **surr_optim_args)
+        # self.optimizer = torch.optim.Adam(self.policy.parameters(), **surr_optim_args) #SGD_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
 
     def update_parameters(self, new_examples):
@@ -65,18 +66,22 @@ class SSO_OGD(OGD):
         # step surrogate
         for m in range(self.args.m):
             #
-            self.optimizer.zero_grad()
-            # linearized term
-            target, _ = self.policy(states)
-            loss = dlt_dft*target
-            # regularization term
-            reg_term = (target-target_t.detach()).pow(2)
-            # compute full surrogate
-            surr = (loss / self.eta + reg_term ).mean()
-            # backprop
-            surr.backward()
+            def closure(call_backward=True):
+                #
+                self.optimizer.zero_grad()
+                # linearized term
+                target, _ = self.policy(states)
+                loss = dlt_dft*target
+                # regularization term
+                reg_term = (target-target_t.detach()).pow(2)
+                # compute full surrogate
+                surr = (loss / self.eta + reg_term ).mean()
+                # backprop
+                if call_backward:
+                    surr.backward()
+                return surr
             # step
-            self.optimizer.step()
+            self.optimizer.step(closure)
 
         # compute grad_norm
         self.optimizer.zero_grad()
@@ -97,7 +102,7 @@ class SSO_OGD(OGD):
 class OSls(OGD):
 
     def __init__(self, env, args):
-        super(SlsOGD,self).__init__(env, args)
+        super(OSls,self).__init__(env, args)
         self.lr = 10**args.log_lr
         self.algo = 'SlsOGD'
         self.episodes = self.args.episodes

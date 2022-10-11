@@ -40,7 +40,7 @@ def get_args():
     parser.add_argument('--group', type=str, default='static-args', metavar='N')
     parser.add_argument('--env_name', default="Hopper-v2", help='Mujoco Gym environment (default: HalfCheetah-v2)')
     parser.add_argument('--expert_type', type=str, default='sac')
-    parser.add_argument('--project', type=str, default='FunctionalOptimization')
+    parser.add_argument('--project', type=str, default='FunctionalOptimizationFinal')
     parser.add_argument('--entity', type=str, default='wilderlavington')
 
     # online imitation learning stuff
@@ -63,7 +63,7 @@ def get_args():
     # SSO shite
     parser.add_argument('--m', type=int, default=1)
     parser.add_argument('--dataset_name', type=str, default='Mujoco')
-    parser.add_argument('--loss', type=str, default='MSELoss') 
+    parser.add_argument('--loss', type=str, default='MSELoss')
     parser.add_argument('--c', type=float, default=0.1)
     parser.add_argument('--sls_beta_update', type=float, default=0.9)
     parser.add_argument('--outer_c', type=float, default=0.1)

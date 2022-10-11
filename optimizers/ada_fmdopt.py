@@ -23,21 +23,25 @@ class Ada_FMDOpt(SGD_FMDOpt):
 
     def step(self, closure, clip_grad=False):
 
-        #======================================================
-        # closure info
-        # .... comments go here
-        #======================================================
-
         # set initial step size
         self.start = time.time()
         self.state['outer_steps'] += 1
+        self.state['surrogate_increase_flag'] = 0
 
         # compute loss + grad for eta computation
-        _, f_t, inner_closure = closure(call_backward=False)
-        batch_size = torch.tensor(f_t.shape[0], device='cuda')
+        loss_func, X_t, y_t, model = closure(call_backward=False)
+        self.inner_optim = LSOpt(model.parameters(),**self.surr_optim_args)
+
+        #
+        def inner_closure(model_outputs):
+            loss = loss_func(model_outputs, y_t)
+            return loss
+
+        target_t = model(X_t)
 
         # produce some 1 by m (n=batch-size, m=output of f)
-        dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
+        self.inner_optim.zero_grad()
+        dlt_dft = torch.autograd.functional.jacobian(inner_closure, target_t).detach() # n by m
 
         # update grad-norm
         if self.grad_sum:
@@ -46,41 +50,43 @@ class Ada_FMDOpt(SGD_FMDOpt):
             self.grad_sum = torch.norm(dlt_dft,2).pow(2).detach()
 
         # set  eta schedule
-        eta = self.eta * (self.grad_sum).pow(0.5)
+        eta = self.eta * (self.grad_sum).pow(0.5) + 1e-6
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             #
-            self.zero_grad()
+            self.inner_optim.zero_grad()
             # f = n by m
-            loss, f, inner_closure = closure(call_backward=False)
+            target = model(X_t)
             # m by d -> 1
-            loss = torch.sum(dlt_dft*f)
-            # remove cap F 
-            reg_term = self.div_op(f,f_t.detach())
+            loss = dlt_dft*target
+            # remove cap F
+            reg_term = (target - target_t.detach()).pow(2)
             # compute full surrogate
-            surr = (loss / eta + reg_term) / batch_size
+            surr = (loss / eta + reg_term ).mean()
             # do we differentiate
             if call_backward:
                 surr.backward()
             # return loss
             return surr
 
-        # ok.
-        if self.reset_lr_on_step:
-            self.inner_optim.state['step_size'] = self.init_step_size
-
         # check improvement
         last_loss = None
 
-        # now we take multiple steps over surrogate
+        # make sure we take big steps
+        if self.reset_lr_on_step:
+            self.inner_optim.state['step_size'] = self.init_step_size
+
+        #
         for m in range(0,self.m):
-            # compute loss
+
+            # compute the current loss
             current_loss = self.inner_optim.step(surrogate)
 
             # add in some stopping conditions
-            if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
-                break
+            if 'minibatch_grad_norm' in self.inner_optim.state.keys():
+                if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
+                    break
 
             # update internals
             self.state['inner_steps'] += 1
@@ -88,8 +94,12 @@ class Ada_FMDOpt(SGD_FMDOpt):
 
             # check we are improving in terms of the surrogate
             if last_loss:
+
                 if last_loss < current_loss:
                     self.state['surrogate_increase_flag'] = 1
+                    # assert (last_loss > current_loss)
+                last_loss = current_loss
+
             else:
                 last_loss = current_loss
 

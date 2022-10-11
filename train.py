@@ -88,7 +88,6 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
 
             # create closure for line-search/lbfgs
             def closure(call_backward=True, single_out=single_out):
-                optim.zero_grad()
                 model_outputs = model(X_batch)
                 def inner_closure(model_outputs):
                     # print(model_outputs.shape, y_batch.shape)
@@ -100,12 +99,13 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
                 if call_backward==True:
                     loss.backward()
                 if not single_out:
-                    return loss, model_outputs, inner_closure
+                    return loss_func, X_batch, y_batch, model
                 else:
                     return loss
 
             # if we need to call it before hand (SGD/Adam/Adagrad)
-            if call_closure:
+            if call_closure: 
+                optim.zero_grad()
                 closure()
 
             # step optimizer over closure

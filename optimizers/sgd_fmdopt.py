@@ -27,8 +27,9 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.m = m
         self.total_steps = total_steps
         self.include_rel_reg = include_rel_reg
+        self.surr_optim_args = surr_optim_args
         # set eta and the divergence
-        self.inner_optim = inner_optim(self.params,**surr_optim_args)
+        # self.inner_optim = inner_optim(self.params,**surr_optim_args)
         self.div_op = lambda f, ft: torch.norm(f-ft,2).pow(2)
         self.eta = eta # please rename
         self.eta_schedule = eta_schedule
@@ -36,9 +37,9 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.reset_lr_on_step = reset_lr_on_step
 
         # preset eta (parameter-wise / diagnol only)
-        for inner_opt in self.inner_optim.param_groups[0]['params']:
-            inner_opt.data = inner_opt.data.to('cuda')
-        self.init_step_size = self.inner_optim.state['step_size']
+        # for inner_opt in self.inner_optim.param_groups[0]['params']:
+        #     inner_opt.data = inner_opt.data.to('cuda')
+        self.init_step_size = 10
         # store state for debugging
         self.state['outer_steps'] = 0
         self.state['inner_steps'] = 0
@@ -93,12 +94,19 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.state['surrogate_increase_flag'] = 0
 
         # compute loss + grad for eta computation
-        loss_t, f_t, inner_closure = closure(call_backward=False)
-        batch_size = torch.tensor(f_t.shape[0], device='cuda')
+        loss_func, X_t, y_t, model = closure(call_backward=False)
+        self.inner_optim = LSOpt(model.parameters(),**self.surr_optim_args)
+
+        #
+        def inner_closure(model_outputs):
+            loss = loss_func(model_outputs, y_t)
+            return loss
+
+        target_t = model(X_t)
 
         # produce some 1 by m (n=batch-size, m=output of f)
-        dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
-        assert dlt_dft.shape == f_t.shape
+        self.inner_optim.zero_grad()
+        dlt_dft = torch.autograd.functional.jacobian(inner_closure, target_t).detach() # n by m
 
         # set  eta schedule
         if self.eta_schedule == 'constant':
@@ -113,17 +121,15 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             #
-            self.zero_grad()
+            self.inner_optim.zero_grad()
             # f = n by m
-            base_loss, f, inner_closure = closure(call_backward=False)
+            target = model(X_t)
             # m by d -> 1
-            loss = torch.sum(dlt_dft*f)
+            loss = dlt_dft*target
             # remove cap F
-            reg_term =  self.div_op(f,f_t.detach())
-            if self.include_rel_reg:
-                reg_term += 1e-3 * torch.norm(f,2).pow(2)
+            reg_term = (target - target_t.detach()).pow(2)
             # compute full surrogate
-            surr = (loss / eta + reg_term ) / batch_size
+            surr = (loss / eta + reg_term ).mean()
             # do we differentiate
             if call_backward:
                 surr.backward()
@@ -137,7 +143,7 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         if self.reset_lr_on_step:
             self.inner_optim.state['step_size'] = self.init_step_size
 
-        # 
+        #
         for m in range(0,self.m):
 
             # compute the current loss

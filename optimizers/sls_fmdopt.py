@@ -50,41 +50,37 @@ class SLS_FMDOpt(SGD_FMDOpt):
         self.state['surrogate_increase_flag'] = 0
 
         # compute loss + grad for eta computation
-        loss_t, f_t, inner_closure = closure(call_backward=False)
-        batch_size = torch.tensor(f_t.shape[0], device='cuda')
+        loss_func, X_t, y_t, model = closure(call_backward=False)
+        self.inner_optim = LSOpt(model.parameters(),**self.surr_optim_args)
+
+        #
+        def inner_closure(model_outputs):
+            loss = loss_func(model_outputs, y_t)
+            return loss
+
+        target_t = model(X_t)
 
         # produce some 1 by m (n=batch-size, m=output of f)
-        dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
+        self.inner_optim.zero_grad()
+        dlt_dft = torch.autograd.functional.jacobian(inner_closure, target_t).detach() # n by m
 
         # solve for eta + project it to make sure it does not explode
-        self.eta = self.compute_functional_stepsize(inner_closure, f_t, dlt_dft)
+        self.eta = self.compute_functional_stepsize(inner_closure, target_t, dlt_dft)
         self.eta = max(self.min_eta, self.eta)
         self.eta = min(self.max_eta, self.eta)
-
-        # set  eta schedule
-        if self.eta_schedule == 'constant':
-            eta = self.eta
-        elif self.eta_schedule == 'stochastic':
-            eta = self.eta * torch.sqrt(torch.tensor(self.state['outer_steps']).float())
-        elif self.eta_schedule == 'exponential':
-            eta = self.eta * torch.tensor((1/self.total_steps)**(-self.state['outer_steps']/self.total_steps)).float()
-        else:
-            raise Exception
-
-        self.state['eta'] = eta
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             #
-            self.zero_grad()
+            self.inner_optim.zero_grad()
             # f = n by m
-            loss, f, inner_closure = closure(call_backward=False)
+            target = model(X_t)
             # m by d -> 1
-            loss = torch.sum(dlt_dft*f)
+            loss = dlt_dft*target
             # remove cap F
-            reg_term = self.div_op(f,f_t.detach())
+            reg_term = (target - target_t.detach()).pow(2)
             # compute full surrogate
-            surr = (loss / eta + reg_term) / batch_size
+            surr = (loss / self.eta + reg_term ).mean()
             # do we differentiate
             if call_backward:
                 surr.backward()
@@ -105,8 +101,9 @@ class SLS_FMDOpt(SGD_FMDOpt):
             current_loss = self.inner_optim.step(surrogate)
 
             # add in some stopping conditions
-            if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
-                break
+            if 'minibatch_grad_norm' in self.inner_optim.state.keys():
+                if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:
+                    break
 
             # update internals
             self.state['inner_steps'] += 1
@@ -114,10 +111,15 @@ class SLS_FMDOpt(SGD_FMDOpt):
 
             # check we are improving in terms of the surrogate
             if last_loss:
+
                 if last_loss < current_loss:
                     self.state['surrogate_increase_flag'] = 1
+                    # assert (last_loss > current_loss)
+                last_loss = current_loss
+
             else:
                 last_loss = current_loss
+
         #
         self.log_info()
 

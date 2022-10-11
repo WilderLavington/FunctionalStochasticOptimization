@@ -95,9 +95,11 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         # compute loss + grad for eta computation
         loss_t, f_t, inner_closure = closure(call_backward=False)
         batch_size = torch.tensor(f_t.shape[0], device='cuda')
+
         # produce some 1 by m (n=batch-size, m=output of f)
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
         assert dlt_dft.shape == f_t.shape
+
         # set  eta schedule
         if self.eta_schedule == 'constant':
             eta = self.eta
@@ -135,12 +137,12 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         if self.reset_lr_on_step:
             self.inner_optim.state['step_size'] = self.init_step_size
 
-        #
-        # print('yee')
+        # 
         for m in range(0,self.m):
 
-            # compute the current loss 
+            # compute the current loss
             current_loss = self.inner_optim.step(surrogate)
+
             # add in some stopping conditions
             if 'minibatch_grad_norm' in self.inner_optim.state.keys():
                 if self.inner_optim.state['minibatch_grad_norm'] <= 1e-6:

@@ -147,10 +147,10 @@ class SSO_OGD(OGD):
         # self.expand_coeff = 1.8
         self.eta_schedule = 'stochastic'
         self.eta = 1 / self.lr
-        surr_optim_args = {'lr':1., 'c':args.c, 'n_batches_per_epoch': self.episodes,
-            'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule': args.eta_schedule}
-        optim_args = {'eta':self.eta, 'eta_schedule':args.eta_schedule, 
-                      'surr_optim_args':surr_optim_args,
+        surr_optim_args = {'lr':1., 'c':0.5,
+            'beta_update':args.sls_beta_update, 'expand_coeff':1.}
+        optim_args = {'eta':self.eta, 'eta_schedule':args.eta_schedule,
+                      'surr_optim_args':surr_optim_args, 'inner_optim': LSOpt,
                       'm': args.m, 'total_steps': self.episodes, 'reset_lr_on_step': True}
         self.optimizer = SGD_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
@@ -177,9 +177,6 @@ class SSO_OGD(OGD):
             def inner_closure(model_outputs):
                 inner_loss = -1 * self.policy.log_prob_forward(model_outputs,expert_actions.reshape(-1)).sum()
                 return inner_loss
-            # print(' original loss - loss', -1 * self.policy.log_prob(states, expert_actions.reshape(-1)).sum() )
-            # print(' precomputed loss - loss', self.compute_loss(states, expert_actions))
-            # create gradftl_loss = self.compute_loss(batch_states.to(self.device), batch_expert_actions.to(self.device))
             if call_backward==True:
                 loss.backward()
             # for line-search

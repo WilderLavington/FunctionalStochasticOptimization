@@ -76,3 +76,7 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/fullba
 # Atari-gridsearch
 python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/baselines.yaml --job_name=fig_11a
 python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/funcopt.yaml --job_name=fig_11b
+
+# mujoco
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/funcopt.yaml --job_name=fig_12a
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/baselines.yaml --job_name=fig_12b

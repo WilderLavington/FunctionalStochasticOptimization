@@ -75,7 +75,7 @@ class LinearPolicy(Policy):
         super(LinearPolicy,self).__init__(num_inputs, num_actions, feature_transformer, learn_fe)
         self.output_linear = nn.Linear(self.ft_out, num_actions)
         self.model_type = 'LinearPolicy'
-        self.learn_ft = False
+        self.learn_ft = False 
         # self.output_linear.weight.data.mul_(0.0)
         # self.output_linear.bias.data.mul_(0.0)
     def transform_state(self, state):

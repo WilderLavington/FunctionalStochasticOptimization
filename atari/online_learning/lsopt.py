@@ -54,12 +54,13 @@ class LSOpt(torch.optim.Optimizer):
         params = list(params)
         super().__init__(params, {})
         assert beta_update < 1.
-        assert expand_coeff > 1.
+        assert expand_coeff >= 1.
         # create some local tools
         self.device = torch.device("cuda" if (torch.cuda.is_available()) else "cpu")
         self.params = params
         self.c = c
         self.expand_coeff = expand_coeff
+        print('expand_coeff', expand_coeff)
         self.beta_b = beta_update
         self.init_step_size = lr
         # store state for debugging
@@ -122,7 +123,7 @@ class LSOpt(torch.optim.Optimizer):
 
         # =================================================
         # replace step with expanded current step for speed
-        self.state['step_size'] = step_size 
+        self.state['step_size'] = step_size
         self.state['step'] += 1
         # return loss
         return loss

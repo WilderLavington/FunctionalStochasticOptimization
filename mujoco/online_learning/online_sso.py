@@ -31,10 +31,7 @@ class SSO_OGD(OGD):
         self.algo = 'SSO_OGD'
         self.episodes = self.args.episodes
         self.batch_size = self.samples
-        # self.beta_update = 0.8
-        # self.expand_coeff = 1.8
-        self.eta_schedule = 'stochastic'
-        self.eta = 1 / self.lr
+        self.eta = 1 #/ self.lr
         # surr_optim_args = {'lr': 1., 'c':args.c,
         #     'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff }
         surr_optim_args = {'lr': 10**(-3.) }
@@ -49,7 +46,6 @@ class SSO_OGD(OGD):
         self.interactions += int(self.args.samples_per_update)
 
         # move everything to device
-
         self.policy.to(self.device)
         states, expert_actions = states.to('cuda'), expert_actions.to('cuda')
 
@@ -107,7 +103,7 @@ class OSls(OGD):
         self.episodes = self.args.episodes
         self.batch_size = self.samples
         surr_optim_args = {'lr': 10**(-3.) }
-        optim_args = {'lr':10**args.log_lr}
+        optim_args = {'lr': 1. } #10**args.log_lr
         self.optimizer = LSOpt(self.policy.parameters(), **optim_args) #SGD_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
 
@@ -163,7 +159,7 @@ class SSO_OSls(OGD):
         self.episodes = self.args.episodes
         self.batch_size = self.samples
         self.eta_schedule = 'stochastic'
-        self.eta = 1 / self.lr
+        self.eta = 1. #/ self.lr
         surr_optim_args = {'lr': 10**(-3.) }
         self.optimizer = torch.optim.Adam(self.policy.parameters(), **surr_optim_args) #SGD_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
@@ -255,11 +251,12 @@ class SSO_AdaOGD(OGD):
     def __init__(self, env, args):
         super(SSO_AdaOGD,self).__init__(env, args)
         self.lr = 10**args.log_lr
-        self.algo = 'SSO_OSls'
+        self.algo = 'SSO_AdaOGD'
         self.episodes = self.args.episodes
         self.batch_size = self.samples
-        self.eta_schedule = 'stochastic'
-        self.eta = 1 / self.lr
+        # self.eta_schedule = 'stochastic'
+        # self.eta = 1 / self.lr
+        self.eta = 10**(-2.)
         surr_optim_args = {'lr': 10**(-3.) }
         self.optimizer = torch.optim.Adam(self.policy.parameters(), **surr_optim_args) #SGD_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
@@ -302,8 +299,8 @@ class SSO_AdaOGD(OGD):
         else:
             self.grad_sum = torch.norm(dlt_dft,2).pow(2).detach()
 
-        # compute eta
-        eta = self.eta * (self.grad_sum).pow(0.5)
+        # compute eta ( divide by batch size to make it less aggressive )
+        eta = self.eta * (self.grad_sum).pow(0.5) + 1e-8
 
         # step surrogate
         for m in range(self.args.m):

@@ -14,7 +14,7 @@ import os
 from mujoco.online_learning.parser import get_args
 from mujoco.online_learning.utils import avg_dicts, stat_dicts, timer
 from mujoco.online_learning.algorithms import OGD, AdaOGD, AdamOGD, FTL, FTRL, AFTRL, RFTRL, DAFTRL
-from mujoco.online_learning.online_sso import OSLS, SSO_OGD, SSO_SLS, SSO_Sadagrad
+from mujoco.online_learning.online_sso import SSO_OGD, OSls, SSO_OSls, SSO_AdaOGD #OSLS, SSO_OGD, SSO_SLS, SSO_Sadagrad
 import subprocess
 
 def generate_env(args):

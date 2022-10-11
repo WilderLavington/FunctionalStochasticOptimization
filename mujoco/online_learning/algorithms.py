@@ -58,8 +58,8 @@ class OnlineLearningAlgo():
         self.updates, self.interactions = 0, 0
         self.policy_return, self.policy_loss = None, None
         self.start = time.time()
-        self.expert_return = self.evaluate_return(env, use_expert=True, duplicates=10)
-        self.expert_loss = self.evaluate_loss(env, use_expert=True, examples=10000)
+        self.expert_return = self.evaluate_return(env, use_expert=True, duplicates=1)
+        self.expert_loss = self.evaluate_loss(env, use_expert=True, examples=1000)
         self.info = {}
         self.inclass_regret = 0
         self.optimal_regret = 0
@@ -184,7 +184,7 @@ class OnlineLearningAlgo():
         return memory, (states, expert_actions, rewards, dones), avg_reward
 
     # evaluation
-    def evaluate_return(self, env, use_expert=False, duplicates=10):
+    def evaluate_return(self, env, use_expert=False, duplicates=1):
         avg_reward = 0.
         for _  in range(duplicates):
             state = env.reset()
@@ -217,7 +217,7 @@ class OnlineLearningAlgo():
         self.beta = 0.
         # evaluate performance vs expert
         with torch.no_grad():
-            self.policy_return = self.evaluate_return(self.args.env_copy, duplicates=10)
+            self.policy_return = self.evaluate_return(self.args.env_copy, duplicates=1)
             self.beta = temp
             self.current_state = self.args.env_copy.reset()
             self.policy_loss = self.evaluate_loss(self.args.env_copy, examples=1000)
@@ -408,7 +408,7 @@ class AdaOGD(OGD):
 class AdamOGD(OGD):
 
     def __init__(self, env, args):
-        super(AdaOGD, self).__init__(env, args)
+        super(AdamOGD, self).__init__(env, args)
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=self.lr)
         self.algo = 'AdamOGD'
 

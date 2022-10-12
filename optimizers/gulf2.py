@@ -10,6 +10,7 @@ from helpers import *
 from optimizers.lsopt import LSOpt
 
 from helpers import get_grad_norm, get_grad_list, get_random_string, update_exp_lr, update_stoch_lr
+from optimizers.lsopt import LSOpt
 
 # helpers
 
@@ -27,9 +28,10 @@ class GULF2(torch.optim.Optimizer):
         self.prox_steps = prox_steps
         self.current_step = 0
         self.reg_lambda = reg_lambda
-        self.alpha =alpha
+        self.alpha = alpha
+        self.surr_optim_args = surr_optim_args
         # set eta and the divergence
-        self.inner_optim = torch.optim.Adam(self.params, **surr_optim_args)
+        # self.inner_optim = torch.optim.Adam(self.params, **surr_optim_args)
 
         # store state for debugging
         self.state['outer_steps'] = 0
@@ -73,23 +75,33 @@ class GULF2(torch.optim.Optimizer):
         # compute wierd prox term
         current_params = deepcopy(self.params)
         self.copy_params(self.params, self.params_t)
-        loss_t, f_t, inner_closure = closure(call_backward=False)
-        dlt_dft = torch.autograd.functional.jacobian(inner_closure, f_t).detach() # n by m
+        loss_func, X_t, y_t, model = closure(call_backward=False) 
+        #
+        def inner_closure(model_outputs):
+            loss = loss_func(model_outputs, y_t)
+            return loss
+        self.inner_optim = LSOpt(model.parameters(),**self.surr_optim_args)
+        target_t = model(X_t)
+
+        # produce some 1 by m (n=batch-size, m=output of f)
+        self.inner_optim.zero_grad()
+        dlt_dft = torch.autograd.functional.jacobian(inner_closure, target_t).detach() # n by m
 
         # put original params back
         self.copy_params(self.params, current_params)
-        batch_size = torch.tensor(f_t.shape[0], device='cuda')
+        batch_size = torch.tensor(target_t.shape[0], device='cuda')
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             #
             self.zero_grad()
             # f = n by m
-            loss, f, inner_closure = closure(call_backward=False)
+            loss_func, X_t, y_t, model = closure(call_backward=False)
+            target = model(X_t)
             # m by d -> 1
-            prox_term = torch.sum(dlt_dft*f)
+            prox_term = torch.sum(dlt_dft*target)
             # compute full surrogate
-            surr = (loss + (1-self.alpha) * prox_term) / batch_size
+            surr = (loss_func(model(X_t), y_t) + (1-self.alpha) * prox_term) / batch_size
             #
             R = torch.norm(torch.nn.utils.parameters_to_vector(self.params), 2).pow(2)
             # do we differentiate

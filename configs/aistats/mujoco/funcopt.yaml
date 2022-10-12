@@ -9,15 +9,12 @@ parameters:
   algo:
     values:
     - SSO_OGD
-    - SSO_OSls
-    - SSO_AdaOGD
   log_lr:
     values:
     - 0.
   model_type:
     values:
     - 'linear'
-    - 'nn'
   env_name:
     values:
     - 'Hopper-v2'
@@ -25,9 +22,9 @@ parameters:
   beta:
     values:
     - 1
+    - 0
   beta_update:
     values:
-    - 1
     - 0
   seed:
     values:
@@ -36,7 +33,9 @@ parameters:
     - 3
   m:
     values:
-    - 100
+    - 1
+    - 10
+    - 1000
   label:
     values:
     - 'aistats-mujoco'

@@ -16,9 +16,9 @@ from optimizers.lsopt import LSOpt
 
 # linesearch optimizer
 class GULF2(torch.optim.Optimizer):
-    def __init__(self, params, reg_lambda=1e-2,
+    def __init__(self, params, reg_lambda=1e-5,
                  surr_optim_args={'lr':1.},
-                 prox_steps = 25, alpha=0.3):
+                 prox_steps = 5, alpha=0.1):
         params = list(params)
         super().__init__(params, {})
 
@@ -68,6 +68,7 @@ class GULF2(torch.optim.Optimizer):
         self.state['outer_steps'] += 1
         self.state['surrogate_increase_flag'] = 0
         self.current_step += 1
+
         # check if we are updating f_t
         if self.current_step == self.prox_steps:
             self.copy_params(self.params_t, self.params)
@@ -75,7 +76,8 @@ class GULF2(torch.optim.Optimizer):
         # compute wierd prox term
         current_params = deepcopy(self.params)
         self.copy_params(self.params, self.params_t)
-        loss_func, X_t, y_t, model = closure(call_backward=False) 
+        loss_func, X_t, y_t, model = closure(call_backward=False)
+
         #
         def inner_closure(model_outputs):
             loss = loss_func(model_outputs, y_t)

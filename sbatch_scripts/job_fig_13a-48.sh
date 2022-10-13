@@ -6,8 +6,9 @@
 #SBATCH --time=00-08:00     # time (DD-HH:MM)
 #SBATCH --array=0-48
 cd FunctionalStochasticOptimization
-wandb online
 conda activate ubcml
+wandb online
+
 if [ $SLURM_ARRAY_TASK_ID -eq 0 ]
 then
     python main.py --min_epochs=50 --algo=Diag_Ada_FMDOpt --normalize_epochs_lengths=1 --seed=1 --fullbatch=0 --batch_size=1 --outer_c=0.5 --m=1 --label=workshop-fig1 --use_optimal_stepsize=1 --loss=MSELoss --dataset_name=mushrooms --eta_schedule=constant --group=AIstats_narval --log_dir=./wandb./configs/aistats/stoch_setting/funcopt.yaml

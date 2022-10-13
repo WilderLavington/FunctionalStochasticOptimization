@@ -48,6 +48,7 @@ parameters:
   dataset_name:
     values:
     - mushrooms
+    - ijcnn
   eta_schedule:
     values:
     - constant

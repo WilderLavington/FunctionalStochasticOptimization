@@ -85,3 +85,4 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/nn/baselines.ya
 
 # fully stochastic setting
 python offline_dir_sweep.py --yaml_file=./configs/aistats/stoch_setting/funcopt.yaml --job_name=fig_13a
+python offline_dir_sweep.py --yaml_file=./configs/aistats/stoch_setting/funcopt.yaml --job_name=fig_13b

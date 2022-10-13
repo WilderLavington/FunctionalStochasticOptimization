@@ -78,5 +78,9 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/baselines.yaml -
 python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/funcopt.yaml --job_name=fig_11b
 
 # mujoco
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/funcopt.yaml --job_name=fig_12a
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/baselines.yaml --job_name=fig_12b
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/linear/funcopt.yaml --job_name=fig_12a
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/linear/baselines.yaml --job_name=fig_12b
+
+# mujoco
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/nn/funcopt.yaml --job_name=fig_12c
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/nn/baselines.yaml --job_name=fig_12d

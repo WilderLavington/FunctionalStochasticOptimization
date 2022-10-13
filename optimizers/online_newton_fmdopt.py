@@ -55,9 +55,9 @@ class Online_Newton_FMDOpt(SGD_FMDOpt):
             # m by d -> 1
             loss = dlt_dft * target
             # remove cap F
-            reg_term = (target - target_t.detach()).pow(2) * (self.eta * dual_coord.detach().pow(0.5)+1e-8)
+            reg_term = (target - target_t.detach()).pow(2)
             # compute full surrogate
-            surr = (loss + reg_term ).mean()
+            surr = (loss / (self.eta * dual_coord.detach().pow(0.5) + 1e-6) + reg_term ).mean()
             # do we differentiate
             if call_backward:
                 surr.backward()

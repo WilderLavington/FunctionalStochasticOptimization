@@ -1,0 +1,53 @@
+program: main.py
+entity: wilderlavington
+method: grid
+project: FunctionalOptimization
+metric:
+  goal: minimize
+  name: grad_norm
+parameters:
+  min_epochs:
+    values:
+    - 50
+  algo:
+    values:
+    - Diag_Ada_FMDOpt
+  normalize_epochs_lengths:
+    values:
+    - 1
+  seed:
+    values:
+    - 1
+    - 2
+    - 3
+  fullbatch:
+    values:
+    - 0
+  batch_size:
+    values:
+    - 1
+  outer_c:
+    values:
+    - 0.5
+  m:
+    values:
+    - 1000
+    - 5
+    - 10
+    - 20
+  label:
+    values:
+    - 'workshop-fig1'
+  use_optimal_stepsize:
+    values:
+    - 1
+  loss:
+    values:
+    - MSELoss
+    - BCEWithLogitsLoss
+  dataset_name:
+    values:
+    - ijcnn
+  eta_schedule:
+    values:
+    - constant

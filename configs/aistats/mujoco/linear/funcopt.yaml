@@ -21,11 +21,10 @@ parameters:
     - 'Walker2d-v2'
   beta:
     values:
-    - 1
-    - 0
+    - 1 
   beta_update:
     values:
-    - 0
+    - 1
   seed:
     values:
     - 1

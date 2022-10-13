@@ -1,0 +1,50 @@
+program: mujoco/mujoco_ex.py
+entity: wilderlavington
+method: grid
+project: FunctionalOptimizationFinal
+metric:
+  goal: minimize
+  name: grad_norm
+parameters:
+  algo:
+    values:
+    - SSO_OGD
+  log_lr:
+    values:
+    - 0.
+  model_type:
+    values:
+    - 'nn'
+  env_name:
+    values:
+    - 'Hopper-v2'
+    - 'Walker2d-v2'
+  beta:
+    values:
+    - 1
+    - 0
+  beta_update:
+    values:
+    - 1
+  seed:
+    values:
+    - 1
+    - 2
+    - 3
+  m:
+    values:
+    - 1
+    - 10
+    - 1000
+  label:
+    values:
+    - 'aistats-mujoco'
+  episodes:
+    values:
+    - 50
+  samples_per_update:
+    values:
+    - 1000
+  eta_schedule:
+    values:
+    - constant

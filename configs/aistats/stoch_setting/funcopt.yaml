@@ -31,10 +31,10 @@ parameters:
     - 0.5
   m:
     values:
-    - 1000
+    - 1
     - 5
     - 10
-    - 20
+    - 25
   label:
     values:
     - 'workshop-fig1'
@@ -47,7 +47,7 @@ parameters:
     - BCEWithLogitsLoss
   dataset_name:
     values:
-    - ijcnn
+    - mushrooms
   eta_schedule:
     values:
     - constant

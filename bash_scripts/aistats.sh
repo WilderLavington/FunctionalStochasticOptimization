@@ -80,7 +80,8 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/funcopt.yaml --j
 # mujoco
 python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/linear/funcopt.yaml --job_name=fig_12a
 python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/linear/baselines.yaml --job_name=fig_12b
-
-# mujoco
 python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/nn/funcopt.yaml --job_name=fig_12c
 python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/nn/baselines.yaml --job_name=fig_12d
+
+# fully stochastic setting
+python offline_dir_sweep.py --yaml_file=./configs/aistats/stoch_setting/funcopt.yaml --job_name=fig_13a

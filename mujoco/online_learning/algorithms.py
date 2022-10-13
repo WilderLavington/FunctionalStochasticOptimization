@@ -20,6 +20,7 @@ from mujoco.online_learning.replay_memory import ReplayMemory
 from mujoco.online_learning.evaluation import AlgoEvaluator
 
 #
+EXPERT_RETURN = { 'Walker2d-v2': 4531.45, 'Hopper-v2':  3454.9044 }
 class OnlineLearningAlgo():
     #
     def __init__(self, env, args):
@@ -58,7 +59,7 @@ class OnlineLearningAlgo():
         self.updates, self.interactions = 0, 0
         self.policy_return, self.policy_loss = None, None
         self.start = time.time()
-        self.expert_return = self.evaluate_return(env, use_expert=True, duplicates=1)
+        self.expert_return = EXPERT_RETURN[args.env_name] # self.evaluate_return(env, use_expert=True, duplicates=1)
         self.expert_loss = self.evaluate_loss(env, use_expert=True, examples=1000)
         self.info = {}
         self.inclass_regret = 0

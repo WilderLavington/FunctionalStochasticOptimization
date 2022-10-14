@@ -52,10 +52,10 @@ class Online_Newton_FMDOpt(SGD_FMDOpt):
             # compute dual
             p = 1 / (1 + torch.exp(-target))
             dual_coord = p * (1-p)
-            # m by d -> 1
-            loss = dlt_dft * target
-            # remove cap F
-            reg_term = (target - target_t.detach()).pow(2) * (self.eta * dual_coord.detach() +1e-7)
+            dual_coord += 1e-5 * torch.ones_like(dual_coord.detach())
+            loss = dlt_dft*target
+            # force inner product
+            reg_term = self.eta * (target - target_t.detach()).pow(2)*dual_coord.detach()
             # compute full surrogate
             surr = (loss + reg_term).mean()
             # do we differentiate

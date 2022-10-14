@@ -82,7 +82,7 @@ def load_train_args(args, model, loss_func, L, X, y):
         optimal_stepsize = 1.
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
-            'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'} 
+            'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}
         optim_args = {'surr_optim_args':surr_optim_args,
             'prox_steps': args.gulf2_prox_steps, 'alpha':args.gulf2_alpha, 'reg_lambda':1e-2}
         optim = GULF2(model.parameters(), **optim_args)
@@ -157,7 +157,7 @@ def load_train_args(args, model, loss_func, L, X, y):
                 'include_data_id': True, 'normalize_training_loss': False}
 
     elif args.algo == 'SLS_FMDOpt':
-        optimal_stepsize = 2.
+        optimal_stepsize = 1.
         args.stepsize = 10**args.log_lr if not args.use_optimal_stepsize else optimal_stepsize
         surr_optim_args = {'lr':args.init_step_size, 'c':args.c, 'n_batches_per_epoch': y.shape[0] / args.batch_size,
             'beta_update':args.beta_update, 'expand_coeff':args.expand_coeff, 'eta_schedule':'constant'}

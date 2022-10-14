@@ -91,7 +91,7 @@ def download_wandb_records(user, project, summary_file):
     # return single data frame for vizualization
     return wandb_records
 
-def generate_plot(proc_df, x, y, ax, label, linestyle='solid', color=None, x_max=5000000):
+def generate_plot(proc_df, x, y, ax, label, linestyle='solid', color=None, x_max=1000000):
     low_order_idx = (torch.tensor(proc_df[x].values) < x_max).nonzero().reshape(-1)
     if label:
         ax.plot(torch.tensor(proc_df[x].values[low_order_idx]),

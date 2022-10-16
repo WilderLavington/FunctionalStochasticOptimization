@@ -1,7 +1,7 @@
 program: main.py
 entity: wilderlavington
 method: grid
-project: FunctionalStochasticOptimization
+project: FunctionalOptimizationFinal
 metric:
   goal: minimize
   name: grad_norm
@@ -51,7 +51,6 @@ parameters:
   loss:
     values:
     - MSELoss
-    - BCEWithLogitsLoss
   dataset_name:
     values:
     - mfac
@@ -60,6 +59,4 @@ parameters:
     - 0.5
   eta_schedule:
     values:
-    - exponential
     - constant
-    - stochastic

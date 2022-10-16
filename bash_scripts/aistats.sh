@@ -87,3 +87,9 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/nn/baselines.ya
 python offline_dir_sweep.py --yaml_file=./configs/aistats/stoch_setting/funcopt.yaml --job_name=fig_13a
 python offline_dir_sweep.py --yaml_file=./configs/aistats/stoch_setting/baseline.yaml --job_name=fig_13b
 python offline_dir_sweep.py --yaml_file=./configs/aistats/stoch_setting/funcopt1.yaml --job_name=fig_13c
+
+# mnist
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/minibatch/funcopt.yaml --job_name=fig_14a
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/minibatch/baselines.yaml --job_name=fig_14b
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/fullbatch/funcopt.yaml --job_name=fig_14c
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/fullbatch/baselines.yaml --job_name=fig_14d

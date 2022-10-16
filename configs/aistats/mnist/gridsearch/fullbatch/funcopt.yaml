@@ -1,7 +1,7 @@
 program: main.py
 entity: wilderlavington
 method: grid
-project: FunctionalStochasticOptimization
+project: FunctionalOptimizationFinal
 metric:
   goal: minimize
   name: grad_norm
@@ -11,11 +11,10 @@ parameters:
     - 500
   algo:
     values:
-    - LSOpt
-    - SGD
-    - Sadagrad
-    - Adam
-    - Adagrad
+    - Ada_FMDOpt
+    - SGD_FMDOpt
+    - Diag_Ada_FMDOpt
+    - SLS_FMDOpt
   normalize_epochs_lengths:
     values:
     - 1
@@ -26,16 +25,18 @@ parameters:
     - 3
   fullbatch:
     values:
-    - 0
-  batch_size:
+    - 1
+  m:
     values:
-    - 5
-    - 25
-    - 125
-    - 625
+    - 1
+    - 10
+    - 100
   use_optimal_stepsize:
     values:
     - 0
+  label:
+    values:
+    - 'workshop-fig14'
   log_lr:
     values:
     - -3.
@@ -45,17 +46,15 @@ parameters:
     - 1.
     - 2.
     - 3.
+  outer_c:
+    values:
+    - 0.5
   loss:
     values:
     - CrossEntropyLoss
   dataset_name:
     values:
     - mnist
-  c:
-    values:
-    - 0.5
   eta_schedule:
     values:
-    - exponential
     - constant
-    - stochastic

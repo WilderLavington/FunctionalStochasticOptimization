@@ -1,7 +1,7 @@
 program: main.py
 entity: wilderlavington
 method: grid
-project: FunctionalStochasticOptimization
+project: FunctionalOptimizationFinal
 metric:
   goal: minimize
   name: grad_norm
@@ -35,10 +35,8 @@ parameters:
   m:
     values:
     - 1
-    - 2
-    - 5
     - 10
-    - 20
+    - 100
   use_optimal_stepsize:
     values:
     - 0

@@ -9,9 +9,30 @@ parameters:
   algo:
     values:
     - SSO_OGD
+    - SSO_OSls
+    - SSO_AdaOGD
+  model_type:
+    values:
+    - 'nn'
+  env_name:
+    values:
+    - 'Hopper-v2'
+    - 'Walker2d-v2'
+  m:
+    values:
+    - 1
+    - 10
+    - 100
+    - 1000
   log_lr:
     values:
+    - 3.
+    - 2.
+    - 1.
     - 0.
+    - -3.
+    - -2.
+    - -1.
   model_type:
     values:
     - 'nn'
@@ -31,19 +52,15 @@ parameters:
     - 1
     - 2
     - 3
-  m:
-    values:
-    - 1
-    - 10
-    - 1000
   label:
     values:
     - 'aistats-mujoco'
   episodes:
     values:
-    - 50
+    - 100
   samples_per_update:
     values:
+    - 100
     - 1000
   eta_schedule:
     values:

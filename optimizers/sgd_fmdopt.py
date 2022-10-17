@@ -86,6 +86,10 @@ class SGD_FMDOpt(torch.optim.Optimizer):
         self.state['step_time'] = timer(self.start,time.time())
         return None
 
+    def zero_grad(self):
+        self.inner_optim = LSOpt(self.params,**self.surr_optim_args)
+        self.inner_optim.zero_grad()
+
     def step(self, closure, clip_grad=False):
 
         # set initial step size

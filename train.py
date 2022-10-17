@@ -104,7 +104,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
                     return loss
 
             # if we need to call it before hand (SGD/Adam/Adagrad)
-            if call_closure: 
+            if call_closure:
                 optim.zero_grad()
                 closure()
 

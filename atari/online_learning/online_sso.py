@@ -85,10 +85,10 @@ class SSO_OGD(OGD):
         self.episodes = self.args.episodes
         self.batch_size = self.samples
         self.eta = 1 #/ self.lr
-        # surr_optim_args = {'lr': 1., 'c':args.c,
-        #     'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff }
+        self.surr_optim_args = {'lr': 1., 'c':args.c,
+            'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff }
         surr_optim_args = {'lr': 10**(-3.) }
-        self.optimizer = torch.optim.Adam(self.policy.parameters(), **surr_optim_args) #SGD_FMDOpt(self.policy.parameters(), **optim_args)
+         #SGD_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
 
     def update_parameters(self, new_examples):
@@ -103,8 +103,9 @@ class SSO_OGD(OGD):
         states, expert_actions = states.to('cuda'), expert_actions.to('cuda')
 
         # compute target
+        self.optimizer = LSOpt(self.policy.parameters(), **self.surr_optim_args)
         target_t = self.policy(states)
-
+ 
         # make hook for jacobian
         def inner_closure(model_outputs):
             loss = -1 * self.policy.log_prob_forward(target_t, expert_actions.reshape(-1)).sum()
@@ -115,8 +116,8 @@ class SSO_OGD(OGD):
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, target_t).detach() # n by m
         assert dlt_dft.shape == target_t.shape
 
-        # step surrogate
-        for m in range(self.args.m):
+        # surrogate
+        def surrogate(call_backward=True):
             #
             self.optimizer.zero_grad()
             # linearized term
@@ -127,10 +128,15 @@ class SSO_OGD(OGD):
             # compute full surrogate
             surr = (loss / self.eta + reg_term ).mean()
             # backprop
-            surr.backward()
+            if call_backward:
+                surr.backward()
+            #
+            return surr
+        # step surrogate
+        for m in range(self.args.m):
             # step
-            self.optimizer.step() 
-
+            loss = self.optimizer.step(surrogate)
+            print(loss)
         # compute grad_norm
         self.optimizer.zero_grad()
         target_t = self.policy(states)

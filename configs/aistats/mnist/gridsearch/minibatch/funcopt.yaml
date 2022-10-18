@@ -27,8 +27,7 @@ parameters:
     values:
     - 0
   batch_size:
-    values:
-    - 5
+    values: 
     - 25
     - 125
     - 625
@@ -36,7 +35,7 @@ parameters:
     values:
     - 1
     - 10
-    - 100 
+    - 100
   label:
     values:
     - 'workshop-fig14'

@@ -84,6 +84,7 @@ class SSO_OGD(OGD):
         self.algo = 'SSO_OGD'
         self.episodes = self.args.episodes
         self.batch_size = self.samples
+        self.eta_schedule = args.eta_schedule
         self.steps = torch.tensor(0.)
         self.eta = 1 / self.lr
         self.surr_optim_args = {'lr': 10., 'c': 0.05,
@@ -148,7 +149,10 @@ class SSO_OGD(OGD):
         assert dlt_dft.shape == target_t.shape
 
         #
-        eta = self.eta * torch.sqrt(self.steps)
+        if self.eta_schedule =='stochastic':
+            eta = self.eta * torch.sqrt(self.steps)
+        else:
+            eta = self.eta
 
         # surrogate
         def surrogate(call_backward=True):
@@ -197,7 +201,6 @@ class SSO_OGD(OGD):
         # return computed loss
         return loss
 
-
 class SSO_SLS(SSO_OGD):
 
     def __init__(self, env, args):
@@ -210,17 +213,17 @@ class SSO_SLS(SSO_OGD):
         self.max_eta = 10**(5.)
 
     def compute_functional_stepsize(self, inner_closure, f_t, dlt_dft):
-        eta_prop = self.eta / self.expand_coeff
+        alpha_prop = self.expand_coeff / self.eta
         for i in range(100):
-            lhs = inner_closure(f_t - (1/eta_prop) * dlt_dft)
-            rhs = inner_closure(f_t) - (1/eta_prop) * self.c * torch.norm(dlt_dft).pow(2)
+            lhs = inner_closure(f_t - alpha_prop * dlt_dft)
+            rhs = inner_closure(f_t) - alpha_prop * self.c * torch.norm(dlt_dft).pow(2)
             if lhs > rhs:
-                eta_prop /= self.beta_update
-            elif (1/eta_prop) <= 1e-6:
+                alpha_prop *= self.beta_update
+            elif alpha_prop <= 1e-6:
                 break
             else:
                 break
-        return eta_prop
+        return 1 / alpha_prop
 
     def update_parameters(self, new_examples):
 
@@ -256,7 +259,10 @@ class SSO_SLS(SSO_OGD):
         self.eta = min(self.max_eta, self.eta)
 
         #
-        eta = self.eta * torch.sqrt(self.steps)
+        if self.eta_schedule =='stochastic':
+            eta = self.eta * torch.sqrt(self.steps)
+        else:
+            eta = self.eta
 
         # surrogate
         def surrogate(call_backward=True):
@@ -305,7 +311,7 @@ class SSO_SLS(SSO_OGD):
         # return computed loss
         return loss
 
-class SSO_Sadagrad(SSO_OGD):
+class SSO_AdaOGD(SSO_OGD):
 
     def __init__(self, env, args):
         super(SSO_Sadagrad,self).__init__(env, args)

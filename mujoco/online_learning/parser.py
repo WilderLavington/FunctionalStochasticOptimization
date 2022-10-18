@@ -51,7 +51,7 @@ def get_args():
     parser.add_argument('--expert_mode', type=int, default=0)
 
     # policy model info
-    parser.add_argument('--hidden_size', type=int, default=256, metavar='N', help='hidden size (default: 256)')
+    parser.add_argument('--hidden_size', type=int, default=2048, metavar='N', help='hidden size (default: 256)')
     parser.add_argument('--model_type', type=str, default='nn', metavar='N')
     parser.add_argument('--bandwidth', type=float, default=0., metavar='N')
     parser.add_argument('--transform_dist', type=int, default=1, metavar='N')

@@ -1,4 +1,7 @@
 
+#===================================================================================
+# svmlib
+#===================================================================================
 # SGD - constant
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SGD/optimal_stepsize/constant/fullbatch/baselines.yaml --job_name=fig_1a
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SGD/optimal_stepsize/constant/minibatch/baselines.yaml --job_name=fig_1b
@@ -58,41 +61,50 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Diag_Ada_FMDOpt
 # ON-SSO - constant
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/constant/fullbatch/funcopt.yaml --job_name=fig_9a
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/constant/minibatch/funcopt.yaml --job_name=fig_9b
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/stochastic/fullbatch/funcopt.yaml --job_name=fig_9ab
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/stochastic/minibatch/funcopt.yaml --job_name=fig_9bb
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/exponential/fullbatch/funcopt.yaml --job_name=fig_9ac
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/exponential/minibatch/funcopt.yaml --job_name=fig_9bc
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/stochastic/fullbatch/funcopt.yaml --job_name=fig_9c
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/stochastic/minibatch/funcopt.yaml --job_name=fig_9d
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/exponential/fullbatch/funcopt.yaml --job_name=fig_9e
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/exponential/minibatch/funcopt.yaml --job_name=fig_9f
 
 # adam - constant
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Adam/optimal_stepsize/constant/fullbatch/baselines.yaml --job_name=fig_9c
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Adam/optimal_stepsize/constant/minibatch/baselines.yaml --job_name=fig_9d
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Adam/optimal_stepsize/constant/fullbatch/baselines.yaml --job_name=fig_10a
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Adam/optimal_stepsize/constant/minibatch/baselines.yaml --job_name=fig_10b
 
 # gulf2 - constant
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/GULF2/optimal_stepsize/constant/fullbatch/baselines.yaml --job_name=fig_9e
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/GULF2/optimal_stepsize/constant/minibatch/baselines.yaml --job_name=fig_9f
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/GULF2/optimal_stepsize/constant/fullbatch/baselines.yaml --job_name=fig_10c
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/GULF2/optimal_stepsize/constant/minibatch/baselines.yaml --job_name=fig_10d
 
-# MFAC
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/minibatch/funcopt.yaml --job_name=fig_10a
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/minibatch/baselines.yaml --job_name=fig_10b
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/fullbatch/funcopt.yaml --job_name=fig_10c
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/fullbatch/baselines.yaml --job_name=fig_10d
+#===================================================================================
+# matrix factorization
+#===================================================================================
+
+# MFAC-gridsearch
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/minibatch/funcopt.yaml --job_name=fig_11a
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/minibatch/baselines.yaml --job_name=fig_11b
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/fullbatch/funcopt.yaml --job_name=fig_11c
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/fullbatch/baselines.yaml --job_name=fig_11d
+
+#===================================================================================
+# Atari
+#===================================================================================
 
 # Atari-gridsearch
-python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/baselines.yaml --job_name=fig_11a
-python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/funcopt.yaml --job_name=fig_11b
+python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/baselines.yaml --job_name=fig_12a
+python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/funcopt.yaml --job_name=fig_12b
 
-# mujoco
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/linear/funcopt.yaml --job_name=fig_12a
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/linear/baselines.yaml --job_name=fig_12b
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/nn/funcopt.yaml --job_name=fig_12c
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/nn/baselines.yaml --job_name=fig_12d
+#===================================================================================
+# Mujoco
+#===================================================================================
 
-# fully stochastic setting
-python offline_dir_sweep.py --yaml_file=./configs/aistats/stoch_setting/funcopt.yaml --job_name=fig_13a
-python offline_dir_sweep.py --yaml_file=./configs/aistats/stoch_setting/baseline.yaml --job_name=fig_13b
-python offline_dir_sweep.py --yaml_file=./configs/aistats/stoch_setting/funcopt1.yaml --job_name=fig_13c
+# mujoco-gridsearch
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/funcopt.yaml --job_name=fig_13a
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/baselines.yaml --job_name=fig_13b
 
-# mnist
+#===================================================================================
+# MNIST
+#===================================================================================
+
+# mnist-gridsearch
 python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/minibatch/funcopt.yaml --job_name=fig_14a
 python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/minibatch/baselines.yaml --job_name=fig_14b
 python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/fullbatch/funcopt.yaml --job_name=fig_14c

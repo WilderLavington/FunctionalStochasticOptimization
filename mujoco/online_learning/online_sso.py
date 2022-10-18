@@ -31,7 +31,9 @@ class SSO_OGD(OGD):
         self.algo = 'SSO_OGD'
         self.episodes = self.args.episodes
         self.batch_size = self.samples
+        self.eta_schedule = args.eta_schedule
         self.eta = 1 #/ self.lr
+        self.optim_steps = 0
         surr_optim_args = {'lr': 1., 'c':args.c,
             'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff }
         # surr_optim_args = {'lr': 10**(-3.) }
@@ -45,6 +47,7 @@ class SSO_OGD(OGD):
         _, (states, expert_actions, _, _), self.avg_return = new_examples
         self.replay_size = int(self.args.samples_per_update)
         self.interactions += int(self.args.samples_per_update)
+        self.optim_steps += 1
 
         # move everything to device
         self.policy.to(self.device)
@@ -63,6 +66,12 @@ class SSO_OGD(OGD):
         dlt_dft = torch.autograd.functional.jacobian(inner_closure, target_t).detach() # n by m
         assert dlt_dft.shape == target_t.shape
 
+        #
+        if self.eta_schedule == 'stochastic':
+            eta = self.eta * torch.sqrt(self.optim_steps)
+        else:
+            eta = self.eta
+
         # step surrogate
         for m in range(self.args.m):
             #
@@ -75,7 +84,7 @@ class SSO_OGD(OGD):
                 # regularization term
                 reg_term = (target-target_t.detach()).pow(2)
                 # compute full surrogate
-                surr = (loss / self.eta + reg_term ).mean()
+                surr = (loss / eta + reg_term ).mean()
                 # backprop
                 if call_backward:
                     surr.backward()
@@ -95,14 +104,15 @@ class SSO_OGD(OGD):
 
         # store
         self.info = {'sso_ogd_loss':  loss,
-                     'grad_norm': grad_norm}
+                     'grad_norm': grad_norm,
+                     'eta': eta}
         # return computed loss
         return loss
 
-class OSls(OGD):
+class OSLS(OGD):
 
     def __init__(self, env, args):
-        super(OSls,self).__init__(env, args)
+        super(OSLS,self).__init__(env, args)
         self.lr = 10**args.log_lr
         self.algo = 'SlsOGD'
         self.episodes = self.args.episodes
@@ -151,19 +161,20 @@ class OSls(OGD):
 
         # store
         self.info = {'sso_ogd_loss':  loss,
-                     'grad_norm': grad_norm}
+                     'grad_norm': grad_norm,
+                     'eta': 1 / self.optimizer.state['step_size']}
         # return computed loss
         return loss
 
-class SSO_OSls(OGD):
+class SSO_SLS(OGD):
 
     def __init__(self, env, args):
-        super(SSO_OSls,self).__init__(env, args)
+        super(SSO_SLS,self).__init__(env, args)
         self.lr = 10**args.log_lr
         self.algo = 'SSO_OSls'
         self.episodes = self.args.episodes
         self.batch_size = self.samples
-        self.eta_schedule = 'stochastic'
+        self.eta_schedule = args.eta_schedule
         self.eta = 1. #/ self.lr
         surr_optim_args = {'lr': 10**(-3.) }
         self.optimizer = torch.optim.Adam(self.policy.parameters(), **surr_optim_args) #SGD_FMDOpt(self.policy.parameters(), **optim_args)
@@ -178,17 +189,17 @@ class SSO_OSls(OGD):
         self.expand_coeff = args.expand_coeff
 
     def compute_functional_stepsize(self, inner_closure, f_t, dlt_dft):
-        eta_prop = self.eta / self.expand_coeff
+        alpha_prop = self.expand_coeff / self.eta
         for i in range(100):
-            lhs = inner_closure(f_t - (1/eta_prop) * dlt_dft)
-            rhs = inner_closure(f_t) - (1/eta_prop) * self.c * torch.norm(dlt_dft).pow(2)
+            lhs = inner_closure(f_t - alpha_prop * dlt_dft)
+            rhs = inner_closure(f_t) - alpha_prop * self.c * torch.norm(dlt_dft).pow(2)
             if lhs > rhs:
-                eta_prop /= self.beta_update
-            elif (1/eta_prop) <= 1e-6:
+                alpha_prop *= self.beta_update
+            elif alpha_prop <= 1e-6:
                 break
             else:
                 break
-        return eta_prop
+        return 1 / alpha_prop
 
     def update_parameters(self, new_examples):
 
@@ -219,6 +230,12 @@ class SSO_OSls(OGD):
         self.eta = max(self.min_eta, self.eta)
         self.eta = min(self.max_eta, self.eta)
 
+        #
+        if self.eta_schedule == 'stochastic':
+            eta = self.eta * torch.sqrt(self.optim_steps)
+        else:
+            eta = self.eta
+
         # step surrogate
         for m in range(self.args.m):
             #
@@ -229,7 +246,7 @@ class SSO_OSls(OGD):
             # regularization term
             reg_term = (target-target_t.detach()).pow(2)
             # compute full surrogate
-            surr = (loss / self.eta + reg_term ).mean()
+            surr = (loss / eta + reg_term ).mean()
             # backprop
             surr.backward()
             # step
@@ -247,7 +264,8 @@ class SSO_OSls(OGD):
 
         # store
         self.info = {'sso_ogd_loss':  loss,
-                     'grad_norm': grad_norm}
+                     'grad_norm': grad_norm,
+                     'eta': eta}
         # return computed loss
         return loss
 
@@ -335,6 +353,7 @@ class SSO_AdaOGD(OGD):
 
         # store
         self.info = {'sso_ogd_loss':  loss,
-                     'grad_norm': grad_norm}
+                     'grad_norm': grad_norm,
+                     'eta': eta}
         # return computed loss
         return loss

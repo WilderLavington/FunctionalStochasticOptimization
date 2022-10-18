@@ -75,7 +75,7 @@ class LinearPolicy(Policy):
         super(LinearPolicy,self).__init__(num_inputs, num_actions, feature_transformer, learn_fe)
         self.output_linear = nn.Linear(self.ft_out, num_actions)
         self.model_type = 'LinearPolicy'
-        self.learn_ft = False 
+        self.learn_ft = False
         # self.output_linear.weight.data.mul_(0.0)
         # self.output_linear.bias.data.mul_(0.0)
     def transform_state(self, state):
@@ -87,61 +87,6 @@ class LinearPolicy(Policy):
         state = self.transform_state(state)
         logits = self.output_linear(state)
         return logits
-
-class RFFPolicy(Policy):
-    def __init__(self, num_inputs, num_actions, feature_transformer, learn_fe, hidden_dim, bandwidth):
-        super(RFFPolicy,self).__init__(num_inputs, num_actions, feature_transformer, learn_fe)
-        self.hidden_dim = hidden_dim
-        self.state_size = self.ft_out
-        self.output_linear = nn.Linear(hidden_dim, num_actions)
-        self.output_linear.weight.data.mul_(0.0)
-        self.output_linear.bias.data.mul_(0.0)
-        self.bandwidth = torch.exp(torch.tensor(bandwidth))
-        self.model_type = 'RFFPolicy'
-        self.learn_ft = False
-        self.transform_map = pyrfm.random_feature.\
-            RandomFourier(n_components=hidden_dim, kernel='rbf', gamma=self.bandwidth)
-        self.transform_map.fit((np.random.rand(1,self.ft_out)))
-    def transform_state(self, state):
-        if torch.is_tensor(state):
-            state = state.cpu().numpy()
-        state = self.state_transform(state)
-        state = self.feature_transformer(state)[0].detach()
-        return torch.FloatTensor(self.transform_map.\
-            transform(state.to('cpu').numpy())).to(state.device)
-    def forward(self, state):
-        y = self.transform_state(state)
-        logits = self.output_linear(y)
-        return logits
-
-class NNPolicy(Policy):
-    def __init__(self, num_inputs, num_actions, feature_transformer, learn_fe, hidden_dim, nonlin):
-        super(NNPolicy,self).__init__(num_inputs, num_actions, feature_transformer, learn_fe)
-        self.nonlin = nonlin
-        self.linear1 = nn.Linear(self.ft_out, hidden_dim)
-        self.linear2 = nn.Linear(hidden_dim, hidden_dim)
-        self.output_linear = nn.Linear(hidden_dim, num_actions)
-        self.output_linear.weight.data.mul_(0.0)
-        self.output_linear.bias.data.mul_(0.0)
-        self.model_type = 'NNPolicy'
-        self.relu1 = nn.ReLU(inplace=False)
-        self.relu2 = nn.ReLU(inplace=False)
-        self.learn_ft = False
-    def transform_state(self, state):
-        if torch.is_tensor(state):
-            state = state.cpu().numpy()
-        state = self.state_transform(state)
-        return self.feature_transformer(state)[0].detach()
-    def forward(self, state):
-        state = self.transform_state(state)
-        if self.nonlin == 'relu':
-            x = self.relu1(self.linear1(state))
-            x = self.relu2(self.linear2(x))
-        elif self.nonlin == 'tanh':
-            x = torch.tanh(self.linear1(state))
-            x = torch.tanh(self.linear2(x))
-        logit = self.output_linear(x)
-        return logit
 
 class End2EndPolicy(Policy):
     def __init__(self, num_inputs, num_actions, feature_transformer, learn_fe):

@@ -12,7 +12,6 @@ parameters:
     - AdaOGD
     - AdamOGD
     - OSLS
-    - GULF2_OGD
   log_lr:
     values:
     - 2.
@@ -25,9 +24,20 @@ parameters:
   label:
     values:
     - 'aistats-atari'
+  env_name:
+    values:
+    - 'BreakoutNoFrameskip-4'
+    - 'PongNoFrameskip-v4'
   use_optimal_stepsize:
     values:
     - 0
+  beta:
+    values:
+    - 1.
+  beta_update:
+    values:
+    - 0.
+    - 1.
   c:
     values:
     - 0.5
@@ -36,7 +46,7 @@ parameters:
     - 100
   samples_per_update:
     values:
-    - 500
+    - 1000
   eta_schedule:
     values:
     - constant

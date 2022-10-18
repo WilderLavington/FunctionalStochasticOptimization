@@ -58,6 +58,10 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Diag_Ada_FMDOpt
 # ON-SSO - constant
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/constant/fullbatch/funcopt.yaml --job_name=fig_9a
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/constant/minibatch/funcopt.yaml --job_name=fig_9b
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/stochastic/fullbatch/funcopt.yaml --job_name=fig_9ab
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/stochastic/minibatch/funcopt.yaml --job_name=fig_9bb
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/exponential/fullbatch/funcopt.yaml --job_name=fig_9ac
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Online_Newton_FMDOpt/optimal_stepsize/exponential/minibatch/funcopt.yaml --job_name=fig_9bc
 
 # adam - constant
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Adam/optimal_stepsize/constant/fullbatch/baselines.yaml --job_name=fig_9c

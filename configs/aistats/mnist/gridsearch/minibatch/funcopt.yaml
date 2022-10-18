@@ -36,7 +36,7 @@ parameters:
     values:
     - 1
     - 10
-    - 100
+    - 100 
   label:
     values:
     - 'workshop-fig14'

@@ -1,7 +1,7 @@
 program: atari/atari_ex.py
 entity: wilderlavington
 method: grid
-project: FunctionalStochasticOptimization
+project: FunctionalOptimizationFinal
 metric:
   goal: minimize
   name: grad_norm
@@ -14,19 +14,19 @@ parameters:
     - OSLS
   log_lr:
     values:
+    - 3.
     - 2.
     - 1.
     - 0.
     - -1.
     - -2.
     - -3.
-    - -4.
   label:
     values:
     - 'aistats-atari'
   env_name:
     values:
-    - 'BreakoutNoFrameskip-4'
+    - 'BreakoutNoFrameskip-v4'
     - 'PongNoFrameskip-v4'
   use_optimal_stepsize:
     values:
@@ -34,9 +34,9 @@ parameters:
   beta:
     values:
     - 1.
+    - 0.
   beta_update:
     values:
-    - 0.
     - 1.
   c:
     values:
@@ -47,6 +47,4 @@ parameters:
   samples_per_update:
     values:
     - 1000
-  eta_schedule:
-    values:
-    - constant
+    - 100

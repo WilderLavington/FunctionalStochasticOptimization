@@ -8,20 +8,31 @@ metric:
 parameters:
   algo:
     values:
-    - SSO_OGD
+    - OGD
+    - AdaOGD
+    - AdamOGD
+    - OSls
   log_lr:
     values:
-    - 0.
+    - -3.
+    - -2.
+    - -1.
+    - 0.0
+    - 1.
+    - 2.
+    - 3.
   model_type:
     values:
     - 'linear'
+    - 'nn'
   env_name:
     values:
     - 'Hopper-v2'
     - 'Walker2d-v2'
   beta:
     values:
-    - 1 
+    - 1
+    - 0
   beta_update:
     values:
     - 1
@@ -29,12 +40,7 @@ parameters:
     values:
     - 1
     - 2
-    - 3
-  m:
-    values:
-    - 1
-    - 10
-    - 1000
+    - 3 
   label:
     values:
     - 'aistats-mujoco'
@@ -44,6 +50,7 @@ parameters:
   samples_per_update:
     values:
     - 1000
+    - 100
   eta_schedule:
     values:
     - constant

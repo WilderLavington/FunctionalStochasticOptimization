@@ -39,6 +39,7 @@ parameters:
     - 1
     - 10
     - 100
+    - 1000
   use_optimal_stepsize:
     values:
     - 0

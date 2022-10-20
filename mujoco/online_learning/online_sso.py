@@ -68,7 +68,7 @@ class SSO_OGD(OGD):
 
         #
         if self.eta_schedule == 'stochastic':
-            eta = self.eta * torch.sqrt(self.optim_steps)
+            eta = self.eta * torch.sqrt(torch.tensor(self.optim_steps))
         else:
             eta = self.eta
 

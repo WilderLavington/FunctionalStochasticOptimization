@@ -13,16 +13,9 @@ parameters:
     - SSO_Sadagrad
   log_lr:
     values:
-    - -3.
-    - -2.
-    - -1.
     - 0.0
-    - 1.
-    - 2.
-    - 3.
   model_type:
     values:
-    - 'linear'
     - 'nn'
   env_name:
     values:
@@ -54,8 +47,7 @@ parameters:
     - 50
   samples_per_update:
     values:
-    - 1000
-    - 100
+    - 1000 
   eta_schedule:
     values:
     - constant

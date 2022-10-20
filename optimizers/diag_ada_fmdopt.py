@@ -55,6 +55,7 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
 
         # update dual coords
         self.dual_coord[data_idxs,:] += dlt_dft.pow(2).detach()
+        self.dual_coord = torch.clamp(self.dual_coord, min=1e-5, max=1e5)
 
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
@@ -63,11 +64,11 @@ class Diag_Ada_FMDOpt(SGD_FMDOpt):
             # f = n by m
             target = model(X_t)
             # m by d -> 1
-            loss = dlt_dft * target / (self.eta * self.dual_coord[data_idxs].pow(0.5)+1e-6)
+            loss = dlt_dft * target
             # remove cap F
-            reg_term = (target - target_t.detach()).pow(2)
+            reg_term = (target - target_t.detach()).pow(2) * (self.eta * self.dual_coord[data_idxs].pow(0.5))
             # compute full surrogate
-            surr = (loss + reg_term ).mean()
+            surr = loss.mean() + reg_term.mean()
             # do we differentiate
             if call_backward:
                 surr.backward()

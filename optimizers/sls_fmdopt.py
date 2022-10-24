@@ -69,6 +69,16 @@ class SLS_FMDOpt(SGD_FMDOpt):
         self.eta = max(self.min_eta, self.eta)
         self.eta = min(self.max_eta, self.eta)
 
+        # set  eta schedule
+        if self.eta_schedule == 'constant':
+            eta = self.eta
+        elif self.eta_schedule == 'stochastic':
+            eta = self.eta * torch.sqrt(torch.tensor(self.state['outer_steps']).float())
+        elif self.eta_schedule == 'exponential':
+            eta = self.eta * torch.tensor((1/self.total_steps)**(-self.state['outer_steps']/self.total_steps)).float()
+        else:
+            raise Exception
+
         # construct surrogate-loss to optimize (avoids extra backward calls)
         def surrogate(call_backward=True):
             #
@@ -80,7 +90,7 @@ class SLS_FMDOpt(SGD_FMDOpt):
             # remove cap F
             reg_term = (target - target_t.detach()).pow(2)
             # compute full surrogate
-            surr = (loss / self.eta + reg_term ).mean()
+            surr = (loss / eta + reg_term ).mean()
             # do we differentiate
             if call_backward:
                 surr.backward()

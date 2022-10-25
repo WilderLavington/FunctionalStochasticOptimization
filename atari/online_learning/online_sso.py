@@ -317,7 +317,8 @@ class SSO_AdaOGD(SSO_OGD):
         super(SSO_AdaOGD,self).__init__(env, args)
         self.algo = 'SSO_Sadagrad'
         self.grad_sum = None
-
+        assert args.eta_schedule == 'constant'
+        
     def update_parameters(self, new_examples):
 
         # grab examples

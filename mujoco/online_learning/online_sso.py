@@ -41,7 +41,7 @@ class SSO_OGD(OGD):
         # self.optimizer = torch.optim.Adam(self.policy.parameters(), **surr_optim_args) #SGD_FMDOpt(self.policy.parameters(), **optim_args)
         self.single_out = 0
         self.optim_steps = 0
-        
+
     def update_parameters(self, new_examples):
 
         # grab examples
@@ -292,7 +292,8 @@ class SSO_AdaOGD(OGD):
         self.c = args.c
         self.beta_update = args.outer_beta_update
         self.expand_coeff = args.expand_coeff
-
+        assert args.eta_schedule == 'constant'
+        
     def update_parameters(self, new_examples):
 
         # grab examples

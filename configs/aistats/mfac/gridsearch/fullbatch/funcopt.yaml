@@ -28,7 +28,7 @@ parameters:
     - 1
   label:
     values:
-    - 'workshop-fig7'
+    - 'mfac'
   outer_c:
     values:
     - 0.5

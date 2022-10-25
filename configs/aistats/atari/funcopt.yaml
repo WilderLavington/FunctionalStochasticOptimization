@@ -17,6 +17,7 @@ parameters:
     - 10
     - 100
     - 1000
+    - 10000
   log_lr:
     values:
     - 3.
@@ -28,7 +29,7 @@ parameters:
     - -3.
   label:
     values:
-    - 'aistats-atari'
+    - 'atari'
   env_name:
     values:
     - 'BreakoutNoFrameskip-v4'

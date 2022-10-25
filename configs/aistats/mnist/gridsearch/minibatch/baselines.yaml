@@ -37,7 +37,7 @@ parameters:
     - 0
   label:
     values:
-    - 'workshop-fig14'
+    - 'mnist'
   log_lr:
     values:
     - -3.

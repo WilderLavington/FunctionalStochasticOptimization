@@ -29,7 +29,7 @@ parameters:
     - 0
   label:
     values:
-    - 'workshop-fig7'
+    - 'mfac'
   batch_size:
     values:
     - 25

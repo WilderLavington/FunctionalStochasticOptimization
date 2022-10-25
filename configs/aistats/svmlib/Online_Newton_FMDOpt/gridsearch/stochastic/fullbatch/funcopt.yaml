@@ -28,7 +28,7 @@ parameters:
     - 1
   label:
     values:
-    - 'workshop-fig3'
+    - 'svmlib'
   m:
     values:
     - 1

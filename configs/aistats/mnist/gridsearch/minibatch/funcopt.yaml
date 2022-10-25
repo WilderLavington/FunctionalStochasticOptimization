@@ -38,7 +38,7 @@ parameters:
     - 100
   label:
     values:
-    - 'workshop-fig14'
+    - 'mnist'
   use_optimal_stepsize:
     values:
     - 0

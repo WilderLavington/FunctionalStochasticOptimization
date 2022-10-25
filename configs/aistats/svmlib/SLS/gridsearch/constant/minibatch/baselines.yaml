@@ -31,7 +31,7 @@ parameters:
     - 625
   label:
     values:
-    - 'workshop-fig1'
+    - 'svmlib'
   use_optimal_stepsize:
     values:
     - 0

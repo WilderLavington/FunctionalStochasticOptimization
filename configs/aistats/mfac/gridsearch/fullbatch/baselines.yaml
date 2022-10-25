@@ -32,7 +32,7 @@ parameters:
     - 0
   label:
     values:
-    - 'workshop-fig7'
+    - 'mfac'
   log_lr:
     values:
     - -3.

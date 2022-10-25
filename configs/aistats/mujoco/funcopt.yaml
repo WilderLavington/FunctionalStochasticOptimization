@@ -46,9 +46,10 @@ parameters:
     - 10
     - 100
     - 1000
+    - 10000
   label:
     values:
-    - 'aistats-mujoco'
+    - 'mujoco'
   episodes:
     values:
     - 50

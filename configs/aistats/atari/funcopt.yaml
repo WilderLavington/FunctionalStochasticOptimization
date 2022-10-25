@@ -1,7 +1,7 @@
 program: atari/atari_ex.py
 entity: wilderlavington
 method: grid
-project: FunctionalOptimizationFinal
+project: TargetBasedSurrogateOptimization
 metric:
   goal: minimize
   name: grad_norm
@@ -10,7 +10,7 @@ parameters:
     values:
     - SSO_OGD
     - SSO_SLS
-    - SSO_Sadagrad
+    - SSO_AdaOGD
   m:
     values:
     - 1

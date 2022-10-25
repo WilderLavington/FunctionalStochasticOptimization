@@ -1,7 +1,7 @@
 program: mujoco/mujoco_ex.py
 entity: wilderlavington
 method: grid
-project: FunctionalOptimizationFinal
+project: TargetBasedSurrogateOptimization
 metric:
   goal: minimize
   name: grad_norm
@@ -15,9 +15,16 @@ parameters:
   log_lr:
     values:
     - -3.
+    - -2.
+    - -1.
+    - 0.0
+    - 1.
+    - 2.
+    - 3.
   model_type:
     values:
     - 'nn'
+    - 'linear'
   env_name:
     values:
     - 'Hopper-v2'
@@ -39,10 +46,11 @@ parameters:
     - 'aistats-mujoco'
   episodes:
     values:
-    - 50
+    - 100
   samples_per_update:
     values:
-    - 1000 
+    - 1000
+    - 100
   eta_schedule:
     values:
     - constant

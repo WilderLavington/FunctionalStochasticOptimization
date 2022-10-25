@@ -314,7 +314,7 @@ class SSO_SLS(SSO_OGD):
 class SSO_AdaOGD(SSO_OGD):
 
     def __init__(self, env, args):
-        super(SSO_Sadagrad,self).__init__(env, args)
+        super(SSO_AdaOGD,self).__init__(env, args)
         self.algo = 'SSO_Sadagrad'
         self.grad_sum = None
 

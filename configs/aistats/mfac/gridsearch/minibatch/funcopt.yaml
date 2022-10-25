@@ -1,7 +1,7 @@
 program: main.py
 entity: wilderlavington
 method: grid
-project: FunctionalOptimizationFinal
+project: TargetBasedSurrogateOptimization
 metric:
   goal: minimize
   name: grad_norm
@@ -30,7 +30,6 @@ parameters:
     - 'workshop-fig7'
   batch_size:
     values:
-    - 5
     - 25
     - 125
     - 625

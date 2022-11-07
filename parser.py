@@ -45,6 +45,6 @@ def get_args():
     # parse
     args, knk = parser.parse_known_args()
     print(knk)
-    assert len(knk) == 0
+    # assert len(knk) == 0
     #
     return args, parser

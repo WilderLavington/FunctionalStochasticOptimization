@@ -1,9 +1,9 @@
-#!/bin/bash 
-#SBATCH --account=def-schmidtm
+#!/bin/bash
+#SBATCH --account=ubcml
 #SBATCH --gres=gpu:1
 #SBATCH --mem-per-cpu=4G
 #SBATCH --cpus-per-task=5
-#SBATCH --time=00-08:00     # time (DD-HH:MM)
+#SBATCH --time=00-16:00     # time (DD-HH:MM)
 #SBATCH --array=0-224
 cd /home/wilder1/scratch/FunctionalStochasticOptimization
 wandb offline

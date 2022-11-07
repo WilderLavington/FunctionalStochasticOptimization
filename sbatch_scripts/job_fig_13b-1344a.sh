@@ -1,10 +1,10 @@
-#!/bin/bash 
-#SBATCH --account=def-schmidtm
+#!/bin/bash
+#SBATCH --account=ubcml
 #SBATCH --gres=gpu:1
 #SBATCH --mem-per-cpu=4G
 #SBATCH --cpus-per-task=5
-#SBATCH --time=00-08:00     # time (DD-HH:MM)
-#SBATCH --array=0-1344
+#SBATCH --time=00-16:00     # time (DD-HH:MM)
+#SBATCH --array=0-999
 cd /home/wilder1/scratch/FunctionalStochasticOptimization
 wandb offline
 if [ $SLURM_ARRAY_TASK_ID -eq 0 ]

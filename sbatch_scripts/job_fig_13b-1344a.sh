@@ -5,7 +5,8 @@
 #SBATCH --cpus-per-task=5
 #SBATCH --time=00-16:00     # time (DD-HH:MM)
 #SBATCH --array=0-999
-cd /home/wilder1/scratch/FunctionalStochasticOptimization
+cd /ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization
+conda activate ubcml
 wandb offline
 if [ $SLURM_ARRAY_TASK_ID -eq 0 ]
 then

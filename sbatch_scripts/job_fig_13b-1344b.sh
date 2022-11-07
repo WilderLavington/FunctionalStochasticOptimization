@@ -3,9 +3,10 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem-per-cpu=4G
 #SBATCH --cpus-per-task=5
-#SBATCH --time=00-08:00     # time (DD-HH:MM)
+#SBATCH --time=00-16:00     # time (DD-HH:MM)
 #SBATCH --array=1000-1344
-cd /home/wilder1/scratch/FunctionalStochasticOptimization
+cd /ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization
+conda activate ubcml
 wandb offline
 if [ $SLURM_ARRAY_TASK_ID -eq 0 ]
 then

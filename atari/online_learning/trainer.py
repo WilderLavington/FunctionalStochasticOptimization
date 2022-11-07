@@ -15,7 +15,7 @@ from online_learning.parser import get_args
 from online_learning.load_expert import pretrain_args
 from online_learning.utils import stat_dicts, timer
 from online_learning.algorithms import OGD, AdaOGD, AdamOGD, FTL, FTRL, AFTRL, SFTRL
-from online_learning.online_sso import OSLS, SSO_OGD, SSO_SLS, SSO_Sadagrad
+from online_learning.online_sso import OSLS, SSO_OGD, SSO_SLS, SSO_AdaOGD
 
 
 def generate_env(args):

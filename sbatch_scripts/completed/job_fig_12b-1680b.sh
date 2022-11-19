@@ -4,7 +4,7 @@
 #SBATCH --mem-per-cpu=4G
 #SBATCH --cpus-per-task=5
 #SBATCH --time=00-16:00     # time (DD-HH:MM)
-#SBATCH --array=1000-1680
+#SBATCH --array=1000-1679
 cd /ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization
 conda activate ubcml
 wandb offline

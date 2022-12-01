@@ -15,8 +15,7 @@ def get_args():
 
 def sync_wandb(wandb_dir):
     # get all yaml files in a directory
-    yaml_files = []
-    yaml_files = []
+    yaml_files = [] 
     for subdir, dirs, files in os.walk(wandb_dir):
         for file in files:
             filename = os.path.join(subdir, file)

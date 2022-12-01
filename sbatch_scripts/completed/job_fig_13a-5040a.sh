@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --account=ubcml
-#SBATCH --gres=gpu:1
+#SBATCH --gpus=1
 #SBATCH --mem-per-cpu=4G
 #SBATCH --cpus-per-task=5
 #SBATCH --time=00-16:00     # time (DD-HH:MM)
-#SBATCH --array=4000-4999
+#SBATCH --array=0-999
 cd /ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization
 conda activate ubcml
 wandb offline

@@ -37,6 +37,11 @@ parameters:
   use_optimal_stepsize:
     values:
     - 0
+  seed:
+    values:
+    - 3
+    - 2
+    - 1
   beta:
     values:
     - 1.

@@ -21,6 +21,11 @@ parameters:
     - -1.
     - -2.
     - -3.
+  seed:
+    values:
+    - 3
+    - 2
+    - 1
   label:
     values:
     - 'atari'

@@ -40,7 +40,7 @@ def get_args():
     parser.add_argument('--group', type=str, default='static-args', metavar='N')
     parser.add_argument('--env_name', default="Hopper-v2", help='Mujoco Gym environment (default: HalfCheetah-v2)')
     parser.add_argument('--expert_type', type=str, default='sac')
-    parser.add_argument('--project', type=str, default='FunctionalOptimizationFinal')
+    parser.add_argument('--project', type=str, default='TargetBasedSurrogateOptimization')
     parser.add_argument('--entity', type=str, default='wilderlavington')
 
     # online imitation learning stuff

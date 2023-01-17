@@ -4,8 +4,9 @@
 #SBATCH --mem-per-cpu=4G
 #SBATCH --cpus-per-gpu=5
 #SBATCH --time=00-08:00     # time (DD-HH:MM)
-#SBATCH --array=2000-2999%16 
-cd /ubc/cs/research/plai-scratch/wlaving
+#SBATCH --array=2000-2999%16
+cd /ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization
+conda activate borg_funcopt_env
 if [ $SLURM_ARRAY_TASK_ID -eq 0 ]
 then
     python atari/atari_ex.py --algo=SSO_SLS --m=1 --log_lr=-3.0 --label=atari --env_name=PongNoFrameskip-v4 --use_optimal_stepsize=0 --seed=3 --beta=0.0 --beta_update=1.0 --c=0.5 --episodes=100 --samples_per_update=100 --eta_schedule=constant --program=atari/atari_ex.py --group=AIstats_borg --log_dir=./wandb./configs/aistats/atari/funcopt.yaml

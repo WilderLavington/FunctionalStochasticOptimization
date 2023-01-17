@@ -59,7 +59,7 @@ def get_args():
     parser.add_argument('--static_cov', type=int, default=0)
 
     # SSO shite
-    parser.add_argument('--project', type=str, default='FunctionalOptimization')
+    parser.add_argument('--project', type=str, default='TargetBasedSurrogateOptimization')
     parser.add_argument('--m', type=int, default=1)
     parser.add_argument('--dataset_name', type=str, default='Atari')
     parser.add_argument('--loss', type=str, default='CrossEntropyLoss')

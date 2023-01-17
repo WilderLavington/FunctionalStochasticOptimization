@@ -89,10 +89,8 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/mfac/gridsearch/fullba
 #===================================================================================
 
 # Atari-gridsearch
-python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/baselines.yaml --job_name=fig_12a \
-  --directory=/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization --account=ubcml --machine=ubcml
-python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/funcopt.yaml --job_name=fig_12b \
-  --directory=/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization --account=ubcml --machine=ubcml
+python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/baselines.yaml --job_name=fig_12a --account=ubcml  --machine=ubcml
+python offline_dir_sweep.py --yaml_file=./configs/aistats/atari/funcopt.yaml --job_name=fig_12b  --account=ubcml --machine=ubcml
 
 #===================================================================================
 # Mujoco

@@ -209,8 +209,7 @@ def generate_experiments(yaml_file, job_name='job-ex', machine='cedar',
     for idx, sep_conf in enumerate(seperated_configs):
         if len(sep_conf):
             eval_generation(job_name=job_name+'-'+str(len(commands))+'-'+str(idx), machine=machine,
-                account=account, commands=sep_conf, directory=directory, time=time,
-                log_dir='./wandb'+yaml_file)
+                account=account, commands=sep_conf, time=time, log_dir='./wandb'+yaml_file)
 
 def main():
     parser = argparse.ArgumentParser(description='job runner')

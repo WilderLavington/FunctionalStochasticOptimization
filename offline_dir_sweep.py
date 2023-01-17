@@ -32,7 +32,7 @@ def create_config_list(path):
         except yaml.YAMLError as exc:
             print(exc)
     params = parsed_yaml['parameters']
-    params['program'] = {'values': [str(parsed_yaml['program'])]} 
+    params['program'] = {'values': [str(parsed_yaml['program'])]}
     expanded_list = []
     for key in params.keys():
         expanded_list.append([{key:v} for v in params[key]['values']])
@@ -86,7 +86,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
     # set the base runner
     args_list = sys.argv[1:]
     if machine=='borg':
-        directory = '/ubc/cs/research/plai-scratch/wlaving'
+        directory = '/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization'
         account = 'plai'
         file = open('sbatch_scripts/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/sh \n')
@@ -107,7 +107,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.close()
     elif machine=='ubcml':
         account = 'ubcml'
-        directory = '/ubc/cs/research/plai-scratch/wlaving'
+        directory = '/ubc/cs/research/plai-scratch/wlaving/FunctionalStochasticOptimization'
         file = open('sbatch_scripts/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --partition=ubcml \n')

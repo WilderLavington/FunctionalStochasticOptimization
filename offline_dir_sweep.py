@@ -84,14 +84,14 @@ def get_incomplete_configs(full_config, project, user='wilderlavington'):
     print('this job is {}% complete'.format(round(len(remaining_config)/len(full_config),2)))
     return remaining_config
 
-def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', commands=[], directory='.', time='00-05:59', log_dir='./wandb'):
+def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', commands=[], time='00-05:59', log_dir='./wandb'):
     # make thhe directory if it does not exist
     Path('sbatch_scripts').mkdir(parents=True, exist_ok=True)
     # set the base runner
     args_list = sys.argv[1:]
     if machine=='borg':
-        if account is None:
-            account = 'plai'
+        directory = '/ubc/cs/research/plai-scratch/wlaving'
+        account = 'plai'
         file = open('sbatch_scripts/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/sh \n')
         file.write('#SBATCH --partition='+account+' \n')
@@ -110,6 +110,8 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('exit')
         file.close()
     elif machine=='ubcml':
+        account = 'ubcml'
+        directory = '/ubc/cs/research/plai-scratch/wlaving'
         file = open('sbatch_scripts/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --partition=ubcml \n')
@@ -129,6 +131,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('exit')
         file.close()
     elif machine=='narval':
+        directory = '/home/wilder1/scratch/FunctionalStochasticOptimization'
         file = open('sbatch_scripts/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --account=rrg-kevinlb \n')
@@ -148,6 +151,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('exit')
         file.close()
     elif machine=='cedar':
+        directory = '/home/wilder1/scratch/FunctionalStochasticOptimization'
         file = open('sbatch_scripts/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --account='+account+'\n')
@@ -190,7 +194,8 @@ def divide_chunks(l, n):
         yield l[i:i + n]
 
 def generate_experiments(yaml_file, job_name='job-ex', machine='cedar',
-            account='rrg-schmidtm', directory='.', time='00-05:59', project='TargetBasedSurrogateOptimization'):
+            account='rrg-schmidtm', directory='.', time='00-05:59', \
+            project='TargetBasedSurrogateOptimization'):
     # create list of configs from yaml
     configs = create_config_list(yaml_file)
     configs = get_incomplete_configs(configs, project=project)
@@ -209,7 +214,6 @@ def generate_experiments(yaml_file, job_name='job-ex', machine='cedar',
 
 def main():
     parser = argparse.ArgumentParser(description='job runner')
-    parser.add_argument('--directory', default='/home/wilder1/scratch/FunctionalStochasticOptimization')
     parser.add_argument('--machine', default='narval')
     parser.add_argument('--time', default='00-08:00')
     parser.add_argument('--account', default='rrg-kevinlb')
@@ -217,8 +221,9 @@ def main():
     parser.add_argument('--yaml_file',default='configs/reality_check/funcopt.yaml')
     parser.add_argument('--wandb_proj',default='TargetBasedSurrogateOptimization')
     args = parser.parse_args()
-    generate_experiments(args.yaml_file,job_name=args.job_name,  machine=args.machine, account=args.account,
-        directory=args.directory, time=args.time, project=args.wandb_proj)
+    generate_experiments(args.yaml_file, job_name=args.job_name,
+        machine=args.machine, account=args.account,
+        time=args.time, project=args.wandb_proj)
 
 
 if __name__ == "__main__":

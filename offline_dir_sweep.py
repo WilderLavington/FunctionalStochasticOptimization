@@ -32,6 +32,7 @@ def create_config_list(path):
         except yaml.YAMLError as exc:
             print(exc)
     params = parsed_yaml['parameters']
+    params['program'] = {'values': [str(parsed_yaml['program'])]} 
     expanded_list = []
     for key in params.keys():
         expanded_list.append([{key:v} for v in params[key]['values']])
@@ -44,12 +45,7 @@ def config2command(config):
     args_list = []
     for key, val in config.items():
         args_list.append("--{0}={1}".format(key, val))
-    if config['label'] == 'aistats-atari':
-        return 'python atari/atari_ex.py ' + ' '.join(args_list)
-    if config['label'] == 'aistats-mujoco':
-        return 'python mujoco/mujoco_ex.py ' + ' '.join(args_list)
-    else:
-        return 'python main.py ' + ' '.join(args_list)
+    return 'python ' + config['program'] +' '+ ' '.join(args_list)
 
 def get_incomplete_configs(full_config, project, user='wilderlavington'):
     runs = api.runs(user+'/'+project, per_page=1e7)

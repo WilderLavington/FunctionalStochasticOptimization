@@ -97,6 +97,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
         file.write('#SBATCH --array=0-'+str(len(commands))+'%16 \n')
         file.write('cd ' + directory + ' \n')
+        file.write('conda activate funcopt_env \n')
         ##
         for idx, command in enumerate(commands):
             file.write('if [ $SLURM_ARRAY_TASK_ID -eq '+str(idx)+' ] \n')
@@ -116,7 +117,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('#SBATCH --cpus-per-task=5 \n')
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
         file.write('#SBATCH --array=0-'+str(len(commands))+'%24 \n')
-        file.write('conda activate ubcml \n')
+        file.write('conda activate funcopt_env \n')
         file.write('cd ' + directory + ' \n')
         ##
         for idx, command in enumerate(commands):

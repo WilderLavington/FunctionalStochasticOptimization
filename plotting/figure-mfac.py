@@ -34,14 +34,14 @@ PROJECT='TargetBasedSurrogateOptimization'
 SUMMARY_FILE='icml_mfac.csv'
 
 # base info
-batch_sizes = [25, 125, 625]
-m = [1, 10, 20]
+batch_sizes = [5, 25, 125, 625]
+m = [1, 10, 100, 1000]
 
 # general settings
 colors = mpl.cm.Set1.colors   # Qualitative colormap
 colormap = {'SGD': '#44AA99' , 'SLS': '#DDCC77', 'Adam': '#88CCEE' }
 colormap.update({'SSO-1':  '#CC6677' ,  'SSO-10': '#AA4499', 'SSO-20': '#882255' , 'SSO-SLS': '#332288'})
-baselines = ['SGD', 'Adam', 'SLS']
+baselines = ['SGD', 'Adam', 'LSOpt']
 algorithms = baselines + ['SSO-'+str(m_) for m_ in m] +['SSO-SLS']
 dataset_names= ['mfac']
 sso_algos = ['SGD_FMDOpt', 'SLS_FMDOpt', 'Ada_FMDOpt']
@@ -53,19 +53,20 @@ name_mask = {'LSOpt':'SLS', 'SGD': 'SGD', 'Adam': 'Adam', 'Adagrad':'Adagrad',
 
 # mask baselines which do not have decay - schedules
 def schedule_mask(sched, algo):
-    if algo in ['Adam', 'Adagrad', 'Ada_FMDOpt']:
+    if algo in ['Adam', 'Adagrad', 'Ada_FMDOpt', 'Diag_Ada_FMDOpt']:
         return 'constant'
     else:
         return sched
 
 # create summary file
-redownload = False
+redownload = True
 if redownload:
     download_wandb_summary(user=USER, project=PROJECT, summary_file=SUMMARY_FILE,
-                    keyval_focus={'dataset_name': dataset_names,
-                                  'algo': baselines+sso_algos,
+                    keyval_focus={'dataset_name': ['mfac'],
+                                  'algo': ['SGD', 'Adam', 'LSOpt', 'Adagrad', 'Adam', 'SGD_FMDOpt'],
                                   'fullbatch': [1, 0],
-                                  'm': m, 'batch_size': batch_sizes})
+                                  'm': [1,5,10,100,1000],
+                                  'batch_size': [5, 25, 125, 625]})
     wandb_records = download_wandb_records(user=USER, project=PROJECT, summary_file=SUMMARY_FILE)
 else:
     wandb_records = pd.read_csv('./logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)

@@ -39,7 +39,7 @@ def download_wandb_summary(user, project, summary_file, key_focus=[],
         for key in keyval_focus.keys():
             if key not in list(conf.keys()):
                 include = False
-            else: 
+            else:
                 include *= bool(np.sum([conf[key] == d for d in keyval_focus[key]]))
         # if this data-point is to be included then append it to summary file.
         if include:

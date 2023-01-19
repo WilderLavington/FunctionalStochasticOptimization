@@ -23,6 +23,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
     if machine=='borg':
         if account is None:
             account = 'plai'
+        directory='/home/wilder1/scratch/FunctionalStochasticOptimization'
         file = open('eval_dir/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/sh \n')
         file.write('#SBATCH --partition='+account+' \n')
@@ -35,6 +36,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
         file.write('exit')
         file.close()
     elif machine=='ubcml':
+        directory='/home/wilder1/scratch/FunctionalStochasticOptimization'
         file = open('eval_dir/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --partition=ubcml \n')
@@ -48,6 +50,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
         file.write('exit')
         file.close()
     elif machine=='narval':
+        directory='/home/wilder1/scratch/FunctionalStochasticOptimization'
         file = open('eval_dir/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --account=rrg-kevinlb \n')
@@ -60,6 +63,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
         file.write('exit')
         file.close()
     elif machine=='cedar':
+        directory='/home/wilder1/scratch/FunctionalStochasticOptimization'
         file = open('eval_dir/job_'+job_name+'.sh',"w+")
         file.write('#!/bin/bash \n')
         file.write('#SBATCH --account='+account+'\n')
@@ -89,7 +93,6 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
 
 def main():
     parser = argparse.ArgumentParser(description='job runner')
-    parser.add_argument('--directory', default='/home/wilder1/scratch/FunctionalStochasticOptimization')
     parser.add_argument('--command', default='echo "hello world" ')
     parser.add_argument('--machine', default='narval')
     parser.add_argument('--time', default='00-12:00')

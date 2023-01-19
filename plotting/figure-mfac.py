@@ -129,7 +129,7 @@ def generate_sgd_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_F
         axs[-1] = generate_plot(proc_df, x, y, axs[-1],
             label='SSO-'+str(m_), linestyle='solid', color=colormap['SSO-SLS'])
     else:
-        print('missing FMDopt  ', m_, dataset_name, batch_size)
+        print('missing SLS-FMDopt  ', m_, dataset_name, 'full-batch')
 
     # mini-batch plots
     for col, batch_size in enumerate(batch_sizes):
@@ -190,8 +190,8 @@ def generate_sgd_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_F
         axs[col].set_yscale("log")
         axs[col].set_xscale("log")
         if not include_leg:
-            axs[0][col].set_title('batch-size: '+str(batch_size), fontsize=16)
-            axs[0][-1].set_title('full-batch', fontsize=16)
+            axs[col].set_title('batch-size: '+str(batch_size), fontsize=16)
+            axs[-1].set_title('full-batch', fontsize=16)
         axs[-1].set_ylabel(dataset_name, fontsize=16)
         axs[-1].yaxis.set_label_position("right")
 
@@ -215,10 +215,9 @@ def generate_sgd_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_F
     plt.rcParams['figure.dpi'] = 100# 400
     fig.tight_layout()
 
-    # show / save
-    plt.show()
-    plt.savefig('./plots/'+fig_name+loss+'.pdf', bbox_inches='tight')
-    plt.show()
+    # show / save 
+    plt.savefig('./plotting/plots/'+fig_name+loss+'.pdf', bbox_inches='tight')
+    print('saved'+'./plotting/plots/'+fig_name+loss+'.pdf')
 
 
 # iterate over SSO-variants

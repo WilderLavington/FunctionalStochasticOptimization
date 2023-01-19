@@ -15,7 +15,7 @@ import time
 import psutil
 
 def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
-            command='', directory='.', time='00-05:59'):
+            command='',  time='00-05:59'):
     # make thhe directory if it does not exist
     Path('eval_dir').mkdir(parents=True, exist_ok=True)
     # set the base runner
@@ -102,7 +102,7 @@ def main():
     for i in range(int(args.num)):
         job_id = str(i)
         eval_generation(machine=args.machine, command=args.command, account=args.account,
-            directory=args.directory, job_name=job_id, time=args.time)
+            job_name=job_id, time=args.time)
 
 if __name__ == "__main__":
     main()

@@ -218,8 +218,8 @@ def generate_sgd_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_F
     fig.tight_layout()
 
     # show / save
-    plt.savefig('./plotting/plots/'+fig_name+loss+'.pdf', bbox_inches='tight')
-    print('saved'+'./plotting/plots/'+fig_name+loss+'.pdf')
+    plt.savefig('./plotting/plots/'+fig_name+loss+dataset_name+'.pdf', bbox_inches='tight')
+    print('saved'+'./plotting/plots/'+fig_name+loss+dataset_name+'.pdf')
 
 # iterate over SSO-variants
 for sso_algo in sso_algos:

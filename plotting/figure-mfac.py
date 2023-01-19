@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[17]:
+
 
 from tqdm import tqdm
 import wandb
@@ -20,91 +25,205 @@ import time
 import matplotlib as mpl
 import matplotlib.ticker as ticker
 
+#
+from plotting_utils import *
+
+#
 USER='wilderlavington'
 PROJECT='TargetBasedSurrogateOptimization'
-SUMMARY_FILE='sharan_report_icml.csv'
+SUMMARY_FILE='icml_mfac.csv'
 
-def download_wandb_summary(user, project, summary_file):
-    """
-    Download a summary of all runs on the wandb project
-    """
-    runs = api.runs(user+'/'+project, per_page=1e7)
-    summary_list, config_list, name_list, id_list, commits = [], [], [], [], []
-    assert len([run for run in runs])
-    for run in tqdm(runs):
-        run = api.run(user+'/'+project+"/"+run.id)
-        conf = {k: v for k, v in run.config.items()}
-        # if 'label' in conf.keys():
-            # if (conf['label'] in labels) and (run.commit not in IGNORE_COMMITS):
-        summary_list.append(run.summary._json_dict)
-        config_list.append(conf)
-        name_list.append(run.name)
-        id_list.append(run.id)
-        if run.commit is not None:
-            commits.append(run.commit)
-        else:
-            commits.append('None')
-        # else:
-        #     pass
-    assert len(summary_list)
-    commits_df = pd.DataFrame.from_records(commits)
-    summary_df = pd.DataFrame.from_records(summary_list)
-    config_df = pd.DataFrame.from_records(config_list)
-    name_df = pd.DataFrame({"name": name_list, "id": id_list})
-    all_df = pd.concat([name_df, config_df, summary_df, commits_df], axis=1)
-    Path('logs/wandb_data/').mkdir(parents=True, exist_ok=True)
-    all_df.to_csv('logs/wandb_data/'+summary_file)
+# base info
+batch_sizes = [25, 125, 625]
+m = [1, 10, 20]
 
-def download_wandb_records(user, project, summary_file,
-        columns_of_interest = ['avg_loss', 'optim_steps', 'grad_norm', 'time_elapsed', \
-         'grad_evals', 'function_evals', 'eta', 'inner_steps', 'eta_scale']):
-    """
-    Download data for all runs in summary file
-    """
-    # load it all in and clean it up
-    runs_df = pd.read_csv('logs/wandb_data/'+summary_file, header=0, squeeze=True)
-    runs_df = runs_df.loc[:,~runs_df.columns.duplicated()]
+# general settings
+colors = mpl.cm.Set1.colors   # Qualitative colormap
+colormap = {'SGD': '#44AA99' , 'SLS': '#DDCC77', 'Adam': '#88CCEE' }
+colormap.update({'SSO-1':  '#CC6677' ,  'SSO-10': '#AA4499', 'SSO-20': '#882255' , 'SSO-SLS': '#332288'})
+baselines = ['SGD', 'Adam', 'SLS']
+algorithms = baselines + ['SSO-'+str(m_) for m_ in m] +['SSO-SLS']
+dataset_names= ['mfac']
+sso_algos = ['SGD_FMDOpt', 'SLS_FMDOpt', 'Ada_FMDOpt']
+label_map = {'optim_steps':'Optimization-Steps',
+             'grad_norm':'Gradient-Norm',
+             'avg_loss': 'Average-Loss'}
+name_mask = {'LSOpt':'SLS', 'SGD': 'SGD', 'Adam': 'Adam', 'Adagrad':'Adagrad',
+             'SLS_FMDOpt': 'SSO-SLS'}
 
-    # set which columns we will store for vizualization
-    list_of_dataframes = []
-    # iterate through all runs to create individual databases
-    for ex in tqdm(range(len(runs_df))):
-        # get the associated runs
-        try:
-            run = api.run(user+'/'+project+'/'+runs_df.loc[runs_df.iloc[ex,0],:]['id'])
-            run_df = []
-            # iterate through all rows in online database
-            base_info = {}
-            for key in runs_df.loc[runs_df.iloc[ex,0],:].keys():
-                base_info.update({key:runs_df.loc[runs_df.iloc[ex,0],:][key]})
-            for i, row in run.history().iterrows():
-                row_info = deepcopy(base_info)
-                row_info.update({key:row[key] for key in columns_of_interest if key in row.keys()})
-                run_df.append(row_info)
-            # convert format to dataframe and add to our list
-            list_of_dataframes.append(pd.DataFrame(run_df))
-        except:
-            pass
-    # combine and then store
-    wandb_records = pd.concat(list_of_dataframes)
-    wandb_records.to_csv('logs/wandb_data/__full__'+summary_file)
-    # return single data frame for vizualization
-    return wandb_records
-
-def generate_plot(proc_df, x, y, ax, label, linestyle='solid', color=None, x_max=1000000):
-    low_order_idx = (torch.tensor(proc_df[x].values) < x_max).nonzero().reshape(-1)
-    if label:
-        ax.plot(torch.tensor(proc_df[x].values[low_order_idx]),
-                torch.tensor(proc_df[y].values[low_order_idx]),
-                label=label, linestyle=linestyle, color=color, alpha=0.8,
-                linewidth=4)
+# mask baselines which do not have decay - schedules
+def schedule_mask(sched, algo):
+    if algo in ['Adam', 'Adagrad', 'Ada_FMDOpt']:
+        return 'constant'
     else:
-        ax.plot(torch.tensor(proc_df[x].values[low_order_idx]),
-                torch.tensor(proc_df[y].values[low_order_idx]),
-                label='_nolegend_', linestyle=linestyle, color=color, alpha=0.8,
-                linewidth=4)
-    ax.fill_between(torch.tensor(proc_df[x].values)[low_order_idx],
-            torch.tensor(proc_df[y+'75'].values)[low_order_idx],
-            torch.tensor(proc_df[y+'25'].values)[low_order_idx],
-            alpha = 0.4, label='_nolegend_', linestyle=linestyle, color=color)
-    return ax
+        return sched
+
+# create summary file
+redownload = False
+if redownload:
+    download_wandb_summary(user=USER, project=PROJECT, summary_file=SUMMARY_FILE,
+                    keyval_focus={'dataset_name': dataset_names,
+                                  'algo': baselines+sso_algos,
+                                  'fullbatch': [1, 0],
+                                  'm': m, 'batch_size': batch_sizes})
+    wandb_records = download_wandb_records(user=USER, project=PROJECT, summary_file=SUMMARY_FILE)
+else:
+    wandb_records = pd.read_csv('./logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
+
+#
+def generate_sgd_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_FMDOpt',
+                        x ='optim_steps', y='avg_loss', include_leg=True):
+
+    # init plots
+    fig, axs = plt.subplots(1, len(batch_sizes)+1, figsize=(16, 3))
+    dataset_name = dataset_names[0]
+
+    # figure out axis automatically
+    x_max = 0
+
+    # baselines
+    for algo in ['LSOpt', 'SGD', 'Adam']:
+        sched_ = schedule_mask(schedule, algo)
+        proc_df = format_dataframe(wandb_records,
+            id_subfields={'fullbatch': 1,
+            'use_optimal_stepsize': 1, 'loss': loss, 'algo': algo,
+            'eta_schedule': schedule, 'dataset_name': dataset_name},
+            x_col=x , y_col=y)
+        if proc_df is not None:
+            x_max = max(proc_df[x].values.max(), x_max)
+            axs[-1] = generate_plot(proc_df, x, y, axs[-1], label=name_mask[algo],
+                                         linestyle='dashed', color=colormap[name_mask[algo]])
+        else:
+            print('missing ', name_mask[algo], ' ',  dataset_name, 'full-batch')
+
+    # FMDopt theoretical
+    for m_ in m:
+        # create parsed info
+        proc_df = format_dataframe(wandb_records,
+            id_subfields={'fullbatch': 1,
+                'use_optimal_stepsize': 1,
+                'loss': loss, 'algo': sso_algo, 'm': m_,
+                'eta_schedule': schedule, 'dataset_name': dataset_name},
+                 avg_subfields=['seed'], max_subfields=['c'],
+            x_col=x, y_col=y)
+        if proc_df is not None:
+            x_max = max(proc_df[x].values.max(), x_max)
+            axs[-1] = generate_plot(proc_df, x, y, axs[-1],
+                label='SSO-'+str(m_), linestyle='solid', color=colormap['SSO-'+str(m_)])
+        else:
+            print('missing FMDopt  ', m_, dataset_name, 'full-batch')
+    axs[-1].grid()
+    axs[-1].set_yscale("log")
+    axs[-1].set_xscale("log")
+
+    # SLS-FMDOpt
+    proc_df = format_dataframe(wandb_records,
+        id_subfields={'fullbatch': 1,
+            'use_optimal_stepsize': 1, #'_step': 499.0,
+            'loss': loss, 'algo': 'SLS_FMDOpt', 'm': 20,
+            'eta_schedule': schedule, 'dataset_name': dataset_name},
+             avg_subfields=['seed'], max_subfields=['c'],
+        x_col=x, y_col=y)
+    if proc_df is not None:
+        x_max = max(proc_df[x].values.max(), x_max)
+        axs[-1] = generate_plot(proc_df, x, y, axs[-1],
+            label='SSO-'+str(m_), linestyle='solid', color=colormap['SSO-SLS'])
+    else:
+        print('missing FMDopt  ', m_, dataset_name, batch_size)
+
+    # mini-batch plots
+    for col, batch_size in enumerate(batch_sizes):
+
+        # figure out axis automatically
+        x_max = 0
+
+        # baselines
+        for algo in ['LSOpt', 'SGD', 'Adam']:
+            sched_ = schedule_mask(schedule, algo)
+            proc_df = format_dataframe(wandb_records,
+                id_subfields={'batch_size': batch_size,
+                'use_optimal_stepsize': 1, 'loss': loss, 'algo': algo,
+                'eta_schedule': schedule, 'dataset_name': dataset_name},
+                x_col=x , y_col=y)
+            if proc_df is not None:
+                x_max = max(proc_df[x].values.max(), x_max)
+                axs[col] = generate_plot(proc_df, x, y, axs[col], label=name_mask[algo],
+                                             linestyle='dashed', color=colormap[name_mask[algo]])
+            else:
+                print('missing ', name_mask[algo], ' ',  dataset_name, batch_size)
+
+        # FMDopt theoretical
+        for m_ in m:
+            # create parsed info
+            proc_df = format_dataframe(wandb_records,
+                id_subfields={'batch_size': batch_size,
+                    'use_optimal_stepsize': 1, #'_step': 499.0,
+                    'loss': loss, 'algo': sso_algo, 'm': m_,
+                    'eta_schedule': schedule, 'dataset_name': dataset_name},
+                     avg_subfields=['seed'], max_subfields=['c'],
+                x_col=x, y_col=y)
+            if proc_df is not None:
+                x_max = max(proc_df[x].values.max(), x_max)
+                axs[col] = generate_plot(proc_df, x, y, axs[col],
+                    label='SSO-'+str(m_), linestyle='solid', color=colormap['SSO-'+str(m_)])
+            else:
+                print('missing FMDopt  ', m_, dataset_name, batch_size)
+
+        # SLS-FMDOpt
+        proc_df = format_dataframe(wandb_records,
+            id_subfields={'batch_size': batch_size,
+                'use_optimal_stepsize': 1, #'_step': 499.0,
+                'loss': loss, 'algo': 'SLS_FMDOpt', 'm': 20,
+                'eta_schedule': schedule, 'dataset_name': dataset_name},
+                 avg_subfields=['seed'], max_subfields=['c'],
+            x_col=x, y_col=y)
+        if proc_df is not None:
+            x_max = max(proc_df[x].values.max(), x_max)
+            axs[col] = generate_plot(proc_df, x, y, axs[col],
+                label='SSO-'+str(m_), linestyle='solid', color=colormap['SSO-SLS'])
+        else:
+            print('missing SLS-FMDopt  ', m_, dataset_name, batch_size)
+
+        axs[col].grid()
+        axs[col].ticklabel_format(axis='x', style='sci', scilimits=(0,0))
+        axs[col].yaxis.set_major_locator(plt.MaxNLocator(4))
+        axs[col].set_yscale("log")
+        axs[col].set_xscale("log")
+        if not include_leg:
+            axs[0][col].set_title('batch-size: '+str(batch_size), fontsize=16)
+            axs[0][-1].set_title('full-batch', fontsize=16)
+        axs[-1].set_ylabel(dataset_name, fontsize=16)
+        axs[-1].yaxis.set_label_position("right")
+
+        axs[col].xaxis.set_minor_locator(mpl.ticker.LogLocator(base=10,numticks=100))
+        axs[col].xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+        axs[col].yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+
+    # remaining format stuff
+    if include_leg:
+        handles = [mpatches.Patch(color=colormap[algo], label=algo) for algo in algorithms]
+        leg = fig.legend(handles=handles,
+               loc="lower center",   # Position of legend
+               borderaxespad=1.65,    # Small spacing around legend box
+               # title="Algorithms",  # Title for the legend
+               fontsize=18,
+               ncol=8,
+               bbox_to_anchor=(0.525, -0.3),
+               )
+
+    plt.subplots_adjust(hspace=1.5)
+    plt.rcParams['figure.dpi'] = 100# 400
+    fig.tight_layout()
+
+    # show / save
+    plt.show()
+    plt.savefig('./plots/'+fig_name+loss+'.pdf', bbox_inches='tight')
+    plt.show()
+
+
+# iterate over SSO-variants
+for sso_algo in sso_algos:
+    generate_sgd_figure('MSELoss', 'constant',
+                        wandb_records, fig_name=sso_algo,
+                        x ='optim_steps', y='avg_loss', include_leg=False,
+                        sso_algo = 'SGD_FMDOpt')

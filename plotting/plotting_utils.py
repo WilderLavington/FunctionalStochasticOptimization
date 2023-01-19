@@ -20,8 +20,8 @@ import time
 import matplotlib as mpl
 import matplotlib.ticker as ticker
 
-
-def download_wandb_summary(user, project, summary_file):
+def download_wandb_summary(user, project, summary_file, key_focus=[],
+            keyval_focus={}):
     """
     Download a summary of all runs on the wandb project
     """
@@ -30,17 +30,27 @@ def download_wandb_summary(user, project, summary_file):
     assert len([run for run in runs])
     for run in tqdm(runs):
         run = api.run(user+'/'+project+"/"+run.id)
-        conf = {k: v for k, v in run.config.items()} 
-        summary_list.append(run.summary._json_dict)
-        config_list.append(conf)
-        name_list.append(run.name)
-        id_list.append(run.id)
-        if run.commit is not None:
-            commits.append(run.commit)
-        else:
-            commits.append('None')
-        # else:
-        #     pass
+        conf = {k: v for k, v in run.config.items()}
+        include = True
+        # check for simple key requirements
+        if not all(item in list(conf.keys()) for item in key_focus):
+            include = False
+        # check if we have key-value requirements
+        for key in keyval_focus.keys():
+            if key not in list(conf.keys()):
+                include = False
+            else: 
+                include *= bool(np.sum([conf[key] == d for d in keyval_focus[key]]))
+        # if this data-point is to be included then append it to summary file.
+        if include:
+            summary_list.append(run.summary._json_dict)
+            config_list.append(conf)
+            name_list.append(run.name)
+            id_list.append(run.id)
+            if run.commit is not None:
+                commits.append(run.commit)
+            else:
+                commits.append('None')
     assert len(summary_list)
     commits_df = pd.DataFrame.from_records(commits)
     summary_df = pd.DataFrame.from_records(summary_list)

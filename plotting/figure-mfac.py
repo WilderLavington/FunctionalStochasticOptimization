@@ -20,6 +20,9 @@ import time
 import matplotlib as mpl
 import matplotlib.ticker as ticker
 
+USER='wilderlavington'
+PROJECT='TargetBasedSurrogateOptimization'
+SUMMARY_FILE='sharan_report_icml.csv'
 
 def download_wandb_summary(user, project, summary_file):
     """
@@ -30,7 +33,9 @@ def download_wandb_summary(user, project, summary_file):
     assert len([run for run in runs])
     for run in tqdm(runs):
         run = api.run(user+'/'+project+"/"+run.id)
-        conf = {k: v for k, v in run.config.items()} 
+        conf = {k: v for k, v in run.config.items()}
+        # if 'label' in conf.keys():
+            # if (conf['label'] in labels) and (run.commit not in IGNORE_COMMITS):
         summary_list.append(run.summary._json_dict)
         config_list.append(conf)
         name_list.append(run.name)
@@ -103,53 +108,3 @@ def generate_plot(proc_df, x, y, ax, label, linestyle='solid', color=None, x_max
             torch.tensor(proc_df[y+'25'].values)[low_order_idx],
             alpha = 0.4, label='_nolegend_', linestyle=linestyle, color=color)
     return ax
-
-def smooth(array, k):
-    array = np.array(array)
-    new_array = deepcopy(array)
-    # print(array[max(0,i-k):i] )
-    for i in range(len(array)):
-        if str(array[i]) != 'nan':
-            avg_list = [val for val in array[max(0,i-k):i+1] if str(val) != 'nan']
-            new_array[i] = sum(avg_list) / len(avg_list)
-    return new_array
-
-
-def format_dataframe(records, id_subfields={}, base_stepper='optim_steps',
-        avg_subfields=['seed'], max_subfields=[], x_col='total_examples', y_col='policy_return', k=1):
-    #
-    pd.set_option('display.max_columns', None)
-    max_subfields = [m for m in max_subfields if m not in id_subfields.keys()]
-    for key in id_subfields:
-        records = records.loc[records[key] == id_subfields[key]]
-    records['function_evals+grad_evals'] = records['function_evals']+records['grad_evals']
-    if not len(records):
-        return None
-    # remove nans
-    records = records[records[y_col].notna()]
-    important_cols = list(set(avg_subfields+max_subfields+\
-        list(id_subfields.keys())+[x_col, y_col, base_stepper]))
-    # remove redundant information
-    records = records[important_cols]
-    # average over avg_subfields
-    records = records.drop(avg_subfields, axis=1)
-    # group over averaging field
-    gb = list(set(list(max_subfields+list(id_subfields.keys())+[x_col, base_stepper])))
-    # only look at final optim steps
-    last_mean_records = records.loc[records[base_stepper] == records[base_stepper].max()]
-    # get the best record
-    best_record = last_mean_records[last_mean_records[y_col] == last_mean_records[y_col].min()]
-    # find parameters of the best record
-    merge_on = list(set(gb)-set([base_stepper, x_col, y_col]))
-    merge_on = [ x for x in merge_on if x in best_record.columns.values]
-    best_records = pd.merge(best_record[merge_on], records, on=merge_on,how='left')
-    final_records = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].mean()
-    final_records[y_col+'25'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.25)[y_col]
-    final_records[y_col+'75'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.75)[y_col]
-    final_records = final_records.sort_values(x_col, axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last')
-    # smooth outputs
-    final_records[y_col+'75'] = smooth(final_records[y_col+'75'],k)
-    final_records[y_col+'25'] = smooth(final_records[y_col+'25'],k)
-    final_records[y_col] = smooth(final_records[y_col],k)
-    # return
-    return final_records

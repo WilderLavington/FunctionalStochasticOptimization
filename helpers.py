@@ -23,7 +23,7 @@ def update_exp_lr(optimizer, steps, total_steps, initial_lr):
         # print('update_exp_lr', param_group['lr'])
     return optimizer
 
-# helpers 
+# helpers
 def compute_grad_norm(grad_list):
     grad_norm = 0.
     grad_list = [g.reshape(-1) for g in grad_list]

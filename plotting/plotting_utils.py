@@ -38,9 +38,19 @@ def download_wandb_summary(user, project, summary_file, key_focus=[],
         # check if we have key-value requirements
         for key in keyval_focus.keys():
             if key not in list(conf.keys()):
+                if conf['dataset_name'] == 'mfac':
+                    print(key, 'it was this one.')
                 include = False
             else:
                 include *= bool(np.sum([conf[key] == d for d in keyval_focus[key]]))
+
+        if (conf['dataset_name'] == 'mfac') and (not include):
+            print(include)
+            print(conf, len(summary_list), run)
+            for key in keyval_focus.keys():
+                print('or', [(conf[key] == d, key, conf[key], d) for d in keyval_focus[key]])
+                print(np.sum([conf[key] == d for d in keyval_focus[key]]))
+
         # if this data-point is to be included then append it to summary file.
         if include:
             summary_list.append(run.summary._json_dict)

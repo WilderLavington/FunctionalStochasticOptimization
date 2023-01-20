@@ -53,7 +53,7 @@ name_mask = {'LSOpt':'SLS', 'SGD': 'SGD', 'Adam': 'Adam', 'Adagrad':'Adagrad',
 
 # mask baselines which do not have decay - schedules
 def schedule_mask(sched, algo):
-    if algo in ['Adam', 'Adagrad', 'Ada_FMDOpt', 'Diag_Ada_FMDOpt']:
+    if algo in ['Adam', 'Adagrad', 'Ada_FMDOpt', 'Diag_Ada_FMDOpt', ]:
         return 'constant'
     else:
         return sched
@@ -62,17 +62,21 @@ def schedule_mask(sched, algo):
 redownload = True
 if redownload:
     download_wandb_summary(user=USER, project=PROJECT, summary_file=SUMMARY_FILE,
-                    keyval_focus={'dataset_name': ['mfac'],
-                                  'algo': ['SGD', 'Adam', 'LSOpt', 'Adagrad', 'Adam', 'SGD_FMDOpt'],
+                    keyval_focus={'dataset_name': ['mfac', 'mfac1', 'mfac4', 'mfac0'],
+                                  'algo': ['SGD', 'Adam', 'LSOpt', 'Adagrad', 'Sadagrad',
+                                           'Adam', 'SGD_FMDOpt', 'Ada_FMDOpt', 'SLS_FMDOpt' ,
+                                           'Diag_Ada_FMDOpt'],
                                   'fullbatch': [1, 0],
-                                  'm': [1,5,10,100,1000],
-                                  'batch_size': [5, 25, 125, 625]})
+                                  'loss': ['MSELoss'],
+                                  'm': [1,2,5,10,100,1000],
+                                  # 'batch_size': [5, 25, 125, 625],
+                                  })
     wandb_records = download_wandb_records(user=USER, project=PROJECT, summary_file=SUMMARY_FILE)
 else:
     wandb_records = pd.read_csv('./logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
 
 #
-def generate_sgd_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_FMDOpt',
+def generate_mfac_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_FMDOpt',
                         x ='optim_steps', y='avg_loss', include_leg=True):
 
     # init plots
@@ -223,7 +227,7 @@ def generate_sgd_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_F
 
 # iterate over SSO-variants
 for sso_algo in sso_algos:
-    generate_sgd_figure('MSELoss', 'constant',
+    generate_mfac_figure('MSELoss', 'constant',
                         wandb_records, fig_name=sso_algo,
                         x ='optim_steps', y='avg_loss', include_leg=False,
                         sso_algo = 'SGD_FMDOpt')

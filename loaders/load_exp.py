@@ -101,7 +101,19 @@ def load_model(data_set_id, loss, X, y, use_dense=False):
     if data_set_id == 'mfac':
         model = LinearNueralNetworkModel(X.shape[1], [10], 10, bias=False)
         model.to('cuda')
-        L = L_MAP[data_set_id]
+        L = L_MAP['mfac']
+    elif data_set_id == 'mfac1':
+        model = LinearNueralNetworkModel(X.shape[1], [1], 10, bias=False)
+        model.to('cuda')
+        L = L_MAP['mfac']
+    elif data_set_id == 'mfac4':
+        model = LinearNueralNetworkModel(X.shape[1], [4], 10, bias=False)
+        model.to('cuda')
+        L = L_MAP['mfac']
+    elif data_set_id == 'mfac0':
+        model = LinearNueralNetworkModel(X.shape[1], [], 10, bias=False)
+        model.to('cuda')
+        L = L_MAP['mfac']
     elif data_set_id == 'mnist':
         model = Mlp(n_classes=10, dropout=False)
         model.to('cuda')

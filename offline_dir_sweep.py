@@ -80,7 +80,8 @@ def get_incomplete_configs(full_config, project, user='wilderlavington'):
     print('this job is {}% complete'.format(round(len(remaining_config)/len(full_config),2)))
     return remaining_config
 
-def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', commands=[], time='00-05:59', log_dir='./wandb'):
+def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm',
+        commands=[], time='00-05:59', log_dir='./wandb', max_per='4'):
     # make thhe directory if it does not exist
     Path('sbatch_scripts').mkdir(parents=True, exist_ok=True)
     # set the base runner
@@ -95,7 +96,7 @@ def eval_generation(job_name='1', machine='cedar', account='rrg-schmidtm', comma
         file.write('#SBATCH --mem-per-cpu=4G \n')
         file.write('#SBATCH --cpus-per-gpu=5 \n')
         file.write('#SBATCH --time='+time+'     # time (DD-HH:MM) \n')
-        file.write('#SBATCH --array=0-'+str(len(commands))+'%16 \n')
+        file.write('#SBATCH --array=0-'+str(len(commands))+'%'+str(max_per)+' \n')
         file.write('cd ' + directory + ' \n')
         file.write('conda activate funcopt_env \n')
         ##
@@ -192,7 +193,7 @@ def divide_chunks(l, n):
 
 def generate_experiments(yaml_file, job_name='job-ex', machine='cedar',
             account='rrg-schmidtm', directory='.', time='00-05:59', \
-            project='TargetBasedSurrogateOptimization'):
+            project='TargetBasedSurrogateOptimization', max_per=4):
     # create list of configs from yaml
     configs = create_config_list(yaml_file)
     configs = get_incomplete_configs(configs, project=project)
@@ -206,12 +207,14 @@ def generate_experiments(yaml_file, job_name='job-ex', machine='cedar',
     for idx, sep_conf in enumerate(seperated_configs):
         if len(sep_conf):
             eval_generation(job_name=job_name+'-'+str(len(commands))+'-'+str(idx), machine=machine,
-                account=account, commands=sep_conf, time=time, log_dir='./wandb'+yaml_file)
+                account=account, commands=sep_conf, time=time, log_dir='./wandb'+yaml_file,
+                max_per=max_per)
 
 def main():
     parser = argparse.ArgumentParser(description='job runner')
     parser.add_argument('--machine', default='narval')
     parser.add_argument('--time', default='00-08:00')
+    parser.add_argument('--max_per', default='4')
     parser.add_argument('--account', default='rrg-kevinlb')
     parser.add_argument('--job_name', default='func-opt-jobs')
     parser.add_argument('--yaml_file',default='configs/reality_check/funcopt.yaml')
@@ -219,7 +222,7 @@ def main():
     args = parser.parse_args()
     generate_experiments(args.yaml_file, job_name=args.job_name,
         machine=args.machine, account=args.account,
-        time=args.time, project=args.wandb_proj)
+        time=args.time, project=args.wandb_proj, max_per=args.max_per)
 
 
 if __name__ == "__main__":

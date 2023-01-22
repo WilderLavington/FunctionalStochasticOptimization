@@ -23,24 +23,24 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SGD_FMDOpt/grid
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SGD_FMDOpt/gridsearch/stochastic/minibatch/funcopt.yaml --job_name=fig_2f --machine=cedar --account=def-schmidtm
 
 # SLS - constant
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/constant/fullbatch/baselines.yaml --job_name=fig_3a
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/constant/minibatch/baselines.yaml --job_name=fig_3b
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/constant/fullbatch/baselines.yaml --job_name=fig_3a --machine=narval --account=rrg-kevinlb
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/constant/minibatch/baselines.yaml --job_name=fig_3b --machine=narval --account=rrg-kevinlb
 # SLS - exponential
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/exponential/fullbatch/baselines.yaml --job_name=fig_3c
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/exponential/minibatch/baselines.yaml --job_name=fig_3d
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/exponential/fullbatch/baselines.yaml --job_name=fig_3c --machine=narval --account=rrg-fwood
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/exponential/minibatch/baselines.yaml --job_name=fig_3d --machine=narval --account=rrg-fwood
 # SLS - stochastic
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/stochastic/fullbatch/baselines.yaml --job_name=fig_3e
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/stochastic/minibatch/baselines.yaml --job_name=fig_3f
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/stochastic/fullbatch/baselines.yaml --job_name=fig_3e --machine=narval --account=rrg-fwood
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS/gridsearch/stochastic/minibatch/baselines.yaml --job_name=fig_3f --machine=narval --account=rrg-kevinlb
 
 # SLS-SSO - constant
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/constant/fullbatch/funcopt.yaml --job_name=fig_4a
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/constant/minibatch/funcopt.yaml --job_name=fig_4b
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/constant/fullbatch/funcopt.yaml --job_name=fig_4a --machine=narval --account=rrg-kevinlb
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/constant/minibatch/funcopt.yaml --job_name=fig_4b --machine=narval --account=rrg-fwood
 # SLS-SSO - exponential
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/exponential/fullbatch/funcopt.yaml --job_name=fig_4c
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/exponential/minibatch/funcopt.yaml --job_name=fig_4d
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/exponential/fullbatch/funcopt.yaml --job_name=fig_4c --machine=narval --account=rrg-fwood
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/exponential/minibatch/funcopt.yaml --job_name=fig_4d --machine=narval --account=rrg-fwood
 # SLS-SSO - stochastic
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/stochastic/fullbatch/funcopt.yaml --job_name=fig_4e
-python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/stochastic/minibatch/funcopt.yaml --job_name=fig_4f
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/stochastic/fullbatch/funcopt.yaml --job_name=fig_4e --machine=narval --account=rrg-kevinlb
+python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/SLS_FMDOpt/gridsearch/stochastic/minibatch/funcopt.yaml --job_name=fig_4f --machine=narval --account=rrg-kevinlb
 
 # Sadagrad - constant
 python offline_dir_sweep.py --yaml_file=./configs/aistats/svmlib/Sadagrad/gridsearch/constant/fullbatch/baselines.yaml --job_name=fig_5a
@@ -110,7 +110,7 @@ python offline_dir_sweep.py --yaml_file=./configs/aistats/mujoco/baselines.yaml 
 #===================================================================================
 
 # mnist-gridsearch
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/minibatch/funcopt.yaml --job_name=fig_14a
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/minibatch/baselines.yaml --job_name=fig_14b
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/fullbatch/funcopt.yaml --job_name=fig_14c
-python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/fullbatch/baselines.yaml --job_name=fig_14d
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/minibatch/funcopt.yaml --job_name=fig_14a --machine=ubcml --account=ubcml
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/minibatch/baselines.yaml --job_name=fig_14b --machine=ubcml --account=ubcml
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/fullbatch/funcopt.yaml --job_name=fig_14c --machine=ubcml --account=ubcml
+python offline_dir_sweep.py --yaml_file=./configs/aistats/mnist/gridsearch/fullbatch/baselines.yaml --job_name=fig_14d --machine=ubcml --account=ubcml

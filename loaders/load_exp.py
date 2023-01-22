@@ -21,6 +21,9 @@ from models import *
 L_MAP = {'mushrooms': torch.tensor(87057.2422, device='cuda'),
          'ijcnn': torch.tensor(3476.3210, device='cuda'),
          'rcv1': torch.tensor(166.4695, device='cuda'),
+         'mfac0': torch.tensor(1000, device='cuda'),
+         'mfac1': torch.tensor(1000, device='cuda'),
+         'mfac4': torch.tensor(1000, device='cuda'),
          'mfac': torch.tensor(1000, device='cuda'),
          'mnist': torch.tensor(1000, device='cuda'),
          'cifar10': torch.tensor(1000, device='cuda'),
@@ -30,22 +33,22 @@ L_MAP = {'mushrooms': torch.tensor(87057.2422, device='cuda'),
 # general data-loader
 def load_dataset(data_set_id, data_dir, loss):
     if data_set_id in LIBSVM_DOWNLOAD_FN.keys():
-        return procces_data(*load_libsvm(data_set_id, datadir=data_dir), loss)
+        return procces_data(*load_libsvm(data_set_id, datadir=data_dir), loss, data_set_id)
     elif data_set_id == "cifar100":
-        return procces_data(*load_cifar100(data_dir), loss)
+        return procces_data(*load_cifar100(data_dir), loss, data_set_id)
     elif data_set_id == "cifar10":
-        return procces_data(*load_cifar10(data_dir), loss)
+        return procces_data(*load_cifar10(data_dir), loss, data_set_id)
     elif data_set_id == "mnist":
-        return procces_data(*load_mnist(data_dir), loss)
-    elif data_set_id == "mfac":
+        return procces_data(*load_mnist(data_dir), loss, data_set_id)
+    elif data_set_id in ["mfac", "mfac1", "mfac4", "mfac0"]:
         assert loss == 'MSELoss'
-        return procces_data(*generate_synthetic_mfac(), loss)
+        return procces_data(*generate_synthetic_mfac(), loss, data_set_id)
     else:
         raise Exception('provide correct dataset id')
 
 # ======================
 # format datasets
-def procces_data(X, y, loss):
+def procces_data(X, y, loss, data_set_id):
     if loss == 'CrossEntropyLoss':
         X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.long)
     elif loss == 'NLLLoss':
@@ -55,7 +58,10 @@ def procces_data(X, y, loss):
     elif loss == 'BCELoss':
         X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
     elif loss == 'MSELoss':
-        X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float).unsqueeze(1)
+        if data_set_id in ["mfac", "mfac1", "mfac4", "mfac0"]:
+            X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float)
+        else:
+            X, y = torch.tensor(X,device='cpu',dtype=torch.float), torch.tensor(y,device='cpu',dtype=torch.float).unsqueeze(1)
     else:
         raise Exception('')
     return X, y

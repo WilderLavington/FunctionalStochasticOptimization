@@ -15,9 +15,9 @@ import gym
 import itertools
 
 # my imports
-from mujoco.online_learning.algorithms import OnlineLearningAlgo
-from mujoco.online_learning.utils import select_optimizer
-from mujoco.online_learning.parser import get_args
+from online_learning.algorithms import OnlineLearningAlgo
+from online_learning.utils import select_optimizer
+from online_learning.parser import get_args
 
 class BC(OnlineLearningAlgo):
 

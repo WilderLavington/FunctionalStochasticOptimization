@@ -4,9 +4,9 @@ import numpy as np
 from typing import Iterable, Optional
 # optimizers stuff
 from torch.optim import Adam, SGD, ASGD, RMSprop, LBFGS, Adagrad
-from mujoco.online_learning.policies import SACPolicy
-from mujoco.online_learning.policies import SACPolicy
-from mujoco.online_learning.lsopt import LSOpt
+from online_learning.policies import SACPolicy
+from online_learning.policies import SACPolicy
+from online_learning.lsopt import LSOpt
 
 def load_expert(num_inputs, action_space, args, device):
     if args.expert_type == 'sac':

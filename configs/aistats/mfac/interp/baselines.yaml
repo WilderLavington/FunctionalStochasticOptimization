@@ -30,24 +30,24 @@ parameters:
   use_optimal_stepsize:
     values:
     - 0
-  label:
-    values:
-    - 'mnist'
   log_lr:
     values:
     - -3.
     - -2.
     - -1.
-    # - 0.0
-    # - 1.
-    # - 2.
-    # - 3.
+    - 0.0
+    - 1.
+    - 2.
+    - 3.
   loss:
     values:
-    - CrossEntropyLoss
+    - MSELoss
   dataset_name:
     values:
-    - mnist
+    - mfac
+    - mfac0
+    - mfac1
+    - mfac4
   c:
     values:
     - 0.5

@@ -13,10 +13,10 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 from torch.distributions import Normal
 
 # oil imports
-from mujoco.online_learning.utils import timer, load_expert, select_optimizer
-from mujoco.online_learning.utils import parameters_to_vector, avg_dicts#, secant_algorithm, steffensen_algorithm
-from mujoco.online_learning.policies import select_policy
-from mujoco.online_learning.replay_memory import ReplayMemory
+from online_learning.utils import timer, load_expert, select_optimizer
+from online_learning.utils import parameters_to_vector, avg_dicts#, secant_algorithm, steffensen_algorithm
+from online_learning.policies import select_policy
+from online_learning.replay_memory import ReplayMemory
 
 class AlgoEvaluator():
 

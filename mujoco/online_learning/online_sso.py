@@ -14,14 +14,8 @@ from torch.distributions import Normal
 import gym
 
 # local imports
-from mujoco.online_learning.algorithms import OGD
-from optimizers.sgd_fmdopt import SGD_FMDOpt
-from optimizers.ada_fmdopt import Ada_FMDOpt
-from mujoco.online_learning.lsopt import LSOpt
-from optimizers.sadagrad import Sadagrad
-from optimizers.sls_fmdopt import SLS_FMDOpt
-from optimizers.gulf2 import GULF2
-from helpers import get_grad_norm
+from online_learning.algorithms import OGD
+from online_learning.lsopt import LSOpt 
 
 class SSO_OGD(OGD):
 
@@ -293,7 +287,7 @@ class SSO_AdaOGD(OGD):
         self.beta_update = args.outer_beta_update
         self.expand_coeff = args.expand_coeff
         assert args.eta_schedule == 'constant'
-        
+
     def update_parameters(self, new_examples):
 
         # grab examples

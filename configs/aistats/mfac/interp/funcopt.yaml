@@ -11,11 +11,10 @@ parameters:
     - 500
   algo:
     values:
-    - LSOpt
-    - SGD
-    - Sadagrad
-    - Adam
-    - Adagrad
+    - SGD_FMDOpt
+    - SLS_FMDOpt
+    - Ada_FMDOpt
+    - Diag_Ada_FMDOpt
   normalize_epochs_lengths:
     values:
     - 1
@@ -27,30 +26,37 @@ parameters:
   fullbatch:
     values:
     - 1
+
+  outer_c:
+    values:
+    - 0.5
+  m:
+    values:
+    - 1
+    - 10
+    - 100
+    - 1000
   use_optimal_stepsize:
     values:
     - 0
-  label:
-    values:
-    - 'mnist'
   log_lr:
     values:
     - -3.
     - -2.
     - -1.
-    # - 0.0
-    # - 1.
-    # - 2.
-    # - 3.
+    - 0.0
+    - 1.
+    - 2.
+    - 3.
   loss:
     values:
-    - CrossEntropyLoss
+    - MSELoss
   dataset_name:
     values:
-    - mnist
-  c:
-    values:
-    - 0.5
+    - mfac
+    - mfac0
+    - mfac1
+    - mfac4
   eta_schedule:
     values:
     - constant

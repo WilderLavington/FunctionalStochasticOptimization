@@ -13,11 +13,11 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 from torch.distributions import Normal
 
 #
-from mujoco.online_learning.utils import timer, load_expert, select_optimizer
-from mujoco.online_learning.utils import parameters_to_vector, avg_dicts
-from mujoco.online_learning.policies import select_policy
-from mujoco.online_learning.replay_memory import ReplayMemory
-from mujoco.online_learning.evaluation import AlgoEvaluator
+from online_learning.utils import timer, load_expert, select_optimizer
+from online_learning.utils import parameters_to_vector, avg_dicts
+from online_learning.policies import select_policy
+from online_learning.replay_memory import ReplayMemory
+from online_learning.evaluation import AlgoEvaluator
 
 #
 EXPERT_RETURN = { 'Walker2d-v2': 4531.45, 'Hopper-v2':  3454.9044 }

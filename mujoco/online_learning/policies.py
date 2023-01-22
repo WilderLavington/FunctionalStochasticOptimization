@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.distributions import Normal, Categorical, Bernoulli
 import numpy as np
 from copy import deepcopy
-import  pyrfm
+
 
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -16
@@ -23,6 +23,7 @@ def select_policy(num_inputs, num_actions, hidden_dim, action_space=None,
     if model_type=='nn':
         return NNPolicy(num_inputs, num_actions, transform_rv, clamp, static_cov, hidden_dim, nonlin)
     elif model_type=='rff':
+        import  pyrfm
         return RFFPolicy(num_inputs, num_actions, transform_rv, clamp, static_cov, hidden_dim, bandwidth)
     elif model_type=='linear':
         return LinearPolicy(num_inputs, num_actions, transform_rv, clamp, static_cov)

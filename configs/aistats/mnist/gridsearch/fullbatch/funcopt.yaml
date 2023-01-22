@@ -11,9 +11,9 @@ parameters:
     - 500
   algo:
     values:
-    - Ada_FMDOpt
+    # - Ada_FMDOpt
     - SGD_FMDOpt
-    - Diag_Ada_FMDOpt
+    # - Diag_Ada_FMDOpt
     - SLS_FMDOpt
   normalize_epochs_lengths:
     values:
@@ -39,14 +39,14 @@ parameters:
     - 'mnist'
   log_lr:
     values:
-    - -3.
+    # - -3.
     - -2.
     - -1.
     - 0.0
     - 1.
-    - 2.
-    - 3.
-    - 4.
+    # - 2.
+    # - 3.
+    # - 4.
   outer_c:
     values:
     - 0.5

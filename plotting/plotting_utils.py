@@ -43,14 +43,6 @@ def download_wandb_summary(user, project, summary_file, key_focus=[],
                 include = False
             else:
                 include *= bool(np.sum([conf[key] == d for d in keyval_focus[key]]))
-
-        if (conf['dataset_name'] == 'mfac') and (not include):
-            print(include)
-            print(conf, len(summary_list), run)
-            for key in keyval_focus.keys():
-                print('or', [(conf[key] == d, key, conf[key], d) for d in keyval_focus[key]])
-                print(np.sum([conf[key] == d for d in keyval_focus[key]]))
-
         # if this data-point is to be included then append it to summary file.
         if include:
             summary_list.append(run.summary._json_dict)
@@ -134,15 +126,15 @@ def smooth(array, k):
             new_array[i] = sum(avg_list) / len(avg_list)
     return new_array
 
-
-def format_dataframe(records, id_subfields={}, base_stepper='optim_steps',
+def format_dataframe(records, id_subfields={}, base_stepper='optim_steps', take_max=False,
         avg_subfields=['seed'], max_subfields=[], x_col='total_examples', y_col='policy_return', k=1):
     #
     pd.set_option('display.max_columns', None)
     max_subfields = [m for m in max_subfields if m not in id_subfields.keys()]
+    print('ok fucj')
     for key in id_subfields:
         records = records.loc[records[key] == id_subfields[key]]
-    records['function_evals+grad_evals'] = records['function_evals']+records['grad_evals']
+        print(key, len(records))
     if not len(records):
         return None
     # remove nans
@@ -151,19 +143,31 @@ def format_dataframe(records, id_subfields={}, base_stepper='optim_steps',
         list(id_subfields.keys())+[x_col, y_col, base_stepper]))
     # remove redundant information
     records = records[important_cols]
-    # average over avg_subfields
-    records = records.drop(avg_subfields, axis=1)
     # group over averaging field
     gb = list(set(list(max_subfields+list(id_subfields.keys())+[x_col, base_stepper])))
+    # average over avg_subfields (so we can determine best record)
+    mean_records = records.groupby(gb).mean().drop(columns=avg_subfields)
     # only look at final optim steps
-    last_mean_records = records.loc[records[base_stepper] == records[base_stepper].max()]
+    print('really?')
+    print(mean_records.columns)
+    print(base_stepper)
+    print(mean_records[base_stepper])
+    last_mean_records = mean_records.loc[mean_records[base_stepper] == mean_records[base_stepper].max()]
     # get the best record
-    best_record = last_mean_records[last_mean_records[y_col] == last_mean_records[y_col].min()]
+    if not take_max:
+        best_record = last_mean_records[last_mean_records[y_col] == last_mean_records[y_col].min()]
+    else:
+        best_record = last_mean_records[last_mean_records[y_col] == last_mean_records[y_col].max()]
+    print('best', best_record)
     # find parameters of the best record
     merge_on = list(set(gb)-set([base_stepper, x_col, y_col]))
     merge_on = [ x for x in merge_on if x in best_record.columns.values]
+    # find examples of best record in original reccord
     best_records = pd.merge(best_record[merge_on], records, on=merge_on,how='left')
+
+    #
     final_records = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].mean()
+
     final_records[y_col+'25'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.25)[y_col]
     final_records[y_col+'75'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.75)[y_col]
     final_records = final_records.sort_values(x_col, axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last')

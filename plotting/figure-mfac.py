@@ -30,26 +30,28 @@ from plotting_utils import *
 
 #
 USER='wilderlavington'
-PROJECT='TargetBasedSurrogateOptimization'
+PROJECT='TargetBasedSurrogateOptimization-mfac'
 SUMMARY_FILE='icml_mfac.csv'
 
 # base info
-batch_sizes = [5, 25, 125, 625]
-m = [1, 10, 100, 1000]
+m = [1, 10, 100]
+dataset_names= ['mfac0', 'mfac1', 'mfac4', 'mfac']
+sso_algos = ['SGD_FMDOpt', 'SLS_FMDOpt', 'Ada_FMDOpt']
 
 # general settings
 colors = mpl.cm.Set1.colors   # Qualitative colormap
-colormap = {'SGD': '#44AA99' , 'SLS': '#DDCC77', 'Adam': '#88CCEE' }
-colormap.update({'SSO-1':  '#CC6677' ,  'SSO-10': '#AA4499', 'SSO-20': '#882255' , 'SSO-SLS': '#332288'})
-baselines = ['SGD', 'Adam', 'LSOpt']
-algorithms = baselines + ['SSO-'+str(m_) for m_ in m] +['SSO-SLS']
-dataset_names= ['mfac']
-sso_algos = ['SGD_FMDOpt', 'SLS_FMDOpt', 'Ada_FMDOpt']
+colormap = {'SGD': '#44AA99' , 'SLS': '#DDCC77', 'Adam': '#88CCEE', 'Adagrad': '#332288'}
+colormap.update({'SSO-1':  '#CC6677' , 'SSO-10': '#AA4499', 'SSO-100': '#882255', })
+baselines = ['SGD', 'Adam', 'LSOpt', 'Adagrad']
+algorithms = baselines + ['SSO-'+str(m_) for m_ in m]
+
+
 label_map = {'optim_steps':'Optimization-Steps',
              'grad_norm':'Gradient-Norm',
              'avg_loss': 'Average-Loss'}
 name_mask = {'LSOpt':'SLS', 'SGD': 'SGD', 'Adam': 'Adam', 'Adagrad':'Adagrad',
-             'SLS_FMDOpt': 'SSO-SLS'}
+             'SLS_FMDOpt': 'SSO-SLS', 'SSO-1': 'SSO-1', 'SSO-100': 'SSO-100',
+             'SSO-10': 'SSO-10'}
 
 # mask baselines which do not have decay - schedules
 def schedule_mask(sched, algo):
@@ -59,95 +61,44 @@ def schedule_mask(sched, algo):
         return sched
 
 # create summary file
-redownload = True
+redownload = False
 if redownload:
     download_wandb_summary(user=USER, project=PROJECT, summary_file=SUMMARY_FILE,
                     keyval_focus={'dataset_name': ['mfac', 'mfac1', 'mfac4', 'mfac0'],
                                   'algo': ['SGD', 'Adam', 'LSOpt', 'Adagrad', 'Sadagrad',
-                                           'Adam', 'SGD_FMDOpt', 'Ada_FMDOpt', 'SLS_FMDOpt' ,
-                                           'Diag_Ada_FMDOpt'],
-                                  'fullbatch': [1, 0],
+                                           'Adam', 'SGD_FMDOpt', 'SLS_FMDOpt'],
+                                  'fullbatch': [1],
                                   'loss': ['MSELoss'],
-                                  'm': [1,2,5,10,100,1000],
+                                  'm': [1,2,5,10,100,1000,10000],
                                   # 'batch_size': [5, 25, 125, 625],
                                   })
     wandb_records = download_wandb_records(user=USER, project=PROJECT, summary_file=SUMMARY_FILE)
 else:
-    wandb_records = pd.read_csv('./logs/wandb_data/__full__'+SUMMARY_FILE, header=0, squeeze=True)
+    wandb_records = pd.read_csv('./logs/wandb_data/__full__'+SUMMARY_FILE, header=0, low_memory=False).squeeze("columns")
 
 #
 def generate_mfac_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_FMDOpt',
                         x ='optim_steps', y='avg_loss', include_leg=True):
 
     # init plots
-    fig, axs = plt.subplots(1, len(batch_sizes)+1, figsize=(16, 3))
+    fig, axs = plt.subplots(1, len(dataset_names), figsize=(16, 3))
     dataset_name = dataset_names[0]
 
     # figure out axis automatically
     x_max = 0
 
-    # baselines
-    for algo in ['LSOpt', 'SGD', 'Adam']:
-        sched_ = schedule_mask(schedule, algo)
-        proc_df = format_dataframe(wandb_records,
-            id_subfields={'fullbatch': 1,
-            'use_optimal_stepsize': 1, 'loss': loss, 'algo': algo,
-            'eta_schedule': schedule, 'dataset_name': dataset_name},
-            x_col=x , y_col=y)
-        if proc_df is not None:
-            x_max = max(proc_df[x].values.max(), x_max)
-            axs[-1] = generate_plot(proc_df, x, y, axs[-1], label=name_mask[algo],
-                                         linestyle='dashed', color=colormap[name_mask[algo]])
-        else:
-            print('missing ', name_mask[algo], ' ',  dataset_name, 'full-batch')
-
-    # FMDopt theoretical
-    for m_ in m:
-        # create parsed info
-        proc_df = format_dataframe(wandb_records,
-            id_subfields={'fullbatch': 1,
-                'use_optimal_stepsize': 1,
-                'loss': loss, 'algo': sso_algo, 'm': m_,
-                'eta_schedule': schedule, 'dataset_name': dataset_name},
-                 avg_subfields=['seed'], max_subfields=['c'],
-            x_col=x, y_col=y)
-        if proc_df is not None:
-            x_max = max(proc_df[x].values.max(), x_max)
-            axs[-1] = generate_plot(proc_df, x, y, axs[-1],
-                label='SSO-'+str(m_), linestyle='solid', color=colormap['SSO-'+str(m_)])
-        else:
-            print('missing FMDopt  ', m_, dataset_name, 'full-batch')
-    axs[-1].grid()
-    axs[-1].set_yscale("log")
-    axs[-1].set_xscale("log")
-
-    # SLS-FMDOpt
-    proc_df = format_dataframe(wandb_records,
-        id_subfields={'fullbatch': 1,
-            'use_optimal_stepsize': 1, #'_step': 499.0,
-            'loss': loss, 'algo': 'SLS_FMDOpt', 'm': 20,
-            'eta_schedule': schedule, 'dataset_name': dataset_name},
-             avg_subfields=['seed'], max_subfields=['c'],
-        x_col=x, y_col=y)
-    if proc_df is not None:
-        x_max = max(proc_df[x].values.max(), x_max)
-        axs[-1] = generate_plot(proc_df, x, y, axs[-1],
-            label='SSO-'+str(m_), linestyle='solid', color=colormap['SSO-SLS'])
-    else:
-        print('missing SLS-FMDopt  ', m_, dataset_name, 'full-batch')
-
     # mini-batch plots
-    for col, batch_size in enumerate(batch_sizes):
+    for col, dataset_name in enumerate(dataset_names):
 
         # figure out axis automatically
         x_max = 0
 
         # baselines
-        for algo in ['LSOpt', 'SGD', 'Adam']:
+        for algo in ['SGD', 'Adam', 'Adagrad']: # 'Adagrad',
             sched_ = schedule_mask(schedule, algo)
             proc_df = format_dataframe(wandb_records,
-                id_subfields={'batch_size': batch_size,
-                'use_optimal_stepsize': 1, 'loss': loss, 'algo': algo,
+                id_subfields={'fullbatch': 1, 'dataset_name': dataset_name,
+                'use_optimal_stepsize': 0, 'loss': loss, 'algo': algo, 'log_lr': -3,
                 'eta_schedule': schedule, 'dataset_name': dataset_name},
                 x_col=x , y_col=y)
             if proc_df is not None:
@@ -155,14 +106,30 @@ def generate_mfac_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_
                 axs[col] = generate_plot(proc_df, x, y, axs[col], label=name_mask[algo],
                                              linestyle='dashed', color=colormap[name_mask[algo]])
             else:
-                print('missing ', name_mask[algo], ' ',  dataset_name, batch_size)
+                print('missing ', name_mask[algo], ' ',  dataset_name, 'full-batch')
+
+        # baselines
+        for algo in ['LSOpt']: # 'Adagrad',
+            sched_ = schedule_mask(schedule, algo)
+            proc_df = format_dataframe(wandb_records,
+                id_subfields={'fullbatch': 1, 'dataset_name': dataset_name,
+                'use_optimal_stepsize': 0, 'loss': loss, 'algo': algo, 'log_lr': 0,
+                'eta_schedule': schedule, 'dataset_name': dataset_name},
+                x_col=x , y_col=y)
+            if proc_df is not None:
+                x_max = max(proc_df[x].values.max(), x_max)
+                axs[col] = generate_plot(proc_df, x, y, axs[col], label=name_mask[algo],
+                                             linestyle='dashed', color=colormap[name_mask[algo]])
+            else:
+                print('missing ', name_mask[algo], ' ',  dataset_name, 'full-batch')
+
 
         # FMDopt theoretical
         for m_ in m:
             # create parsed info
             proc_df = format_dataframe(wandb_records,
-                id_subfields={'batch_size': batch_size,
-                    'use_optimal_stepsize': 1, #'_step': 499.0,
+                id_subfields={'fullbatch': 1, 'log_lr': 0,
+                    'use_optimal_stepsize': 0, 'dataset_name': dataset_name,
                     'loss': loss, 'algo': sso_algo, 'm': m_,
                     'eta_schedule': schedule, 'dataset_name': dataset_name},
                      avg_subfields=['seed'], max_subfields=['c'],
@@ -172,33 +139,23 @@ def generate_mfac_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_
                 axs[col] = generate_plot(proc_df, x, y, axs[col],
                     label='SSO-'+str(m_), linestyle='solid', color=colormap['SSO-'+str(m_)])
             else:
-                print('missing FMDopt  ', m_, dataset_name, batch_size)
+                print('missing FMDopt  ', m_, dataset_name, 'full-batch')
 
-        # SLS-FMDOpt
-        proc_df = format_dataframe(wandb_records,
-            id_subfields={'batch_size': batch_size,
-                'use_optimal_stepsize': 1, #'_step': 499.0,
-                'loss': loss, 'algo': 'SLS_FMDOpt', 'm': 20,
-                'eta_schedule': schedule, 'dataset_name': dataset_name},
-                 avg_subfields=['seed'], max_subfields=['c'],
-            x_col=x, y_col=y)
-        if proc_df is not None:
-            x_max = max(proc_df[x].values.max(), x_max)
-            axs[col] = generate_plot(proc_df, x, y, axs[col],
-                label='SSO-'+str(m_), linestyle='solid', color=colormap['SSO-SLS'])
-        else:
-            print('missing SLS-FMDopt  ', m_, dataset_name, batch_size)
-
+        #
         axs[col].grid()
-        axs[col].ticklabel_format(axis='x', style='sci', scilimits=(0,0))
+        # axs[col].set_yscale("log")
+        # axs[col].set_xscale("log")
+        axs[col].grid()
+
+        # axs[col].ticklabel_format(axis='x', style='sci', scilimits=(0,0))
         axs[col].yaxis.set_major_locator(plt.MaxNLocator(4))
         axs[col].set_yscale("log")
         axs[col].set_xscale("log")
         if not include_leg:
-            axs[col].set_title('batch-size: '+str(batch_size), fontsize=16)
-            axs[-1].set_title('full-batch', fontsize=16)
-        axs[-1].set_ylabel(dataset_name, fontsize=16)
-        axs[-1].yaxis.set_label_position("right")
+            axs[col].set_title('model-type: '+str(dataset_name), fontsize=16)
+            # axs[col].set_title('full-batch', fontsize=16)
+        axs[col].set_ylabel(dataset_name, fontsize=16)
+        axs[col].yaxis.set_label_position("right")
 
         axs[col].xaxis.set_minor_locator(mpl.ticker.LogLocator(base=10,numticks=100))
         axs[col].xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
@@ -206,7 +163,7 @@ def generate_mfac_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_
 
     # remaining format stuff
     if include_leg:
-        handles = [mpatches.Patch(color=colormap[algo], label=algo) for algo in algorithms]
+        handles = [mpatches.Patch(color=colormap[name_mask[algo]], label=algo) for algo in algorithms]
         leg = fig.legend(handles=handles,
                loc="lower center",   # Position of legend
                borderaxespad=1.65,    # Small spacing around legend box
@@ -221,13 +178,13 @@ def generate_mfac_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_
     fig.tight_layout()
 
     # show / save
-    plt.savefig('./plotting/plots/'+fig_name+loss+dataset_name+'.pdf', bbox_inches='tight')
-    print('saved'+'./plotting/plots/'+fig_name+loss+dataset_name+'.pdf')
+    plt.savefig('./plotting/plots/mfac-'+fig_name+'.pdf', bbox_inches='tight')
+    print('saved'+'./plotting/plots/mfac-'+fig_name+'.pdf')
 
 
 # iterate over SSO-variants
 for sso_algo in sso_algos:
     generate_mfac_figure('MSELoss', 'constant',
                         wandb_records, fig_name=sso_algo,
-                        x ='optim_steps', y='avg_loss', include_leg=False,
+                        x ='optim_steps', y='avg_loss', include_leg=True,
                         sso_algo = 'SGD_FMDOpt')

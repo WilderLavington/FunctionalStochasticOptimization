@@ -11,10 +11,10 @@ import wandb
 import os
 
 # project imports
-from mujoco.online_learning.parser import get_args
-from mujoco.online_learning.utils import avg_dicts, stat_dicts, timer
-from mujoco.online_learning.algorithms import OGD, AdaOGD, AdamOGD, FTL, FTRL, AFTRL, RFTRL, DAFTRL
-from mujoco.online_learning.online_sso import SSO_OGD, OSLS, SSO_SLS, SSO_AdaOGD #OSLS, SSO_OGD, SSO_SLS, SSO_Sadagrad
+from online_learning.parser import get_args
+from online_learning.utils import avg_dicts, stat_dicts, timer
+from online_learning.algorithms import OGD, AdaOGD, AdamOGD, FTL, FTRL, AFTRL, RFTRL, DAFTRL
+from online_learning.online_sso import SSO_OGD, OSLS, SSO_SLS, SSO_AdaOGD #OSLS, SSO_OGD, SSO_SLS, SSO_Sadagrad
 import subprocess
 
 def generate_env(args):

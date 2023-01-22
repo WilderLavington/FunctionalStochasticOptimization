@@ -5,12 +5,12 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.dirname('../../')))
-sys.path.append(os.path.dirname(os.path.dirname('./')))
+# sys.path.append(os.path.dirname(os.path.dirname('../../')))
+# sys.path.append(os.path.dirname(os.path.dirname('./')))
 #### model imports
-from mujoco.online_learning.trainer import train_il_agent, evaluate_il_algorithm
-from mujoco.online_learning.expert_generation.pretrain_expert import pretrain_expert_policy
-from mujoco.online_learning.testing import train_bc_agent
+from online_learning.trainer import train_il_agent, evaluate_il_algorithm
+from online_learning.expert_generation.pretrain_expert import pretrain_expert_policy
+from online_learning.testing import train_bc_agent
 
 ###
 def main():

@@ -126,6 +126,7 @@ def train_model(args, model, optim, loss_func, X, y, update_lr_type='constant', 
 
             # check for nans
             assert step_loss == step_loss
+            assert step_loss < np.Inf
             assert grad_norm == grad_norm
 
         # early stopping conditions

@@ -36,7 +36,7 @@ columns_of_interest = ['policy_loss', 'log_policy_loss', 'policy_return', 'model
                        'total_examples', 'env_name', 'beta', 'log_lr', 'algo', 'seed', 'm',
                        'update', 'grad_norm', 'optimal_return']
 # create summary file
-redownload = True
+redownload = False
 if redownload:
     download_wandb_summary(user=USER, project=PROJECT, summary_file=SUMMARY_FILE,
                     keyval_focus={'dataset_name': dataset_names,
@@ -86,11 +86,11 @@ def generate_mujoco_figure(wandb_records, env_name='Walker2d-v2', fig_name='ex',
         proc_df_loss = format_dataframe(wandb_records,
             id_subfields={'beta': beta, 'env_name': env_name, 'algo': 'AdaOGD',
                 'model_type': model_type, 'log_lr': -3}, base_stepper='update',
-            x_col=x , y_col=y[0], k=2)
+            x_col=x , y_col=y[0], k=2, max_vals=50)
         proc_df_return = format_dataframe(wandb_records,
             id_subfields={'beta': beta, 'env_name': env_name, 'algo': 'AdaOGD',
                 'model_type': model_type, 'log_lr': -3}, base_stepper='update',
-            x_col=x , y_col=y[1], k=2)
+            x_col=x , y_col=y[1], k=2, max_vals=50)
 
         if proc_df_loss is not None:
             axs[0][adj_col] = generate_plot(proc_df_loss, x, y[0], axs[0][adj_col], label='Adagrad',
@@ -104,11 +104,11 @@ def generate_mujoco_figure(wandb_records, env_name='Walker2d-v2', fig_name='ex',
         proc_df_loss = format_dataframe(wandb_records,
             id_subfields={'beta': beta, 'env_name': env_name, 'algo': 'AdamOGD',
                     'model_type': model_type, 'log_lr': -3}, base_stepper='update',
-            x_col=x , y_col=y[0], k=2)
+            x_col=x , y_col=y[0], k=2, max_vals=50)
         proc_df_return = format_dataframe(wandb_records,
             id_subfields={'beta': beta, 'env_name': env_name, 'algo': 'AdamOGD',
                     'model_type': model_type, 'log_lr': -3}, base_stepper='update',
-            x_col=x , y_col=y[1], k=2)
+            x_col=x , y_col=y[1], k=2, max_vals=50)
         if proc_df_loss is not None:
             axs[0][adj_col] = generate_plot(proc_df_loss, x, y[0], axs[0][adj_col], label='Adam',
                                          linestyle='dashed', color=colormap['Adam'])
@@ -121,11 +121,11 @@ def generate_mujoco_figure(wandb_records, env_name='Walker2d-v2', fig_name='ex',
         proc_df_loss = format_dataframe(wandb_records,
             id_subfields={'beta': beta, 'env_name': env_name, 'algo': 'OSls',
                 'model_type': model_type, 'log_lr': 0}, base_stepper='update',
-            x_col=x , y_col=y[0], k=2)
+            x_col=x , y_col=y[0], k=2, max_vals=50)
         proc_df_return = format_dataframe(wandb_records,
             id_subfields={'beta': beta, 'env_name': env_name, 'algo': 'OSls',
                 'model_type': model_type, 'log_lr': 0}, base_stepper='update',
-            x_col=x , y_col=y[1], k=2)
+            x_col=x , y_col=y[1], k=2, max_vals=50)
         if proc_df_loss is not None:
             axs[0][adj_col] = generate_plot(proc_df_loss, x, y[0], axs[0][adj_col], label='SLS',
                                          linestyle='dashed', color=colormap['SLS'])
@@ -139,11 +139,11 @@ def generate_mujoco_figure(wandb_records, env_name='Walker2d-v2', fig_name='ex',
             proc_df_loss = format_dataframe(wandb_records,
                 id_subfields={'beta': beta, 'env_name': env_name, 'm': m,
                     'algo': 'SSO_OGD', 'model_type': model_type, 'log_lr': 0}, base_stepper='update',
-                x_col=x , y_col=y[0], k=2)
+                x_col=x , y_col=y[0], k=2, max_vals=50)
             proc_df_return = format_dataframe(wandb_records,
                 id_subfields={'beta': beta, 'env_name': env_name, 'm': m,
                     'algo': 'SSO_OGD', 'model_type': model_type, 'log_lr': 0}, base_stepper='update',
-                x_col=x , y_col=y[1], k=2)
+                x_col=x , y_col=y[1], k=2, max_vals=50)
             if proc_df_loss is not None:
                 axs[0][adj_col] = generate_plot(proc_df_loss, x, y[0], axs[0][adj_col], label='SSO-'+str(m),
                                              linestyle='solid', color=colormap['SSO-'+str(m)])
@@ -177,9 +177,9 @@ def generate_mujoco_figure(wandb_records, env_name='Walker2d-v2', fig_name='ex',
     fig.tight_layout()
 
     # show / save
-    plt.savefig('plotting/plots/aistats/oil-'+fig_name+'.pdf', bbox_inches='tight')
+    plt.savefig('plotting/plots/icml/oil-'+fig_name+'.pdf', bbox_inches='tight')
     # plt.show()
 
 
-generate_mujoco_figure(wandb_records, env_name='Walker2d-v2', include_leg=False)
-generate_mujoco_figure(wandb_records, env_name='Hopper-v2', fig_name='Legend_fig', include_leg=True)
+generate_mujoco_figure(wandb_records, env_name='Walker2d-v2', fig_name='top_fig', include_leg=False)
+generate_mujoco_figure(wandb_records, env_name='Hopper-v2', fig_name='bottom_fig', include_leg=True)

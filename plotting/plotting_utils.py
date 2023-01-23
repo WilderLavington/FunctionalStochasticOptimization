@@ -38,8 +38,6 @@ def download_wandb_summary(user, project, summary_file, key_focus=[],
         # check if we have key-value requirements
         for key in keyval_focus.keys():
             if key not in list(conf.keys()):
-                if conf['dataset_name'] == 'mfac':
-                    print(key, 'it was this one.')
                 include = False
             else:
                 include *= bool(np.sum([conf[key] == d for d in keyval_focus[key]]))
@@ -127,14 +125,13 @@ def smooth(array, k):
     return new_array
 
 def format_dataframe(records, id_subfields={}, base_stepper='optim_steps', take_max=False,
-        avg_subfields=['seed'], max_subfields=[], x_col='total_examples', y_col='policy_return', k=1):
+        avg_subfields=['seed'], max_subfields=[], x_col='total_examples', y_col='policy_return',
+        k=1, max_vals=500):
     #
     pd.set_option('display.max_columns', None)
     max_subfields = [m for m in max_subfields if m not in id_subfields.keys()]
-    print('ok fucj')
     for key in id_subfields:
         records = records.loc[records[key] == id_subfields[key]]
-        print(key, len(records))
     if not len(records):
         return None
     # remove nans
@@ -145,29 +142,45 @@ def format_dataframe(records, id_subfields={}, base_stepper='optim_steps', take_
     records = records[important_cols]
     # group over averaging field
     gb = list(set(list(max_subfields+list(id_subfields.keys())+[x_col, base_stepper])))
-    # average over avg_subfields (so we can determine best record)
-    mean_records = records.groupby(gb).mean().drop(columns=avg_subfields)
+
+    # fill in missing values from early stopping through duplication of last row
+    # import pdb
+    # pdb.set_trace()
+    last_total_records = records.loc[records[base_stepper] == records[base_stepper].max()]
+    max_record = max(records[base_stepper].max(), max_vals)
+    total_lastrec = len(last_total_records)
+    for r in range(total_lastrec):
+        if last_total_records[base_stepper].iloc[r] < max_record:
+            for a in range(int(last_total_records[base_stepper].iloc[r]), int(max_record)):
+                # import pdb
+                # pdb.set_trace()
+                new_add = last_total_records.iloc[r]
+                new_add = new_add.to_dict()
+                new_add[base_stepper] = a
+                new_add = pd.DataFrame([pd.Series(new_add)])
+                last_total_records =  pd.concat([last_total_records, new_add], ignore_index=True)
+    from IPython.display import display
+
+    records = pd.concat([records, last_total_records], ignore_index=True)
+    records = records.drop_duplicates()
+    print('yeet.')
+    print(display(records.sort_values(by = 'seed')[['seed', 'optim_steps']].loc[records[base_stepper] == records[base_stepper].max()].to_string()))
+    # print(records.loc[records[base_stepper] == records[base_stepper].max()][base_stepper])
+    mean_records = records.groupby(gb).mean().drop(columns=avg_subfields).reset_index()
     # only look at final optim steps
-    print('really?')
-    print(mean_records.columns)
-    print(base_stepper)
-    print(mean_records[base_stepper])
     last_mean_records = mean_records.loc[mean_records[base_stepper] == mean_records[base_stepper].max()]
     # get the best record
     if not take_max:
         best_record = last_mean_records[last_mean_records[y_col] == last_mean_records[y_col].min()]
     else:
         best_record = last_mean_records[last_mean_records[y_col] == last_mean_records[y_col].max()]
-    print('best', best_record)
     # find parameters of the best record
     merge_on = list(set(gb)-set([base_stepper, x_col, y_col]))
     merge_on = [ x for x in merge_on if x in best_record.columns.values]
     # find examples of best record in original reccord
     best_records = pd.merge(best_record[merge_on], records, on=merge_on,how='left')
-
     #
     final_records = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].mean()
-
     final_records[y_col+'25'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.25)[y_col]
     final_records[y_col+'75'] = best_records.groupby(merge_on+[x_col], as_index=False)[y_col].quantile(0.75)[y_col]
     final_records = final_records.sort_values(x_col, axis=0, ascending=True, inplace=False, kind='quicksort', na_position='last')

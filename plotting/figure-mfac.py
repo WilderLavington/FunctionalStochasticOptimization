@@ -142,9 +142,7 @@ def generate_mfac_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_
                 print('missing FMDopt  ', m_, dataset_name, 'full-batch')
 
         #
-        axs[col].grid()
-        # axs[col].set_yscale("log")
-        # axs[col].set_xscale("log")
+        axs[col].grid() 
         axs[col].grid()
 
         # axs[col].ticklabel_format(axis='x', style='sci', scilimits=(0,0))
@@ -179,6 +177,7 @@ def generate_mfac_figure(loss, schedule, wandb_records, fig_name, sso_algo='SGD_
 
     # show / save
     plt.savefig('./plotting/plots/mfac-'+fig_name+'.pdf', bbox_inches='tight')
+    plt.show()
     print('saved'+'./plotting/plots/mfac-'+fig_name+'.pdf')
 
 

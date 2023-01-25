@@ -8,17 +8,17 @@ metric:
 parameters:
   algo:
     values:
-    - OGD
-    - AdaOGD
-    - AdamOGD
-    - OSls
+    # - OGD
+    # - AdaOGD
+    # - AdamOGD
+    - OSLS
   log_lr:
     values:
-    - -3.
-    - -2.
-    - -1.
+    # - -3.
+    # - -2.
+    # - -1.
     - 0.0
-    - 1. 
+    # - 1.
   model_type:
     values:
     - 'nn'

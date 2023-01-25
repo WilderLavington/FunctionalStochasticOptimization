@@ -96,18 +96,19 @@ def download_wandb_records(user, project, summary_file,
     # return single data frame for vizualization
     return wandb_records
 
-def generate_plot(proc_df, x, y, ax, label, linestyle='solid', color=None, x_max=1000000):
+def generate_plot(proc_df, x, y, ax, label, linestyle='solid', color=None, x_max=1000000, marker=None,
+                        linewidth=4):
     low_order_idx = (torch.tensor(proc_df[x].values) < x_max).nonzero().reshape(-1)
     if label:
         ax.plot(torch.tensor(proc_df[x].values[low_order_idx]),
                 torch.tensor(proc_df[y].values[low_order_idx]),
                 label=label, linestyle=linestyle, color=color, alpha=0.8,
-                linewidth=4)
+                linewidth=linewidth, marker=marker)
     else:
         ax.plot(torch.tensor(proc_df[x].values[low_order_idx]),
                 torch.tensor(proc_df[y].values[low_order_idx]),
                 label='_nolegend_', linestyle=linestyle, color=color, alpha=0.8,
-                linewidth=4)
+                linewidth=linewidth, marker=marker)
     ax.fill_between(torch.tensor(proc_df[x].values)[low_order_idx],
             torch.tensor(proc_df[y+'75'].values)[low_order_idx],
             torch.tensor(proc_df[y+'25'].values)[low_order_idx],
@@ -163,8 +164,8 @@ def format_dataframe(records, id_subfields={}, base_stepper='optim_steps', take_
 
     records = pd.concat([records, last_total_records], ignore_index=True)
     records = records.drop_duplicates()
-    print('yeet.')
-    print(display(records.sort_values(by = 'seed')[['seed', 'optim_steps']].loc[records[base_stepper] == records[base_stepper].max()].to_string()))
+    # print('yeet.')
+    # print(display(records.sort_values(by = 'seed')[['seed', 'optim_steps']].loc[records[base_stepper] == records[base_stepper].max()].to_string()))
     # print(records.loc[records[base_stepper] == records[base_stepper].max()][base_stepper])
     mean_records = records.groupby(gb).mean().drop(columns=avg_subfields).reset_index()
     # only look at final optim steps

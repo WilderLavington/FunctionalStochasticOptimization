@@ -34,6 +34,7 @@ class OSLS(OGD):
         self.batch_size = self.samples
         self.beta_update = 0.8
         self.expand_coeff = 1.8
+        self.eta_schedule = args.eta_schedule
         optim_args = {'lr':self.lr, 'c':args.c,
             'beta_update':args.sls_beta_update, 'expand_coeff':args.expand_coeff}
         self.optimizer = LSOpt(self.policy.parameters(), **optim_args)
@@ -318,7 +319,7 @@ class SSO_AdaOGD(SSO_OGD):
         self.algo = 'SSO_Sadagrad'
         self.grad_sum = None
         assert args.eta_schedule == 'constant'
-        
+
     def update_parameters(self, new_examples):
 
         # grab examples

@@ -272,23 +272,30 @@ class OnlineLearningAlgo():
 
     # general training loop script
     def train_agent(self):
-
+        gather_times, update_times = [], []
         # intial log and display
+        start_gather = time.time()
         new_examples = self.gather_examples(self.env, self.memory, self.samples, use_expert=True)
+        gather_times.append(timer(start_gather,time.time()))
+
         self.evaluate(new_examples)
         self.log()
         self.display()
 
         # check that the model will not diverge
         with torch.autograd.set_detect_anomaly(True):
+            start_update = time.time()
             self.update_parameters(new_examples)
+            update_times.append(timer(start_update,time.time()))
 
         # with torch.autograd.detect_anomaly():
         for episode in range(self.args.episodes):
 
             # gather new loss and increment
             self.episode = episode + 1
+            start_gather = time.time()
             new_examples = self.gather_examples(self.env, self.memory, self.samples, use_expert=False)
+            gather_times.append(timer(start_gather,time.time()))
 
             # evaluate + display
             if (self.episode % self.args.log_interval == 0):
@@ -300,11 +307,15 @@ class OnlineLearningAlgo():
                 self.display()
 
             # update model parameters
+            start_update = time.time()
             self.update_parameters(new_examples)
+            update_times.append(timer(start_update,time.time()))
 
             # update beta
             self.beta *= self.beta_update
-
+            print(self.samples)
+            print('gather_times', gather_times)
+            print('update_times', update_times)
         # final log and display
         new_examples = self.gather_examples(self.env, self.memory, self.samples, use_expert=False)
         self.evaluate(new_examples)
